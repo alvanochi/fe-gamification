@@ -4,9 +4,9 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Button from '@/components/elements/Button'
 import { FormInput } from '@/components/fragments/FormInput'
-import { AppError } from '@/lib/api'
+import { AppError } from '@/libs/api'
 import { loginSchema, LoginFormValues } from '@/schema/auth.schema'
-import { useLoginMutation } from '@/hooks/useAuth'
+import { useLoginMutation } from '@/hooks/use-auth'
 
 const LoginForm = () => {
   const { mutate: login, isPending, error } = useLoginMutation()
@@ -28,7 +28,7 @@ const LoginForm = () => {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
       {apiError?.message && (
-        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-400">
+        <div className="rounded-md border-brut !border-danger bg-paper-raised p-4 text-sm font-bold text-danger shadow-brutal-sm">
           {apiError.message}
         </div>
       )}
@@ -44,12 +44,12 @@ const LoginForm = () => {
       />
 
       <FormInput<LoginFormValues>
-        label="Password"
-        name="password"
-        type="password"
-        placeholder="Masukkan password"
+        label="Nomor Telepon"
+        name="phoneNumber"
+        type="tel"
+        placeholder="08xxxxxxxxxx"
         register={register}
-        error={errors.password?.message}
+        error={errors.phoneNumber?.message}
         required
       />
 

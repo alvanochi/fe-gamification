@@ -1,11 +1,31 @@
-export interface IRegisterResponse {
-  success: boolean
+export interface IApiEnvelope<T> {
+  code: number
+  status: 'success' | 'failed'
   message: string
-  data: {}
+  data: T
 }
 
-export interface ILoginResponse {
-  success: boolean
-  message: string
-  data: {}
+export interface ILoginData {
+  accessToken: string
+  refreshToken: string
 }
+
+export interface IUser {
+  id: string
+  role: string
+  qrToken: string
+  groupId: string | null
+  email: string
+  phoneNumber: string
+  fullname: string
+  businessName: string
+  youtubeAccount: string
+  instagramAccount: string
+  tiktokAccount: string
+  checkInAt: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type ILoginResponse = IApiEnvelope<ILoginData>
+export type IRegisterResponse = IApiEnvelope<IUser>

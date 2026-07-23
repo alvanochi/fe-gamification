@@ -4,17 +4,18 @@ import type { NextRequest } from 'next/server'
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl
   const token = req.cookies.get('access_token')?.value
+  const isAuthPage = pathname.startsWith('/auth')
+  const isRacePage = pathname.startsWith('/race')
 
-  const isApi = pathname.startsWith('/api')
-  const isAuth = pathname.startsWith('/auth')
-
-  if (!token) {
-    if (isApi || isAuth) return NextResponse.next()
-    return NextResponse.redirect(new URL('/auth/login', req.url))
+  // Authenticated users don't need the auth pages anymore — send them to
+  // their onboarding/race home instead of the public landing page.
+  if (token && isAuthPage) {
+    return NextResponse.redirect(new URL('/race', req.url))
   }
 
-  if (isAuth) {
-    return NextResponse.redirect(new URL('/', req.url))
+  // /race requires a session; the public landing page and 404 stay open.
+  if (!token && isRacePage) {
+    return NextResponse.redirect(new URL('/auth/login', req.url))
   }
 
   return NextResponse.next()

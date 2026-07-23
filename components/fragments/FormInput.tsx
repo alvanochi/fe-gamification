@@ -1,7 +1,7 @@
 'use client'
 
 import { FieldValues, Path, UseFormRegister, RegisterOptions } from 'react-hook-form'
-import Input from '@/components/atoms/Input'
+import Input from '@/components/elements/Input'
 import FormField from './FormField'
 
 type FormInputProps<TFieldValues extends FieldValues> = {

@@ -21,6 +21,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    // Reading the persisted theme requires browser APIs, so it can only
+    // happen post-mount — there's no way to synchronize this without an
+    // initial setState in effect.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true)
     const saved = localStorage.getItem('theme') as Theme | null
     const initial = saved || 'light'

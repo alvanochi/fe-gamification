@@ -7,7 +7,9 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({ message, className = '' }) 
   if (!message) return null
 
   return (
-    <p className={`text-xs text-red-400 mt-1 flex items-center gap-1 ${className}`}>
+    <p
+      className={`text-xs font-bold text-danger mt-1 flex items-center gap-1.5 ${className}`}
+    >
       <svg
         xmlns="http://www.w3.org/2000/svg"
         className="h-3.5 w-3.5 flex-shrink-0"

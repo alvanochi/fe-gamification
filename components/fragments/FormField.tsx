@@ -1,7 +1,7 @@
 'use client'
 
-import Label from '@/components/atoms/Label'
-import ErrorMessage from '@/components/atoms/ErrorMessage'
+import Label from '@/components/elements/Label'
+import ErrorMessage from '@/components/elements/ErrorMessage'
 
 interface FormFieldProps {
   label: string
@@ -21,7 +21,7 @@ const FormField: React.FC<FormFieldProps> = ({
   children,
 }) => {
   return (
-    <div className={`flex flex-col gap-2 ${className}`}>
+    <div className={`flex flex-col gap-1.5 ${className}`}>
       <Label htmlFor={name} required={required}>
         {label}
       </Label>

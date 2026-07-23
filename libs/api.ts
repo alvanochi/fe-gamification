@@ -27,13 +27,14 @@ if (!API_URL) {
 
 const getToken = () => {
   if (typeof window === 'undefined') return null
-  return localStorage.getItem('token')
+  return localStorage.getItem('accessToken')
 }
 
 const clearAuthStorage = () => {
   if (typeof window === 'undefined') return
-  localStorage.removeItem('token')
-  localStorage.removeItem('user')
+  localStorage.removeItem('accessToken')
+  localStorage.removeItem('refreshToken')
+  document.cookie = 'access_token=; path=/; max-age=0; SameSite=Lax'
 }
 
 export const apiClient = axios.create({
@@ -65,8 +66,8 @@ apiClient.interceptors.response.use(
     if (status === 401) {
       clearAuthStorage()
 
-      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-        window.location.href = '/login'
+      if (typeof window !== 'undefined' && window.location.pathname !== '/auth/login') {
+        window.location.href = '/auth/login'
       }
     }
 

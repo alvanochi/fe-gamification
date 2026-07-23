@@ -1,5 +1,5 @@
-import { http } from '@/lib/api'
-import { endpoints } from '@/lib/endpoints'
+import { http } from '@/libs/api'
+import { endpoints } from '@/libs/endpoint'
 import { LoginPayload, RegisterPayload } from '@/schema/auth.schema'
 import { ILoginResponse, IRegisterResponse } from '@/types/auth'
 
@@ -9,6 +9,6 @@ export const authService = {
   },
 
   register(payload: RegisterPayload) {
-    return http.post<IRegisterResponse, RegisterPayload>(endpoints.auth.register, payload)
+    return http.post<IRegisterResponse, RegisterPayload>(endpoints.users.register, payload)
   },
 }

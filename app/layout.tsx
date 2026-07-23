@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Geist, Geist_Mono, Archivo_Black } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/providers/ThemeProvider'
 import QueryProvider from '@/providers/QueryProvider'
+import { SmoothScrollProvider } from '@/providers/SmoothScrollProvider'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -14,10 +15,16 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 })
 
+const archivoBlack = Archivo_Black({
+  variable: '--font-archivo-black',
+  subsets: ['latin'],
+  weight: '400',
+})
+
 export const metadata: Metadata = {
-  title: 'Festival Film Kebangsaan - Pendaftaran',
+  title: 'Millionaire Race — Yogyakarta',
   description:
-    'Portal pendaftaran resmi Festival Film Kebangsaan. Daftarkan karya film terbaik Anda dan ikuti kompetisi bergengsi tingkat nasional.',
+    'Platform gamifikasi Millionaire Race: kejar 30 misi, jelajahi Yogyakarta bareng timmu, dan naik ke puncak leaderboard.',
 }
 
 export default function RootLayout({
@@ -28,10 +35,12 @@ export default function RootLayout({
   return (
     <html lang="id" className="light" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 dark:bg-[#0a0a0a] text-gray-900 dark:text-white`}
+        className={`${geistSans.variable} ${geistMono.variable} ${archivoBlack.variable} antialiased bg-paper text-ink`}
       >
         <QueryProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            <SmoothScrollProvider>{children}</SmoothScrollProvider>
+          </ThemeProvider>
         </QueryProvider>
       </body>
     </html>

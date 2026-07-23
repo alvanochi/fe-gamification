@@ -1,26 +1,153 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fff8e7;
+  --foreground: #111111;
+
+  /* Millionaire Race neo-brutalist palette — "ticket stock" base + one loud accent */
+  --ink: #111111;
+  --paper: #fff8e7;
+  --paper-raised: #ffffff;
+  --primary: #ffd400;
+  --primary-ink: #111111;
+  --secondary: #ff3ea5;
+  --secondary-ink: #111111;
+
+  /* Mission category colors (reserved for future task-list/mission UI) */
+  --tantangan: #39d95a;
+  --bigger-better: #ff6a1a;
+  --soal-lokasi: #2e6bff;
+
+  --success: #1faa59;
+  --danger: #ff3b30;
+  --warning: #ffb800;
+
+  /* Hard-shadow scale: flat color, zero blur, offset like a stamp pressed slightly off */
+  --shadow-color: var(--ink);
+  --brutal-offset-sm: 3px;
+  --brutal-offset: 5px;
+  --brutal-offset-lg: 8px;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-primary: var(--primary);
+  --color-primary-ink: var(--primary-ink);
+  --color-secondary: var(--secondary);
+  --color-secondary-ink: var(--secondary-ink);
+
+  --color-tantangan: var(--tantangan);
+  --color-bigger-better: var(--bigger-better);
+  --color-soal-lokasi: var(--soal-lokasi);
+
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-archivo-black);
+
+  /* Ticket-like radius scale — deliberately not pill-shaped SaaS rounding */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+
+  /* Hard offset shadows — flat color, no blur */
+  --shadow-brutal-sm: var(--brutal-offset-sm) var(--brutal-offset-sm) 0 0 var(--shadow-color);
+  --shadow-brutal: var(--brutal-offset) var(--brutal-offset) 0 0 var(--shadow-color);
+  --shadow-brutal-lg: var(--brutal-offset-lg) var(--brutal-offset-lg) 0 0 var(--shadow-color);
+}
+
+.dark {
+  --background: #171512;
+  --foreground: #f5f1e6;
+
+  --ink: #f5f1e6;
+  --paper: #171512;
+  --paper-raised: #1f1b16;
+  --primary: #ffd400;
+  --primary-ink: #111111;
+  --secondary: #ff3ea5;
+  --secondary-ink: #111111;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  :root:not(.light) {
+    --background: #171512;
+    --foreground: #f5f1e6;
+
+    --ink: #f5f1e6;
+    --paper: #171512;
+    --paper-raised: #1f1b16;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Border scale — Tailwind v4 has no themable border-width namespace, so these
+   are hand-rolled utilities rather than scattered arbitrary values. */
+@utility border-brut-sm {
+  border-width: 2px;
+  border-color: var(--color-ink);
+}
+@utility border-brut {
+  border-width: 3px;
+  border-color: var(--color-ink);
+}
+@utility border-brut-lg {
+  border-width: 4px;
+  border-color: var(--color-ink);
+}
+@utility border-brut-xl {
+  border-width: 6px;
+  border-color: var(--color-ink);
+}
+
+/* "Stamp pressed down" click feedback: on press, the element moves into its
+   own shadow and the shadow disappears. Offsets must match whichever
+   shadow-brutal-* utility the element uses. */
+@utility brutal-press {
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
+  &:active {
+    transform: translate(var(--brutal-offset), var(--brutal-offset));
+    box-shadow: none;
+  }
+}
+@utility brutal-press-sm {
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
+  &:active {
+    transform: translate(var(--brutal-offset-sm), var(--brutal-offset-sm));
+    box-shadow: none;
+  }
+}
+@utility brutal-press-lg {
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
+  &:active {
+    transform: translate(var(--brutal-offset-lg), var(--brutal-offset-lg));
+    box-shadow: none;
+  }
+}
+
+/* Perforated ticket edge, used by the hero boarding-pass card */
+@utility ticket-notch-b {
+  background-image: radial-gradient(circle at 6px 6px, transparent 6px, var(--color-paper) 6.5px);
+  background-size: 24px 12px;
+  background-repeat: repeat-x;
+  background-position: bottom;
 }

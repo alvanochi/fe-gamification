@@ -1,7 +1,7 @@
 'use client'
 
 import { FieldValues, Path, UseFormRegister, RegisterOptions } from 'react-hook-form'
-import Textarea from '@/components/atoms/Textarea'
+import Textarea from '@/components/elements/TextArea'
 import FormField from './FormField'
 
 type FormTextareaProps<TFieldValues extends FieldValues> = {
