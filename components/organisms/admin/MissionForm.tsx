@@ -1,5 +1,6 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Button from '@/components/elements/Button'
@@ -8,6 +9,11 @@ import Input from '@/components/elements/Input'
 import TextArea from '@/components/elements/TextArea'
 import Select from '@/components/elements/Select'
 import ErrorMessage from '@/components/elements/ErrorMessage'
+
+const MapPicker = dynamic(() => import('@/components/organisms/admin/MapPicker'), {
+  ssr: false,
+  loading: () => <div className="h-[280px] w-full animate-pulse rounded-md border-brut bg-paper" />,
+})
 import {
   createMissionSchema,
   CreateMissionFormInput,
@@ -25,6 +31,7 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
     register,
     handleSubmit,
     watch,
+    setValue,
     reset: resetForm,
     formState: { errors },
   } = useForm<CreateMissionFormInput, unknown, CreateMissionFormValues>({
@@ -33,6 +40,9 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
   })
 
   const type = watch('type')
+  const geoLat = watch('geoLat')
+  const geoLng = watch('geoLng')
+  const geoRadius = watch('geoRadius')
   const apiError = error as AppError | null
 
   const onSubmit = (values: CreateMissionFormValues) => {
@@ -158,19 +168,20 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
           <p className="font-mono text-xs uppercase tracking-widest text-soal-lokasi">
             Konfigurasi Geofencing
           </p>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <div>
-              <Label required>Latitude</Label>
-              <Input placeholder="-7.801944" {...register('geoLat')} />
-            </div>
-            <div>
-              <Label required>Longitude</Label>
-              <Input placeholder="110.364444" {...register('geoLng')} />
-            </div>
-            <div>
-              <Label required>Radius (meter)</Label>
-              <Input type="number" min={1} {...register('geoRadius')} />
-            </div>
+
+          <MapPicker
+            lat={geoLat}
+            lng={geoLng}
+            radiusMeters={geoRadius ? Number(geoRadius) : undefined}
+            onPick={(lat, lng) => {
+              setValue('geoLat', lat, { shouldValidate: true })
+              setValue('geoLng', lng, { shouldValidate: true })
+            }}
+          />
+
+          <div>
+            <Label required>Radius (meter)</Label>
+            <Input type="number" min={1} {...register('geoRadius')} />
           </div>
           <ErrorMessage message={errors.geoRadius?.message} />
         </div>
