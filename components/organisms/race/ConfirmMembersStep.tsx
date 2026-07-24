@@ -3,7 +3,7 @@
 import RaceShell from '@/components/fragments/RaceShell'
 import { AppError } from '@/libs/api'
 import { Confirmation, Group } from '@/types/group'
-import { buildConfirmedPairSet, isPairConfirmed } from '@/utils/group/confirmation'
+import { areAllPairsConfirmed, buildConfirmedPairSet, isPairConfirmed } from '@/utils/group/confirmation'
 import { useConfirmMemberMutation } from '@/hooks/use-group'
 
 interface ConfirmMembersStepProps {
@@ -17,6 +17,8 @@ export default function ConfirmMembersStep({ group, confirmations, myId }: Confi
   const apiError = error as AppError | null
   const confirmedPairs = buildConfirmedPairSet(confirmations)
   const others = group.members.filter(m => m.id !== myId)
+  const allConfirmedByMe = others.every(m => isPairConfirmed(confirmedPairs, myId, m.id))
+  const allConfirmedInGroup = areAllPairsConfirmed(group.members, confirmations)
 
   return (
     <RaceShell
@@ -53,6 +55,18 @@ export default function ConfirmMembersStep({ group, confirmations, myId }: Confi
       </ul>
       {apiError?.message && (
         <p className="mt-3 text-xs font-bold text-danger">{apiError.message}</p>
+      )}
+
+      {allConfirmedInGroup && others.length > 0 && (
+        <p className="mt-4 flex items-center justify-center gap-2 rounded-md border-brut !border-success bg-paper px-4 py-3 text-sm font-bold text-success">
+          <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          Semua sudah saling konfirmasi! Menuju sesi foto...
+        </p>
+      )}
+      {!allConfirmedInGroup && allConfirmedByMe && others.length > 0 && (
+        <p className="mt-4 rounded-md border-brut bg-paper px-4 py-3 text-center text-sm font-bold text-ink/60">
+          Kamu sudah konfirmasi semua orang. Menunggu anggota lain saling konfirmasi...
+        </p>
       )}
     </RaceShell>
   )

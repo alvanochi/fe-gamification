@@ -1,4 +1,6 @@
+import Link from 'next/link'
 import RaceShell from '@/components/fragments/RaceShell'
+import Button from '@/components/elements/Button'
 import { Group } from '@/types/group'
 
 export default function GroupSuccessScreen({ group }: { group: Group }) {
@@ -23,8 +25,14 @@ export default function GroupSuccessScreen({ group }: { group: Group }) {
           </li>
         ))}
       </ul>
-      <p className="mt-6 text-center text-sm text-ink/60">
-        Fitur daftar misi &amp; leaderboard live akan segera hadir.
+
+      <Link href="/race/missions">
+        <Button size="lg" className="mt-6 w-full">
+          Lihat Misi Saya
+        </Button>
+      </Link>
+      <p className="mt-4 text-center text-sm text-ink/60">
+        Fitur leaderboard live akan segera hadir.
       </p>
     </RaceShell>
   )

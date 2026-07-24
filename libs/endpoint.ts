@@ -26,6 +26,8 @@ export const endpoints = {
   },
   submissions: {
     uploadUrl: '/submissions/upload-url',
+    myGroup: '/submissions/my-group',
+    pending: '/submissions/pending',
     submit: '/submissions',
     validate: (submissionId: string) => `/submissions/${submissionId}/validate`,
     barterStep: '/submissions/barter-steps',
