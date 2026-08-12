@@ -6,14 +6,17 @@ import Link from 'next/link'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
 import MissionCard from '@/components/organisms/race/MissionCard'
 import { useProfileQuery } from '@/hooks/use-profile'
-import { useMissionsQuery } from '@/hooks/use-missions'
+import { useMissionsQuery, useMyCheckInsQuery } from '@/hooks/use-missions'
 import { useMyGroupSubmissionsQuery } from '@/hooks/use-submissions'
+import { useMyAssignmentsQuery } from '@/hooks/use-barter'
 
 export default function RaceMissionsPage() {
   const router = useRouter()
   const profileQuery = useProfileQuery()
   const missionsQuery = useMissionsQuery()
   const submissionsQuery = useMyGroupSubmissionsQuery()
+  const checkInsQuery = useMyCheckInsQuery()
+  const assignmentsQuery = useMyAssignmentsQuery()
 
   const profile = profileQuery.data
   const hasNoGroup = !profileQuery.isLoading && !profile?.groupId
@@ -34,6 +37,8 @@ export default function RaceMissionsPage() {
 
   const missions = missionsQuery.data ?? []
   const submissions = submissionsQuery.data ?? []
+  const checkIns = checkInsQuery.data ?? []
+  const assignments = assignmentsQuery.data ?? []
 
   return (
     <div className="min-h-[100dvh] bg-paper px-4 py-10 sm:px-8">
@@ -53,7 +58,13 @@ export default function RaceMissionsPage() {
         ) : (
           <ul className="mt-8 space-y-4">
             {missions.map(mission => (
-              <MissionCard key={mission.id} mission={mission} submissions={submissions} />
+              <MissionCard
+                key={mission.id}
+                mission={mission}
+                submissions={submissions}
+                checkIn={checkIns.find(c => c.missionId === mission.id) ?? null}
+                assignment={assignments.find(a => a.missionId === mission.id) ?? null}
+              />
             ))}
           </ul>
         )}

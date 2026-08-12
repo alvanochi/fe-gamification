@@ -1,12 +1,28 @@
 'use client'
 
+import Button from '@/components/elements/Button'
+import ErrorMessage from '@/components/elements/ErrorMessage'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
-import { useMissionsQuery } from '@/hooks/use-missions'
+import {
+  useDeleteMissionMutation,
+  useMissionsQuery,
+  useUpdateMissionMutation,
+} from '@/hooks/use-missions'
+import { AppError } from '@/libs/api'
 import { Mission } from '@/types/mission'
-import { MISSION_TYPE_LABEL as TYPE_LABEL, MISSION_TYPE_COLOR_VAR as TYPE_COLOR_VAR } from '@/utils/mission/type-meta'
+import {
+  MISSION_TYPE_LABEL as TYPE_LABEL,
+  MISSION_TYPE_COLOR_VAR as TYPE_COLOR_VAR,
+  MISSION_CATEGORY_LABEL,
+  CLUE_TYPE_LABEL,
+  PROOF_TYPE_LABEL,
+  formatMissionPoints,
+} from '@/utils/mission/type-meta'
 
 function MissionCard({ mission, indexedById }: { mission: Mission; indexedById: Map<string, Mission> }) {
   const prerequisite = mission.prerequisiteId ? indexedById.get(mission.prerequisiteId) : null
+  const { mutate: update, isPending: isUpdating } = useUpdateMissionMutation()
+  const { mutate: remove, isPending: isDeleting, error: deleteError } = useDeleteMissionMutation()
 
   return (
     <li
@@ -25,14 +41,25 @@ function MissionCard({ mission, indexedById }: { mission: Mission; indexedById: 
           <h4 className="mt-1 font-display text-xl text-ink">{mission.title}</h4>
         </div>
         <span className="shrink-0 rounded-full border-brut-sm bg-primary px-3 py-1 font-display text-sm text-primary-ink">
-          {mission.pointWeight} pt
+          {formatMissionPoints(mission)}
         </span>
       </div>
 
       <p className="mt-2 text-sm text-ink/70">{mission.description}</p>
 
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs text-ink/50">
+        <span>{MISSION_CATEGORY_LABEL[mission.category]}</span>
         <span>{mission.participantCount} peserta/pengerjaan</span>
+        <span>bukti {PROOF_TYPE_LABEL[mission.proofType].toLowerCase()}</span>
+        {mission.locationName && <span>di {mission.locationName}</span>}
+        {mission.sessionStart && mission.sessionEnd && (
+          <span>
+            sesi {mission.sessionStart}-{mission.sessionEnd}
+          </span>
+        )}
+        {mission.durationMinutes && <span>{mission.durationMinutes} menit</span>}
+        {mission.requiresCheckIn && <span>wajib check-in</span>}
+        {mission.clueType !== 'NONE' && <span>petunjuk: {CLUE_TYPE_LABEL[mission.clueType]}</span>}
         {mission.type === 'SOAL_LOKASI' && mission.geoLat && (
           <span>
             geofence {mission.geoLat}, {mission.geoLng} (r{mission.geoRadius}m)
@@ -41,6 +68,40 @@ function MissionCard({ mission, indexedById }: { mission: Mission; indexedById: 
         {prerequisite && <span>setelah: {prerequisite.title}</span>}
         {mission.openAt && <span>buka: {new Date(mission.openAt).toLocaleString('id-ID')}</span>}
       </div>
+
+      <div className="mt-4 flex gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          className="flex-1"
+          loading={isUpdating}
+          onClick={() => {
+            const next = prompt(`Ubah poin untuk "${mission.title}"`, String(mission.pointWeight))
+            if (next === null) return
+
+            const pointWeight = Number(next)
+            if (!Number.isInteger(pointWeight) || pointWeight < 0) {
+              alert('Poin harus berupa bilangan bulat non-negatif.')
+              return
+            }
+            update({ missionId: mission.id, pointWeight })
+          }}
+        >
+          Ubah Poin
+        </Button>
+        <Button
+          variant="danger"
+          size="sm"
+          className="flex-1"
+          loading={isDeleting}
+          onClick={() => {
+            if (confirm(`Hapus misi "${mission.title}"?`)) remove(mission.id)
+          }}
+        >
+          Hapus
+        </Button>
+      </div>
+      <ErrorMessage message={(deleteError as AppError | null)?.message} className="mt-2" />
     </li>
   )
 }

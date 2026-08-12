@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { submissionService } from '@/services/submission.service'
+import { SubmitMissionPayload, ValidateSubmissionPayload } from '@/types/mission'
 
 export const useMyGroupSubmissionsQuery = () => {
   return useQuery({
@@ -31,10 +32,29 @@ export const useValidateSubmissionMutation = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ submissionId, status }: { submissionId: string; status: 'APPROVED' | 'REJECTED' }) =>
-      submissionService.validate(submissionId, status),
+    mutationFn: ({ submissionId, ...payload }: { submissionId: string } & ValidateSubmissionPayload) =>
+      submissionService.validate(submissionId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pending-submissions'] })
+    },
+  })
+}
+
+/**
+ * Kirim bukti misi: unggah file ke R2 lebih dulu (bila ada), lalu simpan
+ * submission dengan mediaUrl hasil unggahan. Sebelumnya file yang dipilih
+ * peserta tidak pernah ikut terkirim sama sekali.
+ */
+export const useSubmitMissionWithEvidenceMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async ({ file, ...payload }: SubmitMissionPayload & { file?: File | null }) => {
+      const mediaUrl = file ? await submissionService.uploadEvidence(file) : payload.mediaUrl
+      return submissionService.submit({ ...payload, mediaUrl })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['my-group-submissions'] })
     },
   })
 }

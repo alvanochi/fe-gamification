@@ -19,13 +19,18 @@ import {
   CreateMissionFormInput,
   CreateMissionFormValues,
   missionTypeOptions,
+  missionCategoryOptions,
+  clueTypeOptions,
+  proofTypeOptions,
 } from '@/schema/mission.schema'
 import { useCreateMissionMutation } from '@/hooks/use-missions'
+import { useSponsorsQuery } from '@/hooks/use-sponsors'
 import { AppError } from '@/libs/api'
 import { Mission } from '@/types/mission'
 
 export default function MissionForm({ existingMissions }: { existingMissions: Mission[] }) {
   const { mutate: createMission, isPending, error, isSuccess, reset } = useCreateMissionMutation()
+  const { data: sponsors } = useSponsorsQuery()
 
   const {
     register,
@@ -36,10 +41,19 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
     formState: { errors },
   } = useForm<CreateMissionFormInput, unknown, CreateMissionFormValues>({
     resolver: zodResolver(createMissionSchema),
-    defaultValues: { isMandatory: false, pointWeight: 0, participantCount: 1 },
+    defaultValues: {
+      isMandatory: false,
+      pointWeight: 0,
+      participantCount: 1,
+      category: 'MANDIRI',
+      clueType: 'NONE',
+      proofType: 'FOTO',
+      requiresCheckIn: false,
+    },
   })
 
   const type = watch('type')
+  const clueType = watch('clueType')
   const geoLat = watch('geoLat')
   const geoLng = watch('geoLng')
   const geoRadius = watch('geoRadius')
@@ -51,6 +65,11 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
       {
         ...values,
         openAt: values.openAt ? new Date(values.openAt).toISOString() : undefined,
+        // Select yang tidak dipilih mengirim string kosong. sponsorId punya
+        // foreign key ke sponsors, jadi '' akan ditolak database — kirim
+        // undefined supaya kolomnya benar-benar dibiarkan kosong.
+        sponsorId: values.sponsorId || undefined,
+        prerequisiteId: values.prerequisiteId || undefined,
       },
       {
         onSuccess: () =>
@@ -63,9 +82,21 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
             participantCount: 1,
             openAt: '',
             prerequisiteId: '',
+            sponsorId: '',
             geoLat: '',
             geoLng: '',
             geoRadius: undefined,
+            category: 'MANDIRI',
+            clueType: 'NONE',
+            clue: '',
+            locationName: '',
+            sessionStart: '',
+            sessionEnd: '',
+            durationMinutes: '',
+            proofType: 'FOTO',
+            pointMin: '',
+            pointMax: '',
+            requiresCheckIn: false,
           }),
       },
     )
@@ -107,10 +138,10 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
 
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <Label required>Kategori</Label>
+          <Label required>Tipe Misi</Label>
           <Select error={!!errors.type} defaultValue="" {...register('type')}>
             <option value="" disabled>
-              Pilih kategori
+              Pilih tipe misi
             </option>
             {missionTypeOptions.map(opt => (
               <option key={opt.value} value={opt.value}>
@@ -146,6 +177,22 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
         </div>
       </div>
 
+      {/* FR-13: menautkan sponsor ke misi tertentu. */}
+      <div>
+        <Label>Sponsor Misi (opsional)</Label>
+        <Select {...register('sponsorId')} defaultValue="">
+          <option value="">Tanpa sponsor</option>
+          {sponsors?.map(sponsor => (
+            <option key={sponsor.id} value={sponsor.id}>
+              {sponsor.name}
+            </option>
+          ))}
+        </Select>
+        <p className="mt-1 text-xs text-ink/50">
+          Misi bersponsor mendapat penanda khusus di daftar misi peserta.
+        </p>
+      </div>
+
       <div>
         <Label>Misi Prasyarat (opsional)</Label>
         <Select {...register('prerequisiteId')} defaultValue="">
@@ -162,6 +209,114 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
         <input type="checkbox" className="h-4 w-4 border-brut-sm" {...register('isMandatory')} />
         Wajib diselesaikan dulu sebelum misi lain terbuka (gatekeeper)
       </label>
+
+      {/* Field yang mengikuti struktur MR6_TataCaraSimulasi GAME.xlsx */}
+      <div className="space-y-5 rounded-md border-brut-sm bg-paper p-4">
+        <p className="font-mono text-xs uppercase tracking-widest text-ink/45">Detail Simulasi (MR6)</p>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div>
+            <Label required>Kategori</Label>
+            <Select error={!!errors.category} {...register('category')}>
+              {missionCategoryOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </Select>
+            <ErrorMessage message={errors.category?.message} />
+          </div>
+
+          <div>
+            <Label required>Pembuktian</Label>
+            <Select error={!!errors.proofType} {...register('proofType')}>
+              {proofTypeOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </Select>
+            <ErrorMessage message={errors.proofType?.message} />
+          </div>
+        </div>
+
+        <div>
+          <Label>Nama Lokasi</Label>
+          <Input placeholder="Misal: Hotel Royal Bringto" {...register('locationName')} />
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div>
+            <Label>Jenis Petunjuk</Label>
+            <Select error={!!errors.clueType} {...register('clueType')}>
+              {clueTypeOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </Select>
+          </div>
+
+          <div>
+            <Label>Durasi Pengerjaan (menit)</Label>
+            <Input type="number" min={1} placeholder="Kosongkan = bebas" {...register('durationMinutes')} />
+            <ErrorMessage message={errors.durationMinutes?.message} />
+          </div>
+        </div>
+
+        {clueType !== 'NONE' && (
+          <div>
+            <Label required>Isi Petunjuk</Label>
+            <TextArea
+              placeholder={
+                clueType === 'MORSE'
+                  ? '-... .- - .. -.- / . .-.. --- -.'
+                  : clueType === 'FOTO' || clueType === 'MAP'
+                    ? 'URL gambar petunjuk'
+                    : 'Tulis petunjuknya di sini'
+              }
+              error={!!errors.clue}
+              {...register('clue')}
+            />
+            <ErrorMessage message={errors.clue?.message} />
+          </div>
+        )}
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div>
+            <Label>Sesi Mulai</Label>
+            <Input type="time" {...register('sessionStart')} />
+            <ErrorMessage message={errors.sessionStart?.message} />
+          </div>
+          <div>
+            <Label>Sesi Selesai</Label>
+            <Input type="time" {...register('sessionEnd')} />
+            <ErrorMessage message={errors.sessionEnd?.message} />
+          </div>
+        </div>
+
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div>
+            <Label>Poin Minimum</Label>
+            <Input type="number" min={0} placeholder="Misal: 50" {...register('pointMin')} />
+            <ErrorMessage message={errors.pointMin?.message} />
+          </div>
+          <div>
+            <Label>Poin Maksimum</Label>
+            <Input type="number" min={0} placeholder="Misal: 100" {...register('pointMax')} />
+            <ErrorMessage message={errors.pointMax?.message} />
+          </div>
+        </div>
+        <p className="text-xs text-ink/50">
+          Isi rentang poin untuk misi yang dinilai subjektif (kerapihan, orisinalitas). Panitia akan
+          menentukan nilainya saat menyetujui bukti. Kosongkan bila poinnya tetap.
+        </p>
+
+        <label className="flex items-center gap-2 text-sm font-bold text-ink">
+          <input type="checkbox" className="h-4 w-4 border-brut-sm" {...register('requiresCheckIn')} />
+          Wajib check-in di pos sebelum mengirim bukti
+        </label>
+      </div>
 
       {type === 'SOAL_LOKASI' && (
         <div className="space-y-4 rounded-md border-brut-sm border-soal-lokasi bg-paper p-4">

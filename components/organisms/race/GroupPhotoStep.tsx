@@ -9,6 +9,7 @@ import { AppError } from '@/libs/api'
 
 export default function GroupPhotoStep({ groupId }: { groupId: string }) {
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [fileName, setFileName] = useState<string | null>(null)
   const { mutate: completePhoto, isPending, error } = useGroupPhotoMutation(groupId)
@@ -17,6 +18,7 @@ export default function GroupPhotoStep({ groupId }: { groupId: string }) {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    setPhotoFile(file)
     setFileName(file.name)
     setPreviewUrl(URL.createObjectURL(file))
   }
@@ -53,8 +55,8 @@ export default function GroupPhotoStep({ groupId }: { groupId: string }) {
         size="lg"
         className="mt-6 w-full"
         loading={isPending}
-        disabled={!previewUrl}
-        onClick={() => completePhoto()}
+        disabled={!photoFile}
+        onClick={() => completePhoto(photoFile)}
       >
         Selesai, Lanjut ke Voting
       </Button>
