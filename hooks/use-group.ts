@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient, UseQueryOptions } from '@tanstack/react-query'
 import { groupService } from '@/services/group.service'
+import { submissionService } from '@/services/submission.service'
 import { Group, Confirmation } from '@/types/group'
 
 type RefetchInterval<T> = UseQueryOptions<T>['refetchInterval']
@@ -57,7 +58,12 @@ export const useGroupPhotoMutation = (groupId: string) => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: () => groupService.completePhoto(groupId),
+    // Foto diunggah ke R2 lebih dulu, lalu URL-nya disimpan bersama penanda
+    // langkah selesai — sebelumnya file-nya tidak pernah dikirim ke mana pun.
+    mutationFn: async (file?: File | null) => {
+      const photoUrl = file ? await submissionService.uploadEvidence(file) : undefined
+      return groupService.completePhoto(groupId, photoUrl)
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['group', groupId] })
     },

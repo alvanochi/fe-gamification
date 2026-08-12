@@ -1,5 +1,20 @@
 export type MissionType = 'TANTANGAN' | 'BIGGER_BETTER' | 'SOAL_LOKASI'
 
+/** Dua kategori besar simulasi di MR6. */
+export type MissionCategory = 'TERSTRUKTUR' | 'MANDIRI'
+
+/** Bentuk petunjuk lokasi (kolom "PETUNJUK" di MR6). */
+export type ClueType = 'NONE' | 'TEKS' | 'MORSE' | 'SANDI_ANGKA' | 'GPS' | 'FOTO' | 'MAP'
+
+/** Bentuk bukti yang diminta (kolom "PEMBUKTIAN" di MR6). */
+export type ProofType =
+  | 'FOTO'
+  | 'VIDEO'
+  | 'FOTO_VIDEO'
+  | 'LINK_SOSMED'
+  | 'LAPORAN_PETUGAS'
+  | 'INPUT_HASIL'
+
 export interface Mission {
   id: string
   title: string
@@ -15,8 +30,32 @@ export interface Mission {
   geoLng: string | null
   geoRadius: number | null
   pointRules: Record<string, unknown> | null
+  category: MissionCategory
+  clueType: ClueType
+  clue: string | null
+  locationName: string | null
+  /** "HH:MM" waktu lokal acara. */
+  sessionStart: string | null
+  sessionEnd: string | null
+  durationMinutes: number | null
+  proofType: ProofType
+  /** Bila keduanya terisi, panitia menilai dalam rentang ini saat Approve. */
+  pointMin: number | null
+  pointMax: number | null
+  requiresCheckIn: boolean
   createdAt: string
   updatedAt: string
+}
+
+export interface MissionCheckIn {
+  id: string
+  missionId: string
+  groupId: string
+  checkedInBy: string
+  checkedOutBy: string | null
+  queueNumber: string | null
+  checkedInAt: string
+  checkedOutAt: string | null
 }
 
 export type SubmissionStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
@@ -30,6 +69,8 @@ export interface Submission {
   mediaUrl: string | null
   answerText: string | null
   selectedOptionId: string | null
+  awardedPoint: number | null
+  rejectReason: string | null
   validatedBy: string | null
   validatedAt: string | null
   createdAt: string
@@ -46,6 +87,11 @@ export interface PendingSubmission {
   missionTitle: string
   missionType: MissionType
   pointWeight: number
+  pointMin: number | null
+  pointMax: number | null
+  proofType: ProofType
+  missionCategory: MissionCategory
+  locationName: string | null
   groupId: string
   groupName: string
   submittedById: string
@@ -58,6 +104,18 @@ export interface SubmitMissionPayload {
   answerText?: string
   geoLat?: string
   geoLng?: string
+}
+
+export interface ValidateSubmissionPayload {
+  status: 'APPROVED' | 'REJECTED'
+  awardedPoint?: number
+  rejectReason?: string
+}
+
+export interface PresignedUpload {
+  uploadUrl: string
+  fileKey: string
+  publicUrl: string
 }
 
 export interface CreateMissionPayload {
@@ -73,4 +131,15 @@ export interface CreateMissionPayload {
   geoLat?: string
   geoLng?: string
   geoRadius?: number
+  category: MissionCategory
+  clueType: ClueType
+  clue?: string
+  locationName?: string
+  sessionStart?: string
+  sessionEnd?: string
+  durationMinutes?: number
+  proofType: ProofType
+  pointMin?: number
+  pointMax?: number
+  requiresCheckIn: boolean
 }

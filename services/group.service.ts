@@ -20,8 +20,10 @@ export const groupService = {
     return http.post<IApiEnvelope<null>>(endpoints.groups.confirmMember(groupId, targetUserId))
   },
 
-  completePhoto(groupId: string) {
-    return http.post<IApiEnvelope<null>>(endpoints.groups.photo(groupId))
+  completePhoto(groupId: string, photoUrl?: string) {
+    return http.post<IApiEnvelope<null>, { photoUrl?: string }>(endpoints.groups.photo(groupId), {
+      photoUrl,
+    })
   },
 
   voteLeader(groupId: string, nomineeId: string) {

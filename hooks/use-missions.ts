@@ -18,3 +18,34 @@ export const useCreateMissionMutation = () => {
     },
   })
 }
+
+export const useMyCheckInsQuery = () => {
+  return useQuery({
+    queryKey: ['mission-checkins'],
+    queryFn: async () => (await missionService.myCheckIns()).data,
+  })
+}
+
+export const useCheckInMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ missionId, queueNumber }: { missionId: string; queueNumber?: string }) =>
+      missionService.checkIn(missionId, queueNumber),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mission-checkins'] })
+    },
+  })
+}
+
+export const useCheckOutMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ missionId }: { missionId: string }) => missionService.checkOut(missionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mission-checkins'] })
+      queryClient.invalidateQueries({ queryKey: ['my-group-submissions'] })
+    },
+  })
+}

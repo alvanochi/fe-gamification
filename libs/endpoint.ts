@@ -22,7 +22,10 @@ export const endpoints = {
   missions: {
     list: '/missions',
     myAssignments: '/missions/my-assignments',
+    myCheckIns: '/missions/my-checkins',
     createAssignment: (missionId: string) => `/missions/${missionId}/assignments`,
+    checkIn: (missionId: string) => `/missions/${missionId}/check-in`,
+    checkOut: (missionId: string) => `/missions/${missionId}/check-out`,
   },
   submissions: {
     uploadUrl: '/submissions/upload-url',
