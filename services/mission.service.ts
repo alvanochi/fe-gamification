@@ -15,6 +15,17 @@ export const missionService = {
     )
   },
 
+  update(missionId: string, payload: Partial<CreateMissionPayload>) {
+    return http.put<IApiEnvelope<{ id: string }>, Partial<CreateMissionPayload>>(
+      endpoints.missions.detail(missionId),
+      payload,
+    )
+  },
+
+  remove(missionId: string) {
+    return http.delete<IApiEnvelope<null>>(endpoints.missions.detail(missionId))
+  },
+
   myCheckIns() {
     return http.get<IApiEnvelope<MissionCheckIn[]>>(endpoints.missions.myCheckIns)
   },

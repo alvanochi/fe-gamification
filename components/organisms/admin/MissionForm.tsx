@@ -24,11 +24,13 @@ import {
   proofTypeOptions,
 } from '@/schema/mission.schema'
 import { useCreateMissionMutation } from '@/hooks/use-missions'
+import { useSponsorsQuery } from '@/hooks/use-sponsors'
 import { AppError } from '@/libs/api'
 import { Mission } from '@/types/mission'
 
 export default function MissionForm({ existingMissions }: { existingMissions: Mission[] }) {
   const { mutate: createMission, isPending, error, isSuccess, reset } = useCreateMissionMutation()
+  const { data: sponsors } = useSponsorsQuery()
 
   const {
     register,
@@ -63,6 +65,11 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
       {
         ...values,
         openAt: values.openAt ? new Date(values.openAt).toISOString() : undefined,
+        // Select yang tidak dipilih mengirim string kosong. sponsorId punya
+        // foreign key ke sponsors, jadi '' akan ditolak database — kirim
+        // undefined supaya kolomnya benar-benar dibiarkan kosong.
+        sponsorId: values.sponsorId || undefined,
+        prerequisiteId: values.prerequisiteId || undefined,
       },
       {
         onSuccess: () =>
@@ -75,6 +82,7 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
             participantCount: 1,
             openAt: '',
             prerequisiteId: '',
+            sponsorId: '',
             geoLat: '',
             geoLng: '',
             geoRadius: undefined,
@@ -167,6 +175,22 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
           <Label>Buka Otomatis Pada (opsional)</Label>
           <Input type="datetime-local" {...register('openAt')} />
         </div>
+      </div>
+
+      {/* FR-13: menautkan sponsor ke misi tertentu. */}
+      <div>
+        <Label>Sponsor Misi (opsional)</Label>
+        <Select {...register('sponsorId')} defaultValue="">
+          <option value="">Tanpa sponsor</option>
+          {sponsors?.map(sponsor => (
+            <option key={sponsor.id} value={sponsor.id}>
+              {sponsor.name}
+            </option>
+          ))}
+        </Select>
+        <p className="mt-1 text-xs text-ink/50">
+          Misi bersponsor mendapat penanda khusus di daftar misi peserta.
+        </p>
       </div>
 
       <div>

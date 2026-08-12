@@ -5,9 +5,11 @@ import Button from '@/components/elements/Button'
 import ErrorMessage from '@/components/elements/ErrorMessage'
 import { useSubmitMissionWithEvidenceMutation } from '@/hooks/use-submissions'
 import { useCheckInMutation, useCheckOutMutation } from '@/hooks/use-missions'
+import { useSponsorsQuery } from '@/hooks/use-sponsors'
 import { useGeolocation } from '@/hooks/use-geolocation'
 import { AppError } from '@/libs/api'
-import { Mission, MissionCheckIn, Submission } from '@/types/mission'
+import BarterChain from '@/components/organisms/race/BarterChain'
+import { Assignment, Mission, MissionCheckIn, Submission } from '@/types/mission'
 import { getLatestSubmissionForMission } from '@/utils/mission/submission-status'
 import {
   CLUE_TYPE_LABEL,
@@ -146,10 +148,12 @@ export default function MissionCard({
   mission,
   submissions,
   checkIn,
+  assignment,
 }: {
   mission: Mission
   submissions: Submission[]
   checkIn?: MissionCheckIn | null
+  assignment?: Assignment | null
 }) {
   const latest = getLatestSubmissionForMission(submissions, mission.id)
   const canSubmit = !latest || latest.status === 'REJECTED'
@@ -159,6 +163,9 @@ export default function MissionCard({
   const [answerText, setAnswerText] = useState('')
   const [queueNumber, setQueueNumber] = useState('')
   const geolocation = useGeolocation()
+
+  const { data: sponsors } = useSponsorsQuery()
+  const sponsor = mission.sponsorId ? sponsors?.find(s => s.id === mission.sponsorId) : undefined
 
   const { mutate: submitMission, isPending, error } = useSubmitMissionWithEvidenceMutation()
   const checkInMutation = useCheckInMutation()
@@ -242,6 +249,17 @@ export default function MissionCard({
           {formatMissionPoints(mission)}
         </span>
       </div>
+
+      {/* FR-11: penanda misi yang didukung sponsor. */}
+      {sponsor && (
+        <div className="mt-3 flex items-center gap-2 rounded-md border-brut-sm border-secondary bg-secondary/10 px-3 py-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={sponsor.logoUrl} alt={sponsor.name} className="h-6 w-auto max-w-[64px] object-contain" />
+          <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-secondary">
+            Misi didukung {sponsor.name}
+          </p>
+        </div>
+      )}
 
       <p className="mt-2 text-sm text-ink/70">{mission.description}</p>
 
@@ -370,10 +388,8 @@ export default function MissionCard({
         </div>
       )}
 
-      {canSubmit && mission.type === 'BIGGER_BETTER' && (
-        <p className="mt-4 rounded-md border-brut bg-paper px-4 py-3 text-sm text-ink/60">
-          Fitur barter (Bigger Better) akan segera hadir di aplikasi.
-        </p>
+      {mission.type === 'BIGGER_BETTER' && (
+        <BarterChain missionId={mission.id} assignment={assignment} />
       )}
     </li>
   )

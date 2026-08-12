@@ -47,6 +47,41 @@ export interface Mission {
   updatedAt: string
 }
 
+export type AssignmentStatus = 'TODO' | 'DOING' | 'REVIEW' | 'ACCEPTED' | 'REJECTED'
+
+export interface Assignment {
+  id: string
+  missionId: string
+  groupId: string
+  assigneeUserId: string | null
+  status: AssignmentStatus
+  rejectReason: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface BarterStep {
+  id: string
+  assignmentId: string
+  stepNo: number
+  itemFrom: string
+  itemTo: string
+  partnerName: string | null
+  videoUrl: string
+  isValid: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface SubmitBarterStepPayload {
+  assignmentId: string
+  stepNo: number
+  itemFrom: string
+  itemTo: string
+  partnerName?: string
+  videoUrl: string
+}
+
 export interface MissionCheckIn {
   id: string
   missionId: string

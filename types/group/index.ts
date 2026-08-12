@@ -4,6 +4,8 @@ export interface Profile {
   fullname: string
   role: 'PARTICIPANT' | 'ADMIN' | 'SUPER_ADMIN'
   groupId: string | null
+  /** Token boarding pass milik sendiri; hanya dikembalikan lewat profil. */
+  qrToken: string | null
   checkInAt: string | null
   createdAt: string
   updatedAt: string

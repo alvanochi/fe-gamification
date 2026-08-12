@@ -1,7 +1,7 @@
 'use client'
 
-import Link from 'next/link'
 import AdminGate from '@/components/fragments/AdminGate'
+import AdminNav from '@/components/fragments/AdminNav'
 import MissionForm from '@/components/organisms/admin/MissionForm'
 import MissionList from '@/components/organisms/admin/MissionList'
 import { useMissionsQuery } from '@/hooks/use-missions'
@@ -18,12 +18,7 @@ export default function AdminMissionsPage() {
               <p className="font-mono text-xs uppercase tracking-[0.3em] text-secondary">Panel Panitia</p>
               <h1 className="mt-2 font-display text-3xl text-ink sm:text-4xl">Kelola Misi</h1>
             </div>
-            <Link
-              href="/admin/validation"
-              className="rounded-md border-brut-sm bg-secondary px-4 py-2 font-display text-xs uppercase text-secondary-ink shadow-brutal-sm brutal-press-sm"
-            >
-              Validasi Submission
-            </Link>
+            <AdminNav />
           </div>
           <p className="mt-2 text-sm text-ink/60">
             Buat & pantau misi Tantangan, Bigger Better, dan Soal Lokasi untuk peserta.

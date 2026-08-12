@@ -1,7 +1,14 @@
 'use client'
 
+import Button from '@/components/elements/Button'
+import ErrorMessage from '@/components/elements/ErrorMessage'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
-import { useMissionsQuery } from '@/hooks/use-missions'
+import {
+  useDeleteMissionMutation,
+  useMissionsQuery,
+  useUpdateMissionMutation,
+} from '@/hooks/use-missions'
+import { AppError } from '@/libs/api'
 import { Mission } from '@/types/mission'
 import {
   MISSION_TYPE_LABEL as TYPE_LABEL,
@@ -14,6 +21,8 @@ import {
 
 function MissionCard({ mission, indexedById }: { mission: Mission; indexedById: Map<string, Mission> }) {
   const prerequisite = mission.prerequisiteId ? indexedById.get(mission.prerequisiteId) : null
+  const { mutate: update, isPending: isUpdating } = useUpdateMissionMutation()
+  const { mutate: remove, isPending: isDeleting, error: deleteError } = useDeleteMissionMutation()
 
   return (
     <li
@@ -59,6 +68,40 @@ function MissionCard({ mission, indexedById }: { mission: Mission; indexedById: 
         {prerequisite && <span>setelah: {prerequisite.title}</span>}
         {mission.openAt && <span>buka: {new Date(mission.openAt).toLocaleString('id-ID')}</span>}
       </div>
+
+      <div className="mt-4 flex gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          className="flex-1"
+          loading={isUpdating}
+          onClick={() => {
+            const next = prompt(`Ubah poin untuk "${mission.title}"`, String(mission.pointWeight))
+            if (next === null) return
+
+            const pointWeight = Number(next)
+            if (!Number.isInteger(pointWeight) || pointWeight < 0) {
+              alert('Poin harus berupa bilangan bulat non-negatif.')
+              return
+            }
+            update({ missionId: mission.id, pointWeight })
+          }}
+        >
+          Ubah Poin
+        </Button>
+        <Button
+          variant="danger"
+          size="sm"
+          className="flex-1"
+          loading={isDeleting}
+          onClick={() => {
+            if (confirm(`Hapus misi "${mission.title}"?`)) remove(mission.id)
+          }}
+        >
+          Hapus
+        </Button>
+      </div>
+      <ErrorMessage message={(deleteError as AppError | null)?.message} className="mt-2" />
     </li>
   )
 }

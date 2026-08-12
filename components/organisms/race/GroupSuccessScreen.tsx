@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import RaceShell from '@/components/fragments/RaceShell'
 import Button from '@/components/elements/Button'
+import SponsorStrip from '@/components/organisms/SponsorStrip'
+import ParticipantQrCard from '@/components/organisms/race/ParticipantQrCard'
 import { Group } from '@/types/group'
 
 export default function GroupSuccessScreen({ group }: { group: Group }) {
@@ -31,9 +33,16 @@ export default function GroupSuccessScreen({ group }: { group: Group }) {
           Lihat Misi Saya
         </Button>
       </Link>
-      <p className="mt-4 text-center text-sm text-ink/60">
-        Fitur leaderboard live akan segera hadir.
-      </p>
+      <Link href="/leaderboard">
+        <Button size="lg" variant="secondary" className="mt-3 w-full">
+          Lihat Klasemen
+        </Button>
+      </Link>
+
+      <ParticipantQrCard className="mt-6" />
+
+      {/* FR-10: sponsor juga tampil di halaman profil kelompok. */}
+      <SponsorStrip className="mt-8" title="Mitra & Sponsor" />
     </RaceShell>
   )
 }

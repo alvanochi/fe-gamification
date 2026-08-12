@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { missionService } from '@/services/mission.service'
+import { CreateMissionPayload } from '@/types/mission'
 
 export const useMissionsQuery = () => {
   return useQuery({
@@ -13,6 +14,29 @@ export const useCreateMissionMutation = () => {
 
   return useMutation({
     mutationFn: missionService.create,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['missions'] })
+    },
+  })
+}
+
+export const useUpdateMissionMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ missionId, ...payload }: { missionId: string } & Partial<CreateMissionPayload>) =>
+      missionService.update(missionId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['missions'] })
+    },
+  })
+}
+
+export const useDeleteMissionMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (missionId: string) => missionService.remove(missionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['missions'] })
     },

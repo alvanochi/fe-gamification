@@ -60,6 +60,7 @@ export const createMissionSchema = z
     participantCount: z.coerce.number().int().min(1, 'Minimal 1 peserta'),
     openAt: z.string().optional(),
     prerequisiteId: z.string().optional(),
+    sponsorId: z.string().optional(),
     geoLat: z.string().optional(),
     geoLng: z.string().optional(),
     geoRadius: z.coerce.number().int().min(1).optional(),

@@ -6,6 +6,7 @@ import { useGSAP } from '@gsap/react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Button from '@/components/elements/Button'
+import SponsorStrip from '@/components/organisms/SponsorStrip'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -76,6 +77,9 @@ export default function FooterCtaSection() {
             </div>
           </div>
         </div>
+
+        {/* FR-10: penempatan logo sponsor di area non-intrusif. */}
+        <SponsorStrip className="mt-12" />
 
         <div className="mt-10 flex flex-col items-center gap-2 text-center text-sm text-ink/60">
           <p className="font-display text-base text-ink">MILLIONAIRE RACE</p>

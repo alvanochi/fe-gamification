@@ -8,6 +8,18 @@ export const endpoints = {
     register: '/users',
     me: '/users/me/profile',
     getById: (id: string) => `/users/${id}`,
+    checkInByQr: '/users/check-in/qr',
+  },
+  sponsors: {
+    list: '/sponsors',
+  },
+  admin: {
+    banners: '/admin/banners',
+    banner: (id: string) => `/admin/banners/${id}`,
+    setGroupLeader: (groupId: string) => `/admin/groups/${groupId}/leader`,
+    manualScore: '/admin/scores/manual',
+    verifyBarter: (assignmentId: string) => `/admin/barter/${assignmentId}/verify`,
+    exportLeaderboard: '/admin/export/leaderboard',
   },
   groups: {
     autoGroup: '/groups/auto-group',
@@ -21,6 +33,7 @@ export const endpoints = {
   },
   missions: {
     list: '/missions',
+    detail: (missionId: string) => `/missions/${missionId}`,
     myAssignments: '/missions/my-assignments',
     myCheckIns: '/missions/my-checkins',
     createAssignment: (missionId: string) => `/missions/${missionId}/assignments`,
@@ -34,6 +47,7 @@ export const endpoints = {
     submit: '/submissions',
     validate: (submissionId: string) => `/submissions/${submissionId}/validate`,
     barterStep: '/submissions/barter-steps',
+    barterSteps: (assignmentId: string) => `/submissions/barter-steps/${assignmentId}`,
   },
   leaderboard: {
     get: '/leaderboard',
