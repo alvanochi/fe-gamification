@@ -3,22 +3,31 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import LogoutButton from '@/components/fragments/LogoutButton'
+import { useProfileQuery } from '@/hooks/use-profile'
 
+/** `superOnly` menandai halaman yang mengubah konten permainan (BRD Bab 4). */
 const LINKS = [
-  { href: '/admin/missions', label: 'Kelola Misi' },
   { href: '/admin/validation', label: 'Validasi' },
-  { href: '/admin/sponsors', label: 'Sponsor' },
   { href: '/admin/check-in', label: 'Check-in QR' },
+  { href: '/admin/field-results', label: 'Hasil Pos' },
+  { href: '/admin/missions', label: 'Kelola Misi', superOnly: true },
+  { href: '/admin/sponsors', label: 'Sponsor', superOnly: true },
+  { href: '/admin/accounts', label: 'Akun', superOnly: true },
   { href: '/leaderboard', label: 'Klasemen' },
 ]
 
-/** Navigasi antar halaman panel panitia, dipakai semua halaman /admin. */
 export default function AdminNav() {
   const pathname = usePathname()
+  const { data: profile } = useProfileQuery()
+  const isSuperAdmin = profile?.role === 'SUPER_ADMIN'
+
+  // Menu yang tidak bisa dibuka panitia lapangan disembunyikan, bukan
+  // ditampilkan lalu ditolak saat diklik.
+  const links = LINKS.filter(link => !link.superOnly || isSuperAdmin)
 
   return (
     <nav className="flex flex-wrap gap-2">
-      {LINKS.map(link => {
+      {links.map(link => {
         const isActive = pathname === link.href
 
         return (
@@ -27,9 +36,7 @@ export default function AdminNav() {
             href={link.href}
             aria-current={isActive ? 'page' : undefined}
             className={`rounded-md border-brut-sm px-4 py-2 font-display text-xs uppercase shadow-brutal-sm brutal-press-sm ${
-              isActive
-                ? 'bg-primary text-primary-ink'
-                : 'bg-secondary text-secondary-ink'
+              isActive ? 'bg-primary text-primary-ink' : 'bg-secondary text-secondary-ink'
             }`}
           >
             {link.label}

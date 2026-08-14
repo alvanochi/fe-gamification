@@ -9,6 +9,7 @@ import { useSponsorsQuery } from '@/hooks/use-sponsors'
 import { useGeolocation } from '@/hooks/use-geolocation'
 import { AppError } from '@/libs/api'
 import BarterChain from '@/components/organisms/race/BarterChain'
+import QuizForm from '@/components/organisms/race/QuizForm'
 import { Assignment, Mission, MissionCheckIn, Submission } from '@/types/mission'
 import { getLatestSubmissionForMission } from '@/utils/mission/submission-status'
 import {
@@ -19,6 +20,7 @@ import {
   PROOF_ACCEPT,
   PROOF_TYPE_LABEL,
   formatMissionPoints,
+  describeScoring,
   isFileProof,
 } from '@/utils/mission/type-meta'
 
@@ -108,13 +110,15 @@ function MissionMeta({ mission }: { mission: Mission }) {
   rows.push(['Waktu', mission.durationMinutes ? `${mission.durationMinutes} menit` : 'Bebas'])
   rows.push(['Pemain', `${mission.participantCount} orang`])
   rows.push(['Pembuktian', PROOF_TYPE_LABEL[mission.proofType]])
+  rows.push(['Penilaian', describeScoring(mission)])
+  if (mission.equipment) rows.push(['Peralatan', mission.equipment])
 
   return (
     <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
       {rows.map(([label, value]) => (
         <div key={label} className="contents">
           <dt className="font-mono uppercase tracking-wide text-ink/45">{label}</dt>
-          <dd className="font-semibold text-ink/80">{value}</dd>
+          <dd className="whitespace-pre-line font-semibold text-ink/80">{value}</dd>
         </div>
       ))}
     </dl>
@@ -386,6 +390,10 @@ export default function MissionCard({
           )}
           <ErrorMessage message={apiError?.message} />
         </div>
+      )}
+
+      {canSubmit && mission.type === 'KUIS' && (
+        <QuizForm missionId={mission.id} disabled={blockedByCheckIn} />
       )}
 
       {mission.type === 'BIGGER_BETTER' && (

@@ -1,9 +1,18 @@
 import { z } from 'zod'
 
 export const missionTypeOptions = [
-  { value: 'TANTANGAN', label: 'Tantangan' },
-  { value: 'BIGGER_BETTER', label: 'Bigger Better (Barter)' },
-  { value: 'SOAL_LOKASI', label: 'Soal Lokasi (Geofencing)' },
+  { value: 'TANTANGAN', label: 'Tantangan — kirim bukti foto/video' },
+  { value: 'BIGGER_BETTER', label: 'Bigger Better — barter berantai' },
+  { value: 'SOAL_LOKASI', label: 'Soal Lokasi — jawab di titik tertentu' },
+  { value: 'KUIS', label: 'Kuis — daftar pertanyaan' },
+] as const
+
+export const scoringModeOptions = [
+  { value: 'FLAT', label: 'Poin tetap — nilai sama untuk semua' },
+  { value: 'RANGE', label: 'Rentang — panitia menilai kualitas hasil' },
+  { value: 'PER_UNIT', label: 'Per satuan — mis. 1 anak panah = 50 poin' },
+  { value: 'TIME_BASED', label: 'Waktu — makin cepat makin tinggi' },
+  { value: 'AUTO_QUIZ', label: 'Otomatis — dihitung dari jawaban benar' },
 ] as const
 
 export const missionCategoryOptions = [
@@ -52,7 +61,7 @@ export const createMissionSchema = z
   .object({
     title: z.string().trim().min(3, 'Judul minimal 3 karakter'),
     description: z.string().trim().min(1, 'Deskripsi wajib diisi'),
-    type: z.enum(['TANTANGAN', 'BIGGER_BETTER', 'SOAL_LOKASI'], {
+    type: z.enum(['TANTANGAN', 'BIGGER_BETTER', 'SOAL_LOKASI', 'KUIS'], {
       error: 'Pilih tipe misi',
     }),
     isMandatory: z.boolean(),
@@ -77,7 +86,25 @@ export const createMissionSchema = z
     pointMin: optionalInt(0),
     pointMax: optionalInt(0),
     requiresCheckIn: z.boolean(),
+    equipment: z.string().trim().optional(),
+    scoringMode: z.enum(['FLAT', 'RANGE', 'PER_UNIT', 'TIME_BASED', 'AUTO_QUIZ']),
+    pointPerUnit: optionalInt(0),
+    maxUnits: optionalInt(1),
+    timeTargetSeconds: optionalInt(1),
   })
+  .refine(data => data.scoringMode !== 'PER_UNIT' || data.pointPerUnit !== undefined, {
+    message: 'Isi poin untuk setiap hasil',
+    path: ['pointPerUnit'],
+  })
+  .refine(data => data.scoringMode !== 'TIME_BASED' || data.timeTargetSeconds !== undefined, {
+    message: 'Isi waktu acuan dalam detik',
+    path: ['timeTargetSeconds'],
+  })
+  .refine(
+    data =>
+      data.scoringMode !== 'RANGE' || (data.pointMin !== undefined && data.pointMax !== undefined),
+    { message: 'Penilaian rentang butuh poin minimum dan maksimum', path: ['pointMax'] },
+  )
   .refine(
     data =>
       data.type !== 'SOAL_LOKASI' || (data.geoLat && data.geoLng && data.geoRadius),

@@ -31,7 +31,9 @@ export default function BarterChain({
 
   const [itemTo, setItemTo] = useState('')
   const [partnerName, setPartnerName] = useState('')
-  const [videoFile, setVideoFile] = useState<File | null>(null)
+  // MR6 meminta "FOTO PERTUKARAN BARANG DARI BARANG 1 KE BARANG SELANJUTNYA",
+  // jadi foto diterima — video tetap boleh bila peserta merekamnya.
+  const [proofFile, setProofFile] = useState<File | null>(null)
 
   const apiError = (createAssignment.error ?? submitStep.error) as AppError | null
   const isLocked = assignment?.status === 'ACCEPTED' || assignment?.status === 'REJECTED'
@@ -110,8 +112,8 @@ export default function BarterChain({
           />
           <input
             type="file"
-            accept="video/*"
-            onChange={e => setVideoFile(e.target.files?.[0] ?? null)}
+            accept="image/*,video/*"
+            onChange={e => setProofFile(e.target.files?.[0] ?? null)}
             className="w-full text-xs text-ink/70"
           />
 
@@ -119,7 +121,7 @@ export default function BarterChain({
             size="sm"
             className="w-full"
             loading={submitStep.isPending}
-            disabled={!itemTo.trim() || !videoFile}
+            disabled={!itemTo.trim() || !proofFile}
             onClick={() =>
               submitStep.mutate(
                 {
@@ -128,13 +130,13 @@ export default function BarterChain({
                   itemFrom,
                   itemTo: itemTo.trim(),
                   partnerName: partnerName.trim() || undefined,
-                  file: videoFile!,
+                  file: proofFile!,
                 },
                 {
                   onSuccess: () => {
                     setItemTo('')
                     setPartnerName('')
-                    setVideoFile(null)
+                    setProofFile(null)
                   },
                 },
               )
@@ -143,7 +145,7 @@ export default function BarterChain({
             Simpan Langkah
           </Button>
           <p className="text-xs text-ink/50">
-            Video pertukaran wajib dilampirkan sebagai bukti tiap langkah.
+            Foto (atau video) pertukaran wajib dilampirkan sebagai bukti tiap langkah.
           </p>
         </div>
       )}

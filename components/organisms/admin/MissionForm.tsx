@@ -21,6 +21,7 @@ import {
   missionTypeOptions,
   missionCategoryOptions,
   clueTypeOptions,
+  scoringModeOptions,
   proofTypeOptions,
 } from '@/schema/mission.schema'
 import { useCreateMissionMutation } from '@/hooks/use-missions'
@@ -49,11 +50,13 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
       clueType: 'NONE',
       proofType: 'FOTO',
       requiresCheckIn: false,
+      scoringMode: 'FLAT',
     },
   })
 
   const type = watch('type')
   const clueType = watch('clueType')
+  const scoringMode = watch('scoringMode')
   const geoLat = watch('geoLat')
   const geoLng = watch('geoLng')
   const geoRadius = watch('geoRadius')
@@ -97,6 +100,11 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
             pointMin: '',
             pointMax: '',
             requiresCheckIn: false,
+            equipment: '',
+            scoringMode: 'FLAT',
+            pointPerUnit: '',
+            maxUnits: '',
+            timeTargetSeconds: '',
           }),
       },
     )
@@ -295,22 +303,82 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
           </div>
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div>
-            <Label>Poin Minimum</Label>
-            <Input type="number" min={0} placeholder="Misal: 50" {...register('pointMin')} />
-            <ErrorMessage message={errors.pointMin?.message} />
-          </div>
-          <div>
-            <Label>Poin Maksimum</Label>
-            <Input type="number" min={0} placeholder="Misal: 100" {...register('pointMax')} />
-            <ErrorMessage message={errors.pointMax?.message} />
-          </div>
+        <div>
+          <Label>Peralatan yang Disiapkan Panitia</Label>
+          <TextArea
+            placeholder={'1. BUSUR 4 BUAH\n2. ANAK PANAH 20 BUAH'}
+            {...register('equipment')}
+          />
+          <p className="mt-1 text-xs text-ink/50">
+            Daftar alat di pos. Ditampilkan ke peserta dan petugas pos.
+          </p>
         </div>
-        <p className="text-xs text-ink/50">
-          Isi rentang poin untuk misi yang dinilai subjektif (kerapihan, orisinalitas). Panitia akan
-          menentukan nilainya saat menyetujui bukti. Kosongkan bila poinnya tetap.
-        </p>
+
+        {/* Cara penilaian: menutup gaya penilaian MR6 yang beragam. */}
+        <div>
+          <Label required>Cara Penilaian</Label>
+          <Select error={!!errors.scoringMode} {...register('scoringMode')}>
+            {scoringModeOptions.map(opt => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </Select>
+        </div>
+
+        {scoringMode === 'RANGE' && (
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div>
+              <Label required>Poin Minimum</Label>
+              <Input type="number" min={0} placeholder="Misal: 50" {...register('pointMin')} />
+              <ErrorMessage message={errors.pointMin?.message} />
+            </div>
+            <div>
+              <Label required>Poin Maksimum</Label>
+              <Input type="number" min={0} placeholder="Misal: 100" {...register('pointMax')} />
+              <ErrorMessage message={errors.pointMax?.message} />
+            </div>
+          </div>
+        )}
+
+        {scoringMode === 'PER_UNIT' && (
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div>
+              <Label required>Poin per Hasil</Label>
+              <Input type="number" min={0} placeholder="Misal: 50" {...register('pointPerUnit')} />
+              <ErrorMessage message={errors.pointPerUnit?.message} />
+            </div>
+            <div>
+              <Label>Batas Jumlah Hasil</Label>
+              <Input type="number" min={1} placeholder="Misal: 3" {...register('maxUnits')} />
+              <p className="mt-1 text-xs text-ink/50">Menjaga dari salah ketik. Boleh dikosongkan.</p>
+            </div>
+          </div>
+        )}
+
+        {scoringMode === 'TIME_BASED' && (
+          <div>
+            <Label required>Waktu Acuan (detik)</Label>
+            <Input
+              type="number"
+              min={1}
+              placeholder="Misal: 300"
+              {...register('timeTargetSeconds')}
+            />
+            <ErrorMessage message={errors.timeTargetSeconds?.message} />
+            <p className="mt-1 text-xs text-ink/50">
+              Selesai dalam waktu ini atau lebih cepat = poin penuh. Lebih lambat, poin berkurang
+              sebanding.
+            </p>
+          </div>
+        )}
+
+        {scoringMode === 'AUTO_QUIZ' && (
+          <p className="rounded-md border-brut-sm bg-paper-raised px-3 py-2 text-xs text-ink/60">
+            Poin dijumlahkan dari tiap jawaban benar. Atur pertanyaannya lewat tombol{' '}
+            <strong>Kelola Pertanyaan</strong> di daftar misi setelah misi tersimpan.
+          </p>
+        )}
 
         <label className="flex items-center gap-2 text-sm font-bold text-ink">
           <input type="checkbox" className="h-4 w-4 border-brut-sm" {...register('requiresCheckIn')} />

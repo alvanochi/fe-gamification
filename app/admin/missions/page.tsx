@@ -10,7 +10,7 @@ export default function AdminMissionsPage() {
   const missionsQuery = useMissionsQuery()
 
   return (
-    <AdminGate>
+    <AdminGate requireSuperAdmin>
       <div className="min-h-[100dvh] bg-paper px-4 py-10 sm:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-wrap items-center justify-between gap-3">

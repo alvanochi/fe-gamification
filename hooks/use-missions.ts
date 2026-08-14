@@ -43,6 +43,26 @@ export const useDeleteMissionMutation = () => {
   })
 }
 
+export const useMissionQuestionsQuery = (missionId: string) => {
+  return useQuery({
+    queryKey: ['mission-questions', missionId],
+    queryFn: async () => (await missionService.questions(missionId)).data,
+    enabled: !!missionId,
+  })
+}
+
+export const useSetQuestionsMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ missionId, questions }: { missionId: string; questions: unknown[] }) =>
+      missionService.setQuestions(missionId, questions),
+    onSuccess: (_d, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['mission-questions', variables.missionId] })
+    },
+  })
+}
+
 export const useMyCheckInsQuery = () => {
   return useQuery({
     queryKey: ['mission-checkins'],
