@@ -8,6 +8,7 @@ import GroupPhotoStep from '@/components/organisms/race/GroupPhotoStep'
 import VoteLeaderStep from '@/components/organisms/race/VoteLeaderStep'
 import NameGroupStep from '@/components/organisms/race/NameGroupStep'
 import GroupSuccessScreen from '@/components/organisms/race/GroupSuccessScreen'
+import BoardingPassPanel from '@/components/organisms/race/BoardingPassPanel'
 import { useProfileQuery } from '@/hooks/use-profile'
 import { useConfirmationsQuery, useGroupQuery } from '@/hooks/use-group'
 import { areAllPairsConfirmed } from '@/utils/group/confirmation'
@@ -38,6 +39,15 @@ export default function RacePage() {
     </Link>
   ) : null
 
+  // Ditempelkan di setiap checkpoint, bukan hanya di layar sukses — peserta
+  // perlu menunjukkan QR-nya sejak tiba di meja registrasi.
+  const chrome = (
+    <>
+      {adminLink}
+      <BoardingPassPanel />
+    </>
+  )
+
   if (initialLoading) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-paper px-4">
@@ -51,7 +61,7 @@ export default function RacePage() {
   if (!groupId || !groupQuery.data) {
     return (
       <>
-        {adminLink}
+        {chrome}
         <NoGroupStep />
       </>
     )
@@ -63,7 +73,7 @@ export default function RacePage() {
   if (!group.leaderId && !areAllPairsConfirmed(group.members, confirmations)) {
     return (
       <>
-        {adminLink}
+        {chrome}
         <ConfirmMembersStep group={group} confirmations={confirmations} myId={profile.id} />
       </>
     )
@@ -72,7 +82,7 @@ export default function RacePage() {
   if (!group.leaderId && !group.photoCompletedAt) {
     return (
       <>
-        {adminLink}
+        {chrome}
         <GroupPhotoStep groupId={group.id} />
       </>
     )
@@ -81,7 +91,7 @@ export default function RacePage() {
   if (!group.leaderId) {
     return (
       <>
-        {adminLink}
+        {chrome}
         <VoteLeaderStep group={group} myId={profile.id} />
       </>
     )
@@ -90,7 +100,7 @@ export default function RacePage() {
   if (!group.nameSetAt) {
     return (
       <>
-        {adminLink}
+        {chrome}
         <NameGroupStep group={group} myId={profile.id} />
       </>
     )
@@ -98,7 +108,7 @@ export default function RacePage() {
 
   return (
     <>
-      {adminLink}
+      {chrome}
       <GroupSuccessScreen group={group} />
     </>
   )
