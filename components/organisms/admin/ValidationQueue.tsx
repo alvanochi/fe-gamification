@@ -49,20 +49,42 @@ function QueueCard({ submission }: { submission: PendingSubmission }) {
   const apiError = error as AppError | null
   const actingOn = isPending ? variables?.status : null
 
-  // Misi berentang nilai (MR6) wajib dinilai manual oleh panitia.
-  const hasRange = submission.pointMin != null && submission.pointMax != null
+  // Input yang diminta menyesuaikan cara penilaian misi.
+  const mode = submission.scoringMode ?? (submission.pointMin != null ? 'RANGE' : 'FLAT')
+  const hasRange = mode === 'RANGE'
+  const isPerUnit = mode === 'PER_UNIT'
+  const isTimeBased = mode === 'TIME_BASED'
+
   const [awardedPoint, setAwardedPoint] = useState<string>(
-    hasRange ? String(submission.pointMin) : '',
+    hasRange ? String(submission.pointMin ?? '') : '',
   )
+  const [units, setUnits] = useState('')
+  const [timeSeconds, setTimeSeconds] = useState('')
   const [rejectReason, setRejectReason] = useState('')
 
   const parsedPoint = Number(awardedPoint)
-  const pointValid =
-    !hasRange ||
-    (awardedPoint.trim() !== '' &&
+  const pointValid = hasRange
+    ? awardedPoint.trim() !== '' &&
       Number.isInteger(parsedPoint) &&
       parsedPoint >= submission.pointMin! &&
-      parsedPoint <= submission.pointMax!)
+      parsedPoint <= submission.pointMax!
+    : isPerUnit
+      ? units.trim() !== '' && Number(units) >= 0
+      : isTimeBased
+        ? timeSeconds.trim() !== '' && Number(timeSeconds) > 0
+        : true
+
+  // Perkiraan poin ditampilkan sebelum menyetujui, supaya panitia tahu
+  // konsekuensi angka yang diketiknya.
+  const previewPoint = isPerUnit
+    ? (submission.pointPerUnit ?? 0) *
+      Math.min(Number(units || 0), submission.maxUnits ?? Number(units || 0))
+    : isTimeBased && Number(timeSeconds) > 0 && submission.timeTargetSeconds
+      ? Math.min(
+          submission.pointWeight,
+          Math.round((submission.pointWeight * submission.timeTargetSeconds) / Number(timeSeconds)),
+        )
+      : null
 
   return (
     <li
@@ -117,6 +139,42 @@ function QueueCard({ submission }: { submission: PendingSubmission }) {
         </div>
       )}
 
+      {isPerUnit && (
+        <div className="mt-4">
+          <label className="font-mono text-[11px] font-bold uppercase tracking-widest text-ink/45">
+            Jumlah hasil ({submission.pointPerUnit} poin per hasil)
+          </label>
+          <input
+            type="number"
+            min={0}
+            value={units}
+            onChange={e => setUnits(e.target.value)}
+            placeholder="Misal: 2"
+            className="mt-1 w-full rounded-md border-brut bg-paper px-4 py-3 font-medium text-ink shadow-brutal-sm focus:outline-none"
+          />
+        </div>
+      )}
+
+      {isTimeBased && (
+        <div className="mt-4">
+          <label className="font-mono text-[11px] font-bold uppercase tracking-widest text-ink/45">
+            Waktu tempuh, detik (acuan {submission.timeTargetSeconds})
+          </label>
+          <input
+            type="number"
+            min={1}
+            value={timeSeconds}
+            onChange={e => setTimeSeconds(e.target.value)}
+            placeholder="Misal: 240"
+            className="mt-1 w-full rounded-md border-brut bg-paper px-4 py-3 font-medium text-ink shadow-brutal-sm focus:outline-none"
+          />
+        </div>
+      )}
+
+      {previewPoint !== null && (
+        <p className="mt-2 text-xs font-bold text-ink/60">Perkiraan poin: {previewPoint}</p>
+      )}
+
       <div className="mt-4">
         <input
           value={rejectReason}
@@ -153,15 +211,21 @@ function QueueCard({ submission }: { submission: PendingSubmission }) {
               submissionId: submission.id,
               status: 'APPROVED',
               awardedPoint: hasRange ? parsedPoint : undefined,
+              units: isPerUnit ? Number(units) : undefined,
+              timeSeconds: isTimeBased ? Number(timeSeconds) : undefined,
             })
           }
         >
           Setujui
         </Button>
       </div>
-      {hasRange && !pointValid && (
+      {!pointValid && (
         <p className="mt-2 text-xs font-bold text-danger">
-          Isi nilai antara {submission.pointMin} dan {submission.pointMax} poin.
+          {hasRange
+            ? `Isi nilai antara ${submission.pointMin} dan ${submission.pointMax} poin.`
+            : isPerUnit
+              ? 'Isi jumlah hasil yang dicapai peserta.'
+              : 'Isi waktu tempuh peserta dalam detik.'}
         </p>
       )}
       <ErrorMessage message={apiError?.message} className="mt-2" />

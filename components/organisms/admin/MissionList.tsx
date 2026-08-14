@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Button from '@/components/elements/Button'
 import ErrorMessage from '@/components/elements/ErrorMessage'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
@@ -9,6 +10,7 @@ import {
   useUpdateMissionMutation,
 } from '@/hooks/use-missions'
 import { AppError } from '@/libs/api'
+import QuestionEditor from '@/components/organisms/admin/QuestionEditor'
 import { Mission } from '@/types/mission'
 import {
   MISSION_TYPE_LABEL as TYPE_LABEL,
@@ -19,7 +21,15 @@ import {
   formatMissionPoints,
 } from '@/utils/mission/type-meta'
 
-function MissionCard({ mission, indexedById }: { mission: Mission; indexedById: Map<string, Mission> }) {
+function MissionCard({
+  mission,
+  indexedById,
+  onEditQuestions,
+}: {
+  mission: Mission
+  indexedById: Map<string, Mission>
+  onEditQuestions: (mission: Mission) => void
+}) {
   const prerequisite = mission.prerequisiteId ? indexedById.get(mission.prerequisiteId) : null
   const { mutate: update, isPending: isUpdating } = useUpdateMissionMutation()
   const { mutate: remove, isPending: isDeleting, error: deleteError } = useDeleteMissionMutation()
@@ -69,7 +79,17 @@ function MissionCard({ mission, indexedById }: { mission: Mission; indexedById: 
         {mission.openAt && <span>buka: {new Date(mission.openAt).toLocaleString('id-ID')}</span>}
       </div>
 
-      <div className="mt-4 flex gap-2">
+      <div className="mt-4 flex flex-wrap gap-2">
+        {mission.type === 'KUIS' && (
+          <Button
+            variant="secondary"
+            size="sm"
+            className="flex-1"
+            onClick={() => onEditQuestions(mission)}
+          >
+            Kelola Pertanyaan
+          </Button>
+        )}
         <Button
           variant="secondary"
           size="sm"
@@ -108,6 +128,7 @@ function MissionCard({ mission, indexedById }: { mission: Mission; indexedById: 
 
 export default function MissionList() {
   const { data: missions, isLoading, error } = useMissionsQuery()
+  const [editingQuestions, setEditingQuestions] = useState<Mission | null>(null)
 
   if (isLoading) {
     return (
@@ -137,10 +158,25 @@ export default function MissionList() {
 
   const indexedById = new Map(missions.map(m => [m.id, m]))
 
+  // Editor pertanyaan menggantikan daftar sepenuhnya supaya panitia punya
+  // ruang penuh saat menyusun soal — daftar misi bisa sangat panjang.
+  if (editingQuestions) {
+    return (
+      <div className="rounded-lg border-brut-lg bg-paper-raised p-6 shadow-brutal-lg">
+        <QuestionEditor mission={editingQuestions} onClose={() => setEditingQuestions(null)} />
+      </div>
+    )
+  }
+
   return (
     <ul className="space-y-4">
       {missions.map(mission => (
-        <MissionCard key={mission.id} mission={mission} indexedById={indexedById} />
+        <MissionCard
+          key={mission.id}
+          mission={mission}
+          indexedById={indexedById}
+          onEditQuestions={setEditingQuestions}
+        />
       ))}
     </ul>
   )

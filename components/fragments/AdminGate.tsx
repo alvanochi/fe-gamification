@@ -4,9 +4,19 @@ import Link from 'next/link'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
 import { useProfileQuery } from '@/hooks/use-profile'
 
-const ALLOWED_ROLES = ['ADMIN', 'SUPER_ADMIN']
-
-export default function AdminGate({ children }: { children: React.ReactNode }) {
+/**
+ * Penjaga halaman panel.
+ *
+ * `requireSuperAdmin` dipakai halaman yang mengubah konten permainan — sesuai
+ * BRD Bab 4, panitia lapangan hanya bertugas memvalidasi unggahan.
+ */
+export default function AdminGate({
+  children,
+  requireSuperAdmin = false,
+}: {
+  children: React.ReactNode
+  requireSuperAdmin?: boolean
+}) {
   const profileQuery = useProfileQuery()
 
   if (profileQuery.isLoading) {
@@ -18,19 +28,23 @@ export default function AdminGate({ children }: { children: React.ReactNode }) {
   }
 
   const profile = profileQuery.data
+  const isPanitia = profile?.role === 'ADMIN' || profile?.role === 'SUPER_ADMIN'
+  const isAllowed = requireSuperAdmin ? profile?.role === 'SUPER_ADMIN' : isPanitia
 
-  if (!profile || !ALLOWED_ROLES.includes(profile.role)) {
+  if (!isAllowed) {
     return (
       <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-4 bg-paper px-4 text-center">
         <h1 className="font-display text-3xl text-ink">Akses Ditolak</h1>
         <p className="max-w-sm text-sm text-ink/60">
-          Halaman ini hanya untuk panitia (admin). Akunmu tidak punya akses.
+          {isPanitia
+            ? 'Halaman ini hanya untuk Super Admin. Hubungi penanggung jawab teknis acara bila kamu perlu mengubah konten permainan.'
+            : 'Halaman ini hanya untuk panitia. Akunmu tidak punya akses.'}
         </p>
         <Link
-          href="/race"
+          href={isPanitia ? '/admin/validation' : '/race'}
           className="rounded-md border-brut bg-primary px-5 py-3 font-display uppercase text-primary-ink shadow-brutal brutal-press"
         >
-          Kembali ke Race
+          {isPanitia ? 'Ke Validasi' : 'Kembali ke Race'}
         </Link>
       </div>
     )

@@ -1,7 +1,7 @@
 import { http } from '@/libs/api'
 import { endpoints } from '@/libs/endpoint'
 import { IApiEnvelope } from '@/types/auth'
-import { CreateMissionPayload, Mission, MissionCheckIn } from '@/types/mission'
+import { CreateMissionPayload, Mission, MissionCheckIn, MissionQuestion } from '@/types/mission'
 
 export const missionService = {
   list() {
@@ -24,6 +24,17 @@ export const missionService = {
 
   remove(missionId: string) {
     return http.delete<IApiEnvelope<null>>(endpoints.missions.detail(missionId))
+  },
+
+  questions(missionId: string) {
+    return http.get<IApiEnvelope<MissionQuestion[]>>(endpoints.missions.questions(missionId))
+  },
+
+  setQuestions(missionId: string, questions: unknown[]) {
+    return http.put<IApiEnvelope<{ total: number }>, { questions: unknown[] }>(
+      endpoints.missions.questions(missionId),
+      { questions },
+    )
   },
 
   myCheckIns() {

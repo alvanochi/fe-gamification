@@ -1,4 +1,9 @@
-export type MissionType = 'TANTANGAN' | 'BIGGER_BETTER' | 'SOAL_LOKASI'
+export type MissionType = 'TANTANGAN' | 'BIGGER_BETTER' | 'SOAL_LOKASI' | 'KUIS'
+
+/** Cara skor dihitung — lihat utils/scoring.ts di backend. */
+export type ScoringMode = 'FLAT' | 'RANGE' | 'PER_UNIT' | 'TIME_BASED' | 'AUTO_QUIZ'
+
+export type QuestionType = 'PILIHAN_GANDA' | 'ISIAN_SINGKAT'
 
 /** Dua kategori besar simulasi di MR6. */
 export type MissionCategory = 'TERSTRUKTUR' | 'MANDIRI'
@@ -43,8 +48,37 @@ export interface Mission {
   pointMin: number | null
   pointMax: number | null
   requiresCheckIn: boolean
+  equipment: string | null
+  scoringMode: ScoringMode
+  pointPerUnit: number | null
+  maxUnits: number | null
+  timeTargetSeconds: number | null
   createdAt: string
   updatedAt: string
+}
+
+export interface MissionQuestionOption {
+  id: string
+  optionText: string
+  /** Hanya terisi untuk panitia. */
+  isCorrect?: boolean
+}
+
+export interface MissionQuestion {
+  id: string
+  orderNo: number
+  questionText: string
+  imageUrl: string | null
+  type: QuestionType
+  point: number
+  answerKey?: string
+  options: MissionQuestionOption[]
+}
+
+export interface QuestionAnswer {
+  questionId: string
+  selectedOptionId?: string
+  answerText?: string
 }
 
 export type AssignmentStatus = 'TODO' | 'DOING' | 'REVIEW' | 'ACCEPTED' | 'REJECTED'
@@ -126,6 +160,10 @@ export interface PendingSubmission {
   pointMax: number | null
   proofType: ProofType
   missionCategory: MissionCategory
+  scoringMode: ScoringMode
+  pointPerUnit: number | null
+  maxUnits: number | null
+  timeTargetSeconds: number | null
   locationName: string | null
   groupId: string
   groupName: string
@@ -139,11 +177,24 @@ export interface SubmitMissionPayload {
   answerText?: string
   geoLat?: string
   geoLng?: string
+  answers?: QuestionAnswer[]
+}
+
+/** Balasan submit misi kuis — dinilai seketika oleh server. */
+export interface QuizSubmitResult {
+  id: string
+  autoGraded?: boolean
+  correctCount?: number
+  totalQuestions?: number
+  point?: number
 }
 
 export interface ValidateSubmissionPayload {
   status: 'APPROVED' | 'REJECTED'
+  /** Mana yang dipakai bergantung scoringMode misi. */
   awardedPoint?: number
+  units?: number
+  timeSeconds?: number
   rejectReason?: string
 }
 
@@ -177,4 +228,9 @@ export interface CreateMissionPayload {
   pointMin?: number
   pointMax?: number
   requiresCheckIn: boolean
+  equipment?: string
+  scoringMode: ScoringMode
+  pointPerUnit?: number
+  maxUnits?: number
+  timeTargetSeconds?: number
 }
