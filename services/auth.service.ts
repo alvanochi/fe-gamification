@@ -11,4 +11,10 @@ export const authService = {
   register(payload: RegisterPayload) {
     return http.post<IRegisterResponse, RegisterPayload>(endpoints.users.register, payload)
   },
+
+  logout(refreshToken: string) {
+    return http.delete<{ message: string }>(endpoints.auth.logout, {
+      data: { refreshToken },
+    })
+  },
 }

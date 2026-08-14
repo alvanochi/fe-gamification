@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import LogoutButton from '@/components/fragments/LogoutButton'
 
 const LINKS = [
   { href: '/admin/missions', label: 'Kelola Misi' },
@@ -35,6 +36,7 @@ export default function AdminNav() {
           </Link>
         )
       })}
+      <LogoutButton />
     </nav>
   )
 }

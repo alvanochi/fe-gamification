@@ -9,6 +9,7 @@ import VoteLeaderStep from '@/components/organisms/race/VoteLeaderStep'
 import NameGroupStep from '@/components/organisms/race/NameGroupStep'
 import GroupSuccessScreen from '@/components/organisms/race/GroupSuccessScreen'
 import BoardingPassPanel from '@/components/organisms/race/BoardingPassPanel'
+import LogoutButton from '@/components/fragments/LogoutButton'
 import { useProfileQuery } from '@/hooks/use-profile'
 import { useConfirmationsQuery, useGroupQuery } from '@/hooks/use-group'
 import { areAllPairsConfirmed } from '@/utils/group/confirmation'
@@ -43,6 +44,7 @@ export default function RacePage() {
   // perlu menunjukkan QR-nya sejak tiba di meja registrasi.
   const chrome = (
     <>
+      <LogoutButton floating />
       {adminLink}
       <BoardingPassPanel />
     </>

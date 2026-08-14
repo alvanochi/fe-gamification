@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import RaceShell from '@/components/fragments/RaceShell'
+import ConfirmModal from '@/components/fragments/ConfirmModal'
 import { AppError } from '@/libs/api'
-import { Group, VoteResult } from '@/types/group'
+import { Group, GroupMember, VoteResult } from '@/types/group'
 import { useVoteLeaderMutation } from '@/hooks/use-group'
 
 interface VoteLeaderStepProps {
@@ -14,6 +15,9 @@ interface VoteLeaderStepProps {
 export default function VoteLeaderStep({ group, myId }: VoteLeaderStepProps) {
   const [votedFor, setVotedFor] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  // Kandidat yang sedang dikonfirmasi — suara tidak bisa ditarik kembali,
+  // jadi jangan sampai terkirim karena salah ketuk.
+  const [pendingNominee, setPendingNominee] = useState<GroupMember | null>(null)
   const { mutate: vote, isPending, variables } = useVoteLeaderMutation(group.id)
   const candidates = group.members.filter(m => m.id !== myId)
 
@@ -32,6 +36,7 @@ export default function VoteLeaderStep({ group, myId }: VoteLeaderStepProps) {
         const apiError = err as AppError
         setNotice(apiError.message || 'Gagal mengirim suara.')
       },
+      onSettled: () => setPendingNominee(null),
     })
   }
 
@@ -50,7 +55,7 @@ export default function VoteLeaderStep({ group, myId }: VoteLeaderStepProps) {
               <button
                 type="button"
                 disabled={isLoadingThis}
-                onClick={() => handleVote(member.id)}
+                onClick={() => setPendingNominee(member)}
                 className={`flex w-full items-center justify-between rounded-md border-brut px-4 py-3 brutal-press-sm
                   ${isSelected ? 'bg-primary text-primary-ink' : 'bg-paper text-ink'}`}
               >
@@ -68,6 +73,23 @@ export default function VoteLeaderStep({ group, myId }: VoteLeaderStepProps) {
         </p>
       )}
       {notice && <p className="mt-3 text-xs font-bold text-danger">{notice}</p>}
+
+      <ConfirmModal
+        open={!!pendingNominee}
+        title="Pilih ketua ini?"
+        description={
+          <>
+            <p>
+              Kamu akan memilih <strong>{pendingNominee?.fullname}</strong> sebagai ketua kelompok.
+            </p>
+            <p className="mt-2">Suara yang sudah dikirim tidak bisa diubah di putaran ini.</p>
+          </>
+        }
+        confirmLabel="Ya, Pilih Dia"
+        loading={isPending}
+        onConfirm={() => pendingNominee && handleVote(pendingNominee.id)}
+        onCancel={() => setPendingNominee(null)}
+      />
     </RaceShell>
   )
 }
