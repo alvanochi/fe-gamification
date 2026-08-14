@@ -78,16 +78,24 @@ export default function SponsorManager() {
   const [linkUrl, setLinkUrl] = useState('')
   const [orderNum, setOrderNum] = useState('0')
   const [logoUrl, setLogoUrl] = useState('')
+  // Pratinjau memakai berkas lokal, bukan URL hasil unggahan. Menampilkan URL
+  // penyimpanan langsung membuat kotak pratinjau kosong bila domain publiknya
+  // belum bisa diakses dari jaringan panitia — padahal berkasnya sudah aman
+  // tersimpan. Ini penyebab pratinjau logo terlihat gagal, sementara pratinjau
+  // foto kelompok tetap muncul karena memang membaca berkas lokal.
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
 
   const handlePickLogo = async (file: File) => {
     setUploadError(null)
     setIsUploading(true)
+    setPreviewUrl(URL.createObjectURL(file))
     try {
       setLogoUrl(await submissionService.uploadEvidence(file))
     } catch (e) {
       setUploadError((e as AppError).message)
+      setPreviewUrl(null)
     } finally {
       setIsUploading(false)
     }
@@ -107,6 +115,7 @@ export default function SponsorManager() {
           setLinkUrl('')
           setOrderNum('0')
           setLogoUrl('')
+          setPreviewUrl(null)
         },
       },
     )
@@ -149,9 +158,9 @@ export default function SponsorManager() {
             onClick={() => fileInputRef.current?.click()}
             className="flex h-28 w-full items-center justify-center overflow-hidden rounded-md border-brut bg-paper p-2"
           >
-            {logoUrl ? (
+            {previewUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={logoUrl} alt="Pratinjau logo" className="max-h-full max-w-full object-contain" />
+              <img src={previewUrl} alt="Pratinjau logo" className="max-h-full max-w-full object-contain" />
             ) : (
               <span className="text-sm font-bold text-ink/50">
                 {isUploading ? 'Mengunggah…' : 'Ketuk untuk pilih logo'}

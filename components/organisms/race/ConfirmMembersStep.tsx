@@ -3,7 +3,12 @@
 import RaceShell from '@/components/fragments/RaceShell'
 import { AppError } from '@/libs/api'
 import { Confirmation, Group } from '@/types/group'
-import { areAllPairsConfirmed, buildConfirmedPairSet, isPairConfirmed } from '@/utils/group/confirmation'
+import {
+  MIN_GROUP_SIZE,
+  areAllPairsConfirmed,
+  buildConfirmedPairSet,
+  isPairConfirmed,
+} from '@/utils/group/confirmation'
 import { useConfirmMemberMutation } from '@/hooks/use-group'
 
 interface ConfirmMembersStepProps {
@@ -19,6 +24,7 @@ export default function ConfirmMembersStep({ group, confirmations, myId }: Confi
   const others = group.members.filter(m => m.id !== myId)
   const allConfirmedByMe = others.every(m => isPairConfirmed(confirmedPairs, myId, m.id))
   const allConfirmedInGroup = areAllPairsConfirmed(group.members, confirmations)
+  const isWaitingForMembers = group.members.length < MIN_GROUP_SIZE
 
   return (
     <RaceShell
@@ -53,6 +59,19 @@ export default function ConfirmMembersStep({ group, confirmations, myId }: Confi
           </li>
         )}
       </ul>
+
+      {isWaitingForMembers && (
+        <div className="mt-4 rounded-md border-brut bg-paper px-4 py-3 text-center">
+          <p className="flex items-center justify-center gap-2 text-sm font-bold text-ink/70">
+            <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+            Menunggu anggota lain bergabung…
+          </p>
+          <p className="mt-1 text-xs text-ink/50">
+            {group.members.length} dari minimal {MIN_GROUP_SIZE} anggota sudah masuk. Halaman ini
+            memperbarui sendiri.
+          </p>
+        </div>
+      )}
       {apiError?.message && (
         <p className="mt-3 text-xs font-bold text-danger">{apiError.message}</p>
       )}

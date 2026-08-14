@@ -32,6 +32,35 @@ export const useLoginMutation = () => {
   })
 }
 
+export const useLogoutMutation = () => {
+  const router = useRouter()
+  const queryClient = useQueryClient()
+
+  const clearSession = () => {
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('refreshToken')
+    document.cookie = 'access_token=; path=/; max-age=0; SameSite=Lax'
+    // Sama alasannya dengan login: cache dibersihkan supaya data akun
+    // sebelumnya tidak sempat terlihat oleh akun berikutnya di tab yang sama.
+    queryClient.clear()
+  }
+
+  return useMutation({
+    mutationFn: async () => {
+      const refreshToken = localStorage.getItem('refreshToken')
+      if (refreshToken) {
+        await authService.logout(refreshToken)
+      }
+    },
+    // Sesi lokal dibersihkan apa pun hasilnya — kalau token sudah kedaluwarsa
+    // di server, pengguna tetap harus bisa keluar dari perangkatnya.
+    onSettled: () => {
+      clearSession()
+      router.push('/auth/login')
+    },
+  })
+}
+
 export const useRegisterMutation = () => {
   const router = useRouter()
 
