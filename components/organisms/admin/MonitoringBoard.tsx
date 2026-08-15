@@ -180,9 +180,9 @@ export default function MonitoringBoard() {
       <div className="grid gap-3 sm:grid-cols-4">
         {[
           ['Kelompok', groups.length],
-          ['Peserta hadir', `${totalPresent}/${totalMembers}`],
+          ['Peserta hadir', `${data?.checkedIn ?? totalPresent}/${data?.totalParticipants ?? totalMembers}`],
+          ['Menunggu kelompok', data?.waitingForGroup ?? 0],
           ['Menunggu validasi', totalPending],
-          ['Total misi', data?.totalMissions ?? 0],
         ].map(([label, value]) => (
           <div key={String(label)} className="rounded-md border-brut bg-paper-raised px-4 py-3">
             <p className="font-mono text-[10px] uppercase tracking-widest text-ink/45">{label}</p>
@@ -204,11 +204,25 @@ export default function MonitoringBoard() {
           onChange={e => setSearch(e.target.value)}
           placeholder="Cari kelompok…"
         />
-        <Button size="sm" loading={generate.isPending} onClick={() => setConfirmGenerate(true)}>
+        <Button
+          size="sm"
+          loading={generate.isPending}
+          disabled={(data?.waitingForGroup ?? 0) === 0}
+          onClick={() => setConfirmGenerate(true)}
+        >
           Generate Kelompok
+          {(data?.waitingForGroup ?? 0) > 0 ? ` (${data?.waitingForGroup})` : ''}
         </Button>
       </div>
       <ErrorMessage message={(generate.error as AppError | null)?.message} />
+
+      {(data?.waitingForGroup ?? 0) === 0 && (
+        <p className="text-xs text-ink/50">
+          Tombol Generate Kelompok aktif ketika ada peserta yang sudah dipindai tapi belum punya
+          kelompok. Saat ini {data?.checkedIn ?? 0} dari {data?.totalParticipants ?? 0} peserta
+          tercatat hadir, dan semuanya sudah kebagian kelompok.
+        </p>
+      )}
 
       {groups.length === 0 ? (
         <p className="rounded-md border-brut bg-paper-raised p-6 text-center text-sm text-ink/60">
@@ -268,8 +282,8 @@ export default function MonitoringBoard() {
         description={
           <>
             <p>
-              Semua peserta yang <strong>sudah hadir</strong> dan belum punya kelompok akan diacak
-              ke dalam kelompok berisi maksimal 6 orang.
+              <strong>{data?.waitingForGroup ?? 0} peserta</strong> yang sudah hadir dan belum
+              punya kelompok akan diacak ke dalam kelompok berisi maksimal 6 orang.
             </p>
             <p className="mt-2">
               Peserta yang belum dipindai panitia tidak ikut. Jalankan lagi setelah gelombang
