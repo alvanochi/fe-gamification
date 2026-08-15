@@ -121,7 +121,12 @@ function GroupDetail({ group, onClose }: { group: GroupProgress; onClose: () => 
                         }`}
                       >
                         {a.status === 'APPROVED'
-                          ? `disetujui · ${a.awardedPoint ?? 0} poin`
+                          ? // Submission yang divalidasi sebelum kolom nilai ada tidak
+                            // menyimpan angkanya — tampilkan tanpa poin, bukan "0 poin"
+                            // yang keliru menyiratkan tidak dapat nilai.
+                            a.awardedPoint != null
+                            ? `disetujui · ${a.awardedPoint} poin`
+                            : 'disetujui'
                           : a.status === 'REJECTED'
                             ? 'ditolak'
                             : 'menunggu'}
