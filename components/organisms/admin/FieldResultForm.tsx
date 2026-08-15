@@ -38,16 +38,13 @@ export default function FieldResultForm() {
     [missions, missionId],
   )
 
-  // Hanya misi yang memang dinilai petugas yang ditawarkan, supaya daftarnya
-  // tidak dipenuhi misi mandiri yang buktinya diunggah peserta sendiri.
+  // Pembagian tegas: halaman ini hanya untuk misi yang dinilai petugas di
+  // tempat (Laporan Petugas / Input Hasil). Misi yang buktinya diunggah peserta
+  // dinilai lewat Antrean Validasi, sambil melihat foto atau videonya.
   const fieldMissions = useMemo(
     () =>
       (missions ?? []).filter(
-        m =>
-          m.proofType === 'LAPORAN_PETUGAS' ||
-          m.proofType === 'INPUT_HASIL' ||
-          m.scoringMode === 'PER_UNIT' ||
-          m.scoringMode === 'TIME_BASED',
+        m => m.proofType === 'LAPORAN_PETUGAS' || m.proofType === 'INPUT_HASIL',
       ),
     [missions],
   )
@@ -87,7 +84,9 @@ export default function FieldResultForm() {
       <div>
         <h3 className="font-display text-2xl text-ink">Input Hasil dari Pos</h3>
         <p className="mt-1 text-sm text-ink/60">
-          Masukkan hasil mentahnya saja — poin dihitung otomatis sesuai aturan misi.
+          Untuk misi yang dinilai petugas di tempat. Masukkan hasil mentahnya saja — poin
+          dihitung otomatis sesuai aturan misi. Misi yang buktinya diunggah peserta dinilai lewat
+          Antrean Validasi.
         </p>
       </div>
 
@@ -125,7 +124,7 @@ export default function FieldResultForm() {
         {fieldMissions.length === 0 && (
           <p className="mt-1 text-xs text-ink/50">
             Belum ada misi yang dinilai petugas pos. Atur pembuktian misi ke &quot;Laporan
-            Petugas&quot; atau pilih penilaian per satuan/waktu.
+            Petugas&quot; atau &quot;Input hasil&quot; saat membuatnya.
           </p>
         )}
       </div>

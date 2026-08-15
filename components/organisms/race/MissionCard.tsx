@@ -312,10 +312,16 @@ export default function MissionCard({
                 variant="secondary"
                 className="w-full"
                 loading={checkOutMutation.isPending}
+                disabled={!latest}
                 onClick={() => checkOutMutation.mutate({ missionId: mission.id })}
               >
                 Check-out
               </Button>
+              <p className="text-xs text-ink/55">
+                {latest
+                  ? 'Jangan lupa check-out supaya antrean pos bisa lanjut ke kelompok berikutnya.'
+                  : 'Kirim bukti misi ini dulu, baru bisa check-out dari pos.'}
+              </p>
             </>
           )}
 

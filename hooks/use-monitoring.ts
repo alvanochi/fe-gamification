@@ -62,6 +62,38 @@ export const useMonitoringQuery = () => {
   })
 }
 
+export interface MissionProgress {
+  id: string
+  title: string
+  type: string
+  category: string
+  proofType: string
+  requiresCheckIn: boolean
+  approvedCount: number
+  pendingCount: number
+  rejectedCount: number
+  groups: Array<{
+    groupId: string
+    groupName: string
+    status: 'PENDING' | 'APPROVED' | 'REJECTED'
+    point: number | null
+    at: string
+  }>
+}
+
+export const useMissionMonitoringQuery = () => {
+  return useQuery({
+    queryKey: ['monitoring-missions'],
+    queryFn: async () =>
+      (
+        await http.get<IApiEnvelope<{ totalGroups: number; missions: MissionProgress[] }>>(
+          endpoints.admin.monitoringMissions,
+        )
+      ).data,
+    refetchInterval: 10_000,
+  })
+}
+
 export const useGroupDetailQuery = (groupId: string | null) => {
   return useQuery({
     queryKey: ['monitoring-group', groupId],

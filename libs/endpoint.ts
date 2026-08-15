@@ -22,6 +22,7 @@ export const endpoints = {
     groups: '/admin/groups',
     generateGroups: '/admin/groups/generate',
     monitoring: '/admin/monitoring',
+    monitoringMissions: '/admin/monitoring/missions',
     monitoringGroup: (groupId: string) => `/admin/monitoring/${groupId}`,
     accounts: '/admin/accounts',
     accountRole: (userId: string) => `/admin/accounts/${userId}/role`,
