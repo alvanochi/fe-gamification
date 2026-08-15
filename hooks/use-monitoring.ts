@@ -21,6 +21,10 @@ export interface GroupProgress {
 
 export interface MonitoringData {
   totalMissions: number
+  totalParticipants: number
+  checkedIn: number
+  /** Peserta hadir yang belum kebagian kelompok — calon Generate Kelompok. */
+  waitingForGroup: number
   groups: GroupProgress[]
 }
 
