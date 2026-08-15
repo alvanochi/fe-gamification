@@ -2,11 +2,12 @@ import { useSyncExternalStore } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { userService } from '@/services/user.service'
 
-export const useProfileQuery = (options?: { enabled?: boolean }) => {
+export const useProfileQuery = (options?: { enabled?: boolean; refetchInterval?: number }) => {
   return useQuery({
     queryKey: ['profile'],
     queryFn: async () => (await userService.getProfile()).data,
     enabled: options?.enabled ?? true,
+    refetchInterval: options?.refetchInterval,
   })
 }
 

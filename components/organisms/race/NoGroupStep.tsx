@@ -48,6 +48,13 @@ export default function NoGroupStep() {
       title="GABUNG KELOMPOK"
       subtitle="Sistem akan mengacak kamu ke dalam kelompok berisi maksimal 6 orang."
     >
+      {/* SRS 5.3: pembentukan kelompok dijalankan panitia dari dashboard, bukan
+          dipicu peserta satu per satu. Peserta menunggu di sini. */}
+      <div className="mb-4 rounded-md border-brut border-dashed bg-paper px-4 py-3 text-sm text-ink/70">
+        Panitia akan membentuk kelompok dari seluruh peserta yang sudah hadir. Layar ini lanjut
+        sendiri begitu kamu mendapat kelompok.
+      </div>
+
       {isSearching ? (
         <RadarSearch
           label={
@@ -58,7 +65,7 @@ export default function NoGroupStep() {
         />
       ) : (
         <Button size="lg" className="w-full" onClick={handleSearch}>
-          Cari Kelompokku
+          Cek Kelompokku Sekarang
         </Button>
       )}
       <ErrorMessage message={apiError?.message} className="mt-3" />
