@@ -7,6 +7,7 @@ import { useProfileQuery } from '@/hooks/use-profile'
 
 /** `superOnly` menandai halaman yang mengubah konten permainan (BRD Bab 4). */
 const LINKS = [
+  { href: '/admin/monitoring', label: 'Monitoring' },
   { href: '/admin/validation', label: 'Validasi' },
   { href: '/admin/check-in', label: 'Check-in QR' },
   { href: '/admin/field-results', label: 'Hasil Pos' },

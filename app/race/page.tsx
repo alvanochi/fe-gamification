@@ -9,13 +9,15 @@ import VoteLeaderStep from '@/components/organisms/race/VoteLeaderStep'
 import NameGroupStep from '@/components/organisms/race/NameGroupStep'
 import GroupSuccessScreen from '@/components/organisms/race/GroupSuccessScreen'
 import BoardingPassPanel from '@/components/organisms/race/BoardingPassPanel'
+import CheckInGate from '@/components/organisms/race/CheckInGate'
 import LogoutButton from '@/components/fragments/LogoutButton'
 import { useProfileQuery } from '@/hooks/use-profile'
 import { useConfirmationsQuery, useGroupQuery } from '@/hooks/use-group'
 import { areAllPairsConfirmed } from '@/utils/group/confirmation'
 
 export default function RacePage() {
-  const profileQuery = useProfileQuery()
+  // Disegarkan berkala agar gerbang kehadiran membuka sendiri setelah dipindai.
+  const profileQuery = useProfileQuery({ refetchInterval: 3000 })
   const profile = profileQuery.data
   const groupId = profile?.groupId ?? null
 
@@ -59,6 +61,17 @@ export default function RacePage() {
   }
 
   if (!profile) return null
+
+  // Gerbang kehadiran: peserta yang belum dipindai panitia berhenti di sini.
+  // Panitia tidak ikut dipindai, jadi tidak dihadang.
+  if (profile.role === 'PARTICIPANT' && !profile.checkInAt) {
+    return (
+      <>
+        <LogoutButton floating />
+        <CheckInGate profile={profile} />
+      </>
+    )
+  }
 
   if (!groupId || !groupQuery.data) {
     return (
