@@ -20,7 +20,7 @@ export default function NoGroupStep() {
     <RaceShell
       eyebrow="Checkpoint 1 · Kelompok"
       title="MENUNGGU KELOMPOK"
-      subtitle="Panitia akan membagi seluruh peserta yang sudah hadir ke dalam kelompok berisi maksimal 6 orang."
+      subtitle="Panitia sedang membagi peserta yang sudah hadir ke dalam kelompok."
     >
       <RadarSearch label="Menunggu panitia membentuk kelompok…" />
 

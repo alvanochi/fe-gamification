@@ -9,7 +9,7 @@ export default function GroupSuccessScreen({ group }: { group: Group }) {
     <RaceShell
       eyebrow="Checkpoint 6 · Siap Berangkat"
       title={group.name}
-      subtitle="Selamat! Kelompokmu resmi terbentuk. Sampai jumpa di 30 misi Millionaire Race."
+      subtitle="Selamat, kelompok berhasil dibuat. Silakan lanjutkan ke misi-misi kamu."
     >
       <ul className="space-y-2">
         {group.members.map(member => (

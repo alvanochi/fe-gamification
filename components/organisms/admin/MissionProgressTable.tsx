@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Input from '@/components/elements/Input'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
+import Pagination from '@/components/fragments/Pagination'
 import { useMissionMonitoringQuery, type MissionProgress } from '@/hooks/use-monitoring'
 import { useDebounce } from '@/hooks/use-debounce'
 
@@ -20,7 +21,9 @@ const STATUS_STYLE = {
  * Melengkapi peta progres yang menjawab "kelompok A sampai mana".
  */
 export default function MissionProgressTable() {
-  const { data, isLoading } = useMissionMonitoringQuery()
+  const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(25)
+  const { data, isLoading } = useMissionMonitoringQuery(page, perPage)
   const [search, setSearch] = useState('')
   const [open, setOpen] = useState<string | null>(null)
   const debounced = useDebounce(search, 300)
@@ -114,6 +117,15 @@ export default function MissionProgressTable() {
           })}
         </ul>
       )}
+
+      <Pagination
+        page={data?.page ?? page}
+        perPage={data?.perPage ?? perPage}
+        total={data?.totalMissions ?? 0}
+        totalPages={data?.totalPages ?? 1}
+        onPageChange={setPage}
+        onPerPageChange={setPerPage}
+      />
 
       <p className="text-xs text-ink/50">
         Ketuk misi untuk melihat kelompok mana saja yang sudah mengerjakannya. &quot;Belum&quot;

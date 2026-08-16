@@ -1,6 +1,7 @@
 export const endpoints = {
   auth: {
     login: '/authentications',
+    loginQr: '/authentications/qr',
     refresh: '/authentications',
     logout: '/authentications',
   },
@@ -23,6 +24,8 @@ export const endpoints = {
     generateGroups: '/admin/groups/generate',
     monitoring: '/admin/monitoring',
     monitoringMissions: '/admin/monitoring/missions',
+    barterQueue: '/admin/barter/queue',
+    validateBarterStep: (stepId: string) => `/admin/barter/steps/${stepId}/validate`,
     monitoringGroup: (groupId: string) => `/admin/monitoring/${groupId}`,
     accounts: '/admin/accounts',
     accountRole: (userId: string) => `/admin/accounts/${userId}/role`,
@@ -57,6 +60,12 @@ export const endpoints = {
     validate: (submissionId: string) => `/submissions/${submissionId}/validate`,
     barterStep: '/submissions/barter-steps',
     barterSteps: (assignmentId: string) => `/submissions/barter-steps/${assignmentId}`,
+  },
+  settings: {
+    get: '/settings',
+    admin: '/settings/admin',
+    releaseMissions: '/settings/admin/release-missions',
+    announce: '/settings/admin/announce',
   },
   leaderboard: {
     get: '/leaderboard',

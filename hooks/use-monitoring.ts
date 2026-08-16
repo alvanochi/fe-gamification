@@ -19,7 +19,14 @@ export interface GroupProgress {
   lastActivityAt: string | null
 }
 
-export interface MonitoringData {
+export interface Paged {
+  page: number
+  perPage: number
+  totalPages: number
+}
+
+export interface MonitoringData extends Paged {
+  totalGroups: number
   totalMissions: number
   totalParticipants: number
   checkedIn: number
@@ -57,10 +64,15 @@ export interface CheckInRow {
   checkedOutByName: string | null
 }
 
-export const useMonitoringQuery = () => {
+export const useMonitoringQuery = (page = 1, perPage = 25) => {
   return useQuery({
-    queryKey: ['monitoring'],
-    queryFn: async () => (await http.get<IApiEnvelope<MonitoringData>>(endpoints.admin.monitoring)).data,
+    queryKey: ['monitoring', page, perPage],
+    queryFn: async () =>
+      (
+        await http.get<IApiEnvelope<MonitoringData>>(endpoints.admin.monitoring, {
+          params: { page, perPage },
+        })
+      ).data,
     // Panitia memakai halaman ini sambil acara berjalan.
     refetchInterval: 10_000,
   })
@@ -85,14 +97,14 @@ export interface MissionProgress {
   }>
 }
 
-export const useMissionMonitoringQuery = () => {
+export const useMissionMonitoringQuery = (page = 1, perPage = 25) => {
   return useQuery({
-    queryKey: ['monitoring-missions'],
+    queryKey: ['monitoring-missions', page, perPage],
     queryFn: async () =>
       (
-        await http.get<IApiEnvelope<{ totalGroups: number; missions: MissionProgress[] }>>(
-          endpoints.admin.monitoringMissions,
-        )
+        await http.get<
+          IApiEnvelope<Paged & { totalGroups: number; totalMissions: number; missions: MissionProgress[] }>
+        >(endpoints.admin.monitoringMissions, { params: { page, perPage } })
       ).data,
     refetchInterval: 10_000,
   })

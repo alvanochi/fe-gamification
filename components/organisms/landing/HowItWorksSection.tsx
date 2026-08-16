@@ -4,7 +4,7 @@ const STEPS = [
   { title: 'Gabung Tim', desc: 'Sistem mengacak kamu ke dalam grup berisi maks. 6 orang.' },
   { title: 'Konfirmasi', desc: 'Temukan & centang anggota timmu satu per satu, real-time.' },
   { title: 'Pilih Ketua', desc: 'Voting ketua tim (min. 3 suara) & beri nama tim kalian.' },
-  { title: '30 Misi', desc: 'Tantangan, Bigger Better (barter), & Soal lokasi ber-geofence.' },
+  { title: 'Ragam Misi', desc: 'Tantangan, Bigger Better (barter), & Soal lokasi ber-geofence.' },
   { title: 'Podium', desc: 'Poin terkumpul otomatis — pantau posisimu di leaderboard.' },
 ]
 

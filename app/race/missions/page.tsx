@@ -10,6 +10,9 @@ import { useMissionsQuery, useMyCheckInsQuery } from '@/hooks/use-missions'
 import { useMyGroupSubmissionsQuery } from '@/hooks/use-submissions'
 import { useMyAssignmentsQuery } from '@/hooks/use-barter'
 import { useDebounce } from '@/hooks/use-debounce'
+import { useSettingsQuery } from '@/hooks/use-settings'
+import { useRealtime } from '@/hooks/use-realtime'
+import AnnouncementPopup from '@/components/fragments/AnnouncementPopup'
 import { getLatestSubmissionForMission } from '@/utils/mission/submission-status'
 import { MISSION_CATEGORY_LABEL, MISSION_TYPE_LABEL } from '@/utils/mission/type-meta'
 import { Mission, Submission } from '@/types/mission'
@@ -36,6 +39,8 @@ export default function RaceMissionsPage() {
   const submissionsQuery = useMyGroupSubmissionsQuery()
   const checkInsQuery = useMyCheckInsQuery()
   const assignmentsQuery = useMyAssignmentsQuery()
+  const settingsQuery = useSettingsQuery()
+  useRealtime(profileQuery.data?.groupId ?? null)
 
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<StatusFilter>('SEMUA')
@@ -76,6 +81,28 @@ export default function RaceMissionsPage() {
   const initialLoading =
     profileQuery.isLoading || missionsQuery.isLoading || submissionsQuery.isLoading
 
+  // Panitia mengumpulkan peserta untuk briefing lebih dulu; daftar misi baru
+  // muncul setelah tombol "Munculkan Misi" ditekan.
+  if (!initialLoading && settingsQuery.data && !settingsQuery.data.missionsReleased) {
+    return (
+      <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-paper px-4 text-center">
+        <AnnouncementPopup />
+        <p className="font-mono text-xs uppercase tracking-[0.3em] text-secondary">
+          Menunggu Aba-aba
+        </p>
+        <h1 className="mt-2 font-display text-3xl text-ink sm:text-4xl">MISI BELUM DIBUKA</h1>
+        <p className="mt-3 max-w-sm text-sm text-ink/60">
+          Panitia masih memberi pengarahan. Daftar misi akan muncul sendiri di layar ini begitu
+          permainan resmi dimulai.
+        </p>
+        <span className="mt-6 h-4 w-4 animate-spin rounded-full border-2 border-ink/40 border-t-transparent" />
+        <Link href="/race" className="mt-8 font-mono text-xs uppercase tracking-widest text-secondary">
+          ← Kembali
+        </Link>
+      </div>
+    )
+  }
+
   if (initialLoading || hasNoGroup) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-paper px-4">
@@ -96,6 +123,7 @@ export default function RaceMissionsPage() {
 
   return (
     <div className="min-h-[100dvh] bg-paper px-4 py-10 sm:px-8">
+      <AnnouncementPopup />
       <div className="mx-auto max-w-5xl">
         <Link href="/race" className="font-mono text-xs uppercase tracking-widest text-secondary">
           ← Kembali
