@@ -4,8 +4,9 @@ import { useRef } from 'react'
 import { useGSAP } from '@gsap/react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import Link from 'next/link'
+import Button from '@/components/elements/Button'
 import SponsorStrip from '@/components/organisms/SponsorStrip'
-import StartScanner from '@/components/organisms/StartScanner'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -62,7 +63,11 @@ export default function FooterCtaSection() {
               Ambil QR-mu di meja registrasi, pindai, dan langsung mulai bertanding bersama timmu.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-4">
-              <StartScanner />
+              <Link href="/scan">
+                <Button size="lg" variant="primary">
+                  Mulai — Pindai QR
+                </Button>
+              </Link>
             </div>
           </div>
         </div>

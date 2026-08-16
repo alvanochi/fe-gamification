@@ -37,8 +37,8 @@ export default function LeaderboardPage() {
         </div>
 
         <p className="mt-3 text-sm text-paper/60">
-          Poin masuk otomatis setiap panitia menyetujui bukti misi. Halaman ini menyegarkan sendiri
-          tiap 30 detik.
+          Poin masuk otomatis setiap panitia menyetujui bukti misi, dan papan ini langsung ikut
+          berubah saat itu juga.
           {dataUpdatedAt > 0 && (
             <> Terakhir diperbarui {new Date(dataUpdatedAt).toLocaleTimeString('id-ID')}.</>
           )}

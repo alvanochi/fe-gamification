@@ -3,7 +3,8 @@
 import { useRef } from 'react'
 import { useGSAP } from '@gsap/react'
 import { gsap } from 'gsap'
-import StartScanner from '@/components/organisms/StartScanner'
+import Link from 'next/link'
+import Button from '@/components/elements/Button'
 
 export default function HeroSection() {
   const ref = useRef<HTMLDivElement>(null)
@@ -58,7 +59,7 @@ export default function HeroSection() {
 
           <h1 className="mt-4 max-w-2xl font-display text-4xl leading-[1.05] text-ink sm:text-6xl md:text-7xl">
             <span data-hero-line className="block">
-              KEJAR 30 MISI.
+              KEJAR MISINYA.
             </span>
             <span data-hero-line className="block text-secondary">
               JELAJAHI JOGJA.
@@ -78,7 +79,11 @@ export default function HeroSection() {
               Halaman /auth/login & /auth/register tetap ada untuk panitia. */}
           <div className="mt-8 flex flex-wrap gap-4" id="daftar">
             <div data-hero-cta>
-              <StartScanner />
+              <Link href="/scan">
+                <Button size="lg" variant="primary">
+                  Mulai — Pindai QR
+                </Button>
+              </Link>
             </div>
           </div>
           <p className="mt-3 text-sm text-ink/60">

@@ -1,10 +1,9 @@
 const STEPS = [
-  { title: 'Daftar', desc: 'Isi form pendaftaran & akun sosial media UMKM-mu.' },
-  { title: 'Scan QR', desc: 'Check-in di lokasi acara dengan scan QR resmi.' },
-  { title: 'Gabung Tim', desc: 'Sistem mengacak kamu ke dalam grup berisi maks. 6 orang.' },
-  { title: 'Konfirmasi', desc: 'Temukan & centang anggota timmu satu per satu, real-time.' },
-  { title: 'Pilih Ketua', desc: 'Voting ketua tim (min. 3 suara) & beri nama tim kalian.' },
-  { title: 'Ragam Misi', desc: 'Tantangan, Bigger Better (barter), & Soal lokasi ber-geofence.' },
+  { title: 'Scan QR', desc: 'Pindai QR yang diberikan panitia — kamu langsung masuk ke akunmu.' },
+  { title: 'Gabung Tim', desc: 'Panitia membentuk tim, dan sistem mengacak siapa saja anggotanya.' },
+  { title: 'Konfirmasi', desc: 'Temukan anggota timmu di lokasi, lalu unggah satu foto bersama.' },
+  { title: 'Pilih Ketua', desc: 'Satu suara per anggota. Ketua terpilih, lalu beri nama tim kalian.' },
+  { title: 'Lakukan Misi', desc: 'Kerjakan misi bersama tim, kirim buktinya, dan kumpulkan poin.' },
   { title: 'Podium', desc: 'Poin terkumpul otomatis — pantau posisimu di leaderboard.' },
 ]
 
