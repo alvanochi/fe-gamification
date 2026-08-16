@@ -3,6 +3,7 @@
 import { useRef } from 'react'
 import { useGSAP } from '@gsap/react'
 import { gsap } from 'gsap'
+import Link from 'next/link'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Button from '@/components/elements/Button'
 import ThemeToggle from '@/components/elements/ThemeToggle'
@@ -10,9 +11,10 @@ import { useLenis } from '@/providers/SmoothScrollProvider'
 
 gsap.registerPlugin(ScrollTrigger)
 
+// Tautan "Misi" dihapus bersama seksi tipe misi — peserta tidak perlu tahu
+// pembagian kategori misinya sebelum acara dimulai.
 const LINKS = [
   { href: '#cara-kerja', label: 'Cara Kerja' },
-  { href: '#misi', label: 'Misi' },
   { href: '#leaderboard', label: 'Leaderboard' },
   { href: '#sponsor', label: 'Sponsor' },
 ]
@@ -79,14 +81,13 @@ export default function StickyNav() {
 
         <div className="flex items-center gap-3">
           <ThemeToggle />
-          <Button
-            size="sm"
-            variant="primary"
-            onClick={() => scrollTo('#daftar')}
-            className="hidden sm:inline-flex"
-          >
-            Daftar
-          </Button>
+          {/* Pendaftaran mandiri ditiadakan: peserta didaftarkan panitia lalu
+              menerima QR cetak. Yang tersisa hanya jalan masuk lewat pindai. */}
+          <Link href="/scan" className="hidden sm:inline-flex">
+            <Button size="sm" variant="primary">
+              Pindai QR
+            </Button>
+          </Link>
         </div>
       </div>
     </nav>

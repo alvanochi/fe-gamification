@@ -1,7 +1,6 @@
 import StickyNav from '@/components/organisms/landing/StickyNav'
 import HeroSection from '@/components/organisms/landing/HeroSection'
 import HowItWorksSection from '@/components/organisms/landing/HowItWorksSection'
-import MissionTypesSection from '@/components/organisms/landing/MissionTypesSection'
 import LeaderboardTeaserSection from '@/components/organisms/landing/LeaderboardTeaserSection'
 import SponsorUmkmMarqueeSection from '@/components/organisms/landing/SponsorUmkmMarqueeSection'
 import FooterCtaSection from '@/components/organisms/landing/FooterCtaSection'
@@ -15,7 +14,6 @@ export default function Home() {
       <main className="flex-1">
         <HeroSection />
         <HowItWorksSection />
-        <MissionTypesSection />
         <LeaderboardTeaserSection />
         <SponsorUmkmMarqueeSection />
       </main>

@@ -2,10 +2,13 @@ import { useQuery } from '@tanstack/react-query'
 import { leaderboardService } from '@/services/leaderboard.service'
 
 /**
- * Papan skor. Belum push realtime (WebSocket) — untuk sekarang data disegarkan
- * berkala dan bisa ditarik manual, yang sudah cukup untuk layar pit stop.
+ * Papan skor.
+ *
+ * Poin masuk lewat siaran WebSocket, jadi tabel diperbarui begitu ada
+ * perubahan. Penyegaran berkala tetap dipasang longgar sebagai jaring pengaman
+ * bila koneksi socket sempat terputus.
  */
-export const useLeaderboardQuery = (refetchIntervalMs = 30_000) => {
+export const useLeaderboardQuery = (refetchIntervalMs = 60_000) => {
   return useQuery({
     queryKey: ['leaderboard'],
     queryFn: async () => (await leaderboardService.get()).data,

@@ -29,7 +29,7 @@ const extractToken = (raw: string): string | null => {
  * di sini. Pemindaian dilakukan di perangkat peserta — tidak ada gambar yang
  * dikirim ke server.
  */
-export default function StartScanner() {
+export default function StartScanner({ autoStart = false }: { autoStart?: boolean }) {
   const router = useRouter()
   const queryClient = useQueryClient()
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -118,7 +118,7 @@ export default function StartScanner() {
   if (!isOpen) {
     return (
       <Button size="lg" variant="primary" onClick={start}>
-        Mulai — Pindai QR
+        {autoStart ? 'Buka Kamera' : 'Mulai — Pindai QR'}
       </Button>
     )
   }
