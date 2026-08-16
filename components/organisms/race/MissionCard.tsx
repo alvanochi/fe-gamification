@@ -234,20 +234,26 @@ export default function MissionCard({
   )
 
   return (
+    // Bingkai penuh berwarna tipe misi — bukan hanya garis kiri — supaya
+    // kartunya terlihat utuh dan tipenya terbaca sekilas dari kejauhan.
     <li
-      className="rounded-lg border-brut bg-paper-raised p-5 shadow-brutal-sm"
-      style={{ borderLeftWidth: 8, borderLeftColor: MISSION_TYPE_COLOR_VAR[mission.type] }}
+      className="overflow-hidden rounded-lg border-brut bg-paper-raised shadow-brutal-sm"
+      style={{ borderColor: MISSION_TYPE_COLOR_VAR[mission.type] }}
     >
+      <div
+        className="px-5 py-2"
+        style={{ backgroundColor: MISSION_TYPE_COLOR_VAR[mission.type] }}
+      >
+        <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-white">
+          {MISSION_TYPE_LABEL[mission.type]}
+          {mission.isMandatory && ' · WAJIB'}
+          {mission.requiresCheckIn && ' · PERLU CHECK-IN'}
+        </p>
+      </div>
+      <div className="p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p
-            className="font-mono text-[11px] font-bold uppercase tracking-widest"
-            style={{ color: MISSION_TYPE_COLOR_VAR[mission.type] }}
-          >
-            {MISSION_TYPE_LABEL[mission.type]}
-            {mission.isMandatory && ' · WAJIB'}
-          </p>
-          <h4 className="mt-1 font-display text-xl text-ink">{mission.title}</h4>
+          <h4 className="font-display text-xl text-ink">{mission.title}</h4>
         </div>
         <span className="shrink-0 rounded-full border-brut-sm bg-primary px-3 py-1 font-display text-sm text-primary-ink">
           {formatMissionPoints(mission)}
@@ -405,6 +411,7 @@ export default function MissionCard({
       {mission.type === 'BIGGER_BETTER' && (
         <BarterChain missionId={mission.id} assignment={assignment} />
       )}
+      </div>
     </li>
   )
 }

@@ -6,6 +6,7 @@ import Input from '@/components/elements/Input'
 import ErrorMessage from '@/components/elements/ErrorMessage'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
 import ConfirmModal from '@/components/fragments/ConfirmModal'
+import Pagination from '@/components/fragments/Pagination'
 import {
   useGenerateGroupsMutation,
   useGroupDetailQuery,
@@ -153,7 +154,9 @@ function GroupDetail({ group, onClose }: { group: GroupProgress; onClose: () => 
 }
 
 export default function MonitoringBoard() {
-  const { data, isLoading } = useMonitoringQuery()
+  const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(25)
+  const { data, isLoading } = useMonitoringQuery(page, perPage)
   const generate = useGenerateGroupsMutation()
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<GroupProgress | null>(null)
@@ -270,6 +273,15 @@ export default function MonitoringBoard() {
           </table>
         </div>
       )}
+
+      <Pagination
+        page={data?.page ?? page}
+        perPage={data?.perPage ?? perPage}
+        total={data?.totalGroups ?? 0}
+        totalPages={data?.totalPages ?? 1}
+        onPageChange={setPage}
+        onPerPageChange={setPerPage}
+      />
 
       <p className="text-xs text-ink/50">
         Ketuk baris untuk melihat rincian anggota, riwayat misi, dan check-in pos. Halaman

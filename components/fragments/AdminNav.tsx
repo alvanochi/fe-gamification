@@ -7,10 +7,12 @@ import { useProfileQuery } from '@/hooks/use-profile'
 
 /** `superOnly` menandai halaman yang mengubah konten permainan (BRD Bab 4). */
 const LINKS = [
+  { href: '/admin/control', label: 'Kendali Acara' },
   { href: '/admin/monitoring', label: 'Monitoring' },
   { href: '/admin/validation', label: 'Validasi' },
   { href: '/admin/check-in', label: 'Check-in QR' },
   { href: '/admin/field-results', label: 'Hasil Pos' },
+  { href: '/admin/barter', label: 'Barter' },
   { href: '/admin/missions', label: 'Kelola Misi', superOnly: true },
   { href: '/admin/sponsors', label: 'Sponsor', superOnly: true },
   { href: '/admin/accounts', label: 'Akun', superOnly: true },

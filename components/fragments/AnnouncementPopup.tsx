@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import Button from '@/components/elements/Button'
 import { useSettingsQuery } from '@/hooks/use-settings'
 
@@ -13,13 +13,16 @@ const SEEN_KEY = 'announcement-seen-at'
  * bukan sekadar "sudah pernah dilihat", sehingga pengumuman berikutnya tetap
  * tampil sementara yang lama tidak muncul lagi tiap pindah halaman.
  */
+// localStorage adalah sumber di luar React; dibaca lewat useSyncExternalStore
+// supaya nilainya konsisten antara render server dan klien tanpa effect.
+const noopSubscribe = () => () => {}
+const readSeen = () => (typeof window === 'undefined' ? null : localStorage.getItem(SEEN_KEY))
+
 export default function AnnouncementPopup({ enabled = true }: { enabled?: boolean }) {
   const { data } = useSettingsQuery(enabled)
-  const [dismissedAt, setDismissedAt] = useState<string | null>(null)
-
-  useEffect(() => {
-    setDismissedAt(localStorage.getItem(SEEN_KEY))
-  }, [])
+  const stored = useSyncExternalStore(noopSubscribe, readSeen, () => null)
+  const [justDismissed, setJustDismissed] = useState<string | null>(null)
+  const dismissedAt = justDismissed ?? stored
 
   const announcedAt = data?.announcedAt ?? null
   const message = data?.announcement
@@ -28,7 +31,7 @@ export default function AnnouncementPopup({ enabled = true }: { enabled?: boolea
 
   const close = () => {
     localStorage.setItem(SEEN_KEY, announcedAt)
-    setDismissedAt(announcedAt)
+    setJustDismissed(announcedAt)
   }
 
   return (

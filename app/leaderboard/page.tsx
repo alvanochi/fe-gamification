@@ -6,6 +6,7 @@ import LeaderboardTable from '@/components/organisms/LeaderboardTable'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
 import { useLeaderboardQuery } from '@/hooks/use-leaderboard'
 import { useHasSession, useProfileQuery } from '@/hooks/use-profile'
+import { useRealtime } from '@/hooks/use-realtime'
 
 export default function LeaderboardPage() {
   const { data: rows, isLoading, isFetching, error, refetch, dataUpdatedAt } = useLeaderboardQuery()
@@ -13,6 +14,9 @@ export default function LeaderboardPage() {
   // (mis. dari layar proyektor); profil hanya dipakai untuk menyorot tim sendiri
   // dan hanya diminta bila memang ada token, agar tamu tidak terlempar ke login.
   const { data: profile } = useProfileQuery({ enabled: useHasSession() })
+  // Poin masuk lewat siaran realtime, jadi klasemen berubah seketika tanpa
+  // menunggu penyegaran berkala.
+  useRealtime(null)
 
   return (
     <div className="min-h-[100dvh] bg-ink px-4 py-10 text-paper sm:px-8">
