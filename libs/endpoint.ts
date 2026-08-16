@@ -1,6 +1,7 @@
 export const endpoints = {
   auth: {
     login: '/authentications',
+    loginQr: '/authentications/qr',
     refresh: '/authentications',
     logout: '/authentications',
   },

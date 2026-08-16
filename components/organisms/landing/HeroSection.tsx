@@ -1,10 +1,9 @@
 'use client'
 
 import { useRef } from 'react'
-import Link from 'next/link'
 import { useGSAP } from '@gsap/react'
 import { gsap } from 'gsap'
-import Button from '@/components/elements/Button'
+import StartScanner from '@/components/organisms/StartScanner'
 
 export default function HeroSection() {
   const ref = useRef<HTMLDivElement>(null)
@@ -70,26 +69,21 @@ export default function HeroSection() {
           </h1>
 
           <p className="mt-6 max-w-lg text-base text-ink/70 md:text-lg">
-            Millionaire Race adalah balapan tantangan nyata untuk ±300 peserta &amp; 50 tim —
+            Millionaire Race adalah balapan tantangan nyata antar tim —
             selesaikan misi, dukung UMKM lokal, dan rebut posisi puncak leaderboard.
           </p>
 
-          <div className="mt-8 flex flex-wrap gap-4">
+          {/* Peserta didaftarkan panitia sebelum acara, lalu menerima QR cetak.
+              Karena itu tidak ada pendaftaran mandiri di sini — cukup pindai.
+              Halaman /auth/login & /auth/register tetap ada untuk panitia. */}
+          <div className="mt-8 flex flex-wrap gap-4" id="daftar">
             <div data-hero-cta>
-              <Link href="/auth/register" id="daftar">
-                <Button size="lg" variant="primary">
-                  Daftar Sekarang
-                </Button>
-              </Link>
-            </div>
-            <div data-hero-cta>
-              <Link href="/auth/login">
-                <Button size="lg" variant="ghost">
-                  Sudah Punya Akun? Masuk
-                </Button>
-              </Link>
+              <StartScanner />
             </div>
           </div>
+          <p className="mt-3 text-sm text-ink/60">
+            Belum punya QR? Hubungi panitia di meja registrasi.
+          </p>
         </div>
       </div>
     </section>

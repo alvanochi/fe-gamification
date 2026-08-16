@@ -1,12 +1,11 @@
 'use client'
 
 import { useRef } from 'react'
-import Link from 'next/link'
 import { useGSAP } from '@gsap/react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import Button from '@/components/elements/Button'
 import SponsorStrip from '@/components/organisms/SponsorStrip'
+import StartScanner from '@/components/organisms/StartScanner'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -60,20 +59,10 @@ export default function FooterCtaSection() {
               GARIS FINISH MENUNGGU
             </h2>
             <p className="mx-auto mt-3 max-w-md text-ink/70">
-              Daftarkan timmu sekarang dan jadi bagian dari kampanye promosi wisata &amp; UMKM
-              Jogja terbesar tahun ini.
+              Ambil QR-mu di meja registrasi, pindai, dan langsung mulai bertanding bersama timmu.
             </p>
             <div className="mt-8 flex flex-wrap justify-center gap-4">
-              <Link href="/auth/register">
-                <Button size="lg" variant="primary">
-                  Daftar Sekarang
-                </Button>
-              </Link>
-              <Link href="/auth/login">
-                <Button size="lg" variant="secondary">
-                  Sudah Punya Akun? Masuk
-                </Button>
-              </Link>
+              <StartScanner />
             </div>
           </div>
         </div>
