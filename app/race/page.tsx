@@ -3,17 +3,17 @@
 import Link from 'next/link'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
 import NoGroupStep from '@/components/organisms/race/NoGroupStep'
-import ConfirmMembersStep from '@/components/organisms/race/ConfirmMembersStep'
-import GroupPhotoStep from '@/components/organisms/race/GroupPhotoStep'
+import GroupSelfieStep from '@/components/organisms/race/GroupSelfieStep'
 import VoteLeaderStep from '@/components/organisms/race/VoteLeaderStep'
 import NameGroupStep from '@/components/organisms/race/NameGroupStep'
 import GroupSuccessScreen from '@/components/organisms/race/GroupSuccessScreen'
 import BoardingPassPanel from '@/components/organisms/race/BoardingPassPanel'
 import CheckInGate from '@/components/organisms/race/CheckInGate'
 import LogoutButton from '@/components/fragments/LogoutButton'
+import AnnouncementPopup from '@/components/fragments/AnnouncementPopup'
+import { useRealtime } from '@/hooks/use-realtime'
 import { useProfileQuery } from '@/hooks/use-profile'
-import { useConfirmationsQuery, useGroupQuery } from '@/hooks/use-group'
-import { areAllPairsConfirmed } from '@/utils/group/confirmation'
+import { useGroupQuery } from '@/hooks/use-group'
 
 export default function RacePage() {
   // Disegarkan berkala agar gerbang kehadiran membuka sendiri setelah dipindai.
@@ -23,13 +23,13 @@ export default function RacePage() {
 
   // Stop polling once the group has been deliberately named — nothing about
   // the flow changes after that, so there's no reason to keep hammering the API.
-  const groupQuery = useGroupQuery(groupId, query => (query.state.data?.nameSetAt ? false : 3000))
-  const confirmationsQuery = useConfirmationsQuery(groupId, () =>
-    groupQuery.data?.nameSetAt ? false : 3000,
-  )
+  // Realtime: perubahan anggota, foto, voting, dan ketua tampil serentak di
+  // semua perangkat kelompok tanpa menunggu polling.
+  useRealtime(groupId)
 
+  const groupQuery = useGroupQuery(groupId, query => (query.state.data?.nameSetAt ? false : 3000))
   const initialLoading =
-    profileQuery.isLoading || (!!groupId && (groupQuery.isLoading || confirmationsQuery.isLoading))
+    profileQuery.isLoading || (!!groupId && groupQuery.isLoading)
 
   const isPanitia = profile?.role === 'ADMIN' || profile?.role === 'SUPER_ADMIN'
 
@@ -46,6 +46,7 @@ export default function RacePage() {
   // perlu menunjukkan QR-nya sejak tiba di meja registrasi.
   const chrome = (
     <>
+      <AnnouncementPopup />
       <LogoutButton floating />
       {adminLink}
       <BoardingPassPanel />
@@ -83,22 +84,14 @@ export default function RacePage() {
   }
 
   const group = groupQuery.data
-  const confirmations = confirmationsQuery.data ?? []
 
-  if (!group.leaderId && !areAllPairsConfirmed(group.members, confirmations)) {
-    return (
-      <>
-        {chrome}
-        <ConfirmMembersStep group={group} confirmations={confirmations} myId={profile.id} />
-      </>
-    )
-  }
-
+  // Selfie kelompok menggantikan langkah saling mencentang: satu foto bersama
+  // sudah membuktikan mereka berkumpul, dan jauh lebih cepat.
   if (!group.leaderId && !group.photoCompletedAt) {
     return (
       <>
         {chrome}
-        <GroupPhotoStep groupId={group.id} />
+        <GroupSelfieStep group={group} myId={profile.id} />
       </>
     )
   }

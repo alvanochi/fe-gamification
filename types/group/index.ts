@@ -11,6 +11,12 @@ export interface Profile {
   updatedAt: string
 }
 
+export interface GroupCategory {
+  id: string
+  name: string
+  color: string
+}
+
 export interface GroupMember {
   id: string
   fullname: string
@@ -23,7 +29,23 @@ export interface Group {
   leaderId: string | null
   score: number
   photoCompletedAt: string | null
+  photoUrl: string | null
+  /** Siapa yang pertama mengunggah selfie kelompok. */
+  photoBy: string | null
+  photoByName: string | null
+  categoryId: string | null
+  category: GroupCategory | null
   nameSetAt: string | null
+  startedAt: string | null
+  formationPoint: number | null
+  /** Sisa detik pembentukan kelompok, dihitung server saat data dibaca. */
+  formationSecondsLeft: number
+  formationRule: {
+    limitMinutes: number
+    graceMinutes: number
+    fullPoint: number
+    latePoint: number
+  } | null
   createdAt: string
   updatedAt: string
   members: GroupMember[]
