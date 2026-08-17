@@ -29,6 +29,8 @@ export const endpoints = {
     monitoringGroup: (groupId: string) => `/admin/monitoring/${groupId}`,
     accounts: '/admin/accounts',
     accountRole: (userId: string) => `/admin/accounts/${userId}/role`,
+    accountRoles: '/admin/accounts/roles',
+    accountQrTokens: '/admin/accounts/qr-tokens',
     verifyBarter: (assignmentId: string) => `/admin/barter/${assignmentId}/verify`,
     exportLeaderboard: '/admin/export/leaderboard',
     participantQrCards: '/admin/participants/qr',

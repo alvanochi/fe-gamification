@@ -14,11 +14,10 @@ const LINKS = [
   { href: '/admin/post', label: 'Jaga Pos' },
   { href: '/admin/field-results', label: 'Hasil Pos' },
   { href: '/admin/barter', label: 'Barter' },
-  { href: '/admin/qr-cards', label: 'Kartu QR' },
   { href: '/admin/missions', label: 'Kelola Misi', superOnly: true },
   { href: '/admin/categories', label: 'Kategori', superOnly: true },
   { href: '/admin/sponsors', label: 'Sponsor', superOnly: true },
-  { href: '/admin/accounts', label: 'Akun', superOnly: true },
+  { href: '/admin/accounts', label: 'Akun & Kartu QR' },
   { href: '/leaderboard', label: 'Klasemen' },
 ]
 
