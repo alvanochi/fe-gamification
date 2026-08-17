@@ -31,6 +31,8 @@ export const endpoints = {
     accountRole: (userId: string) => `/admin/accounts/${userId}/role`,
     verifyBarter: (assignmentId: string) => `/admin/barter/${assignmentId}/verify`,
     exportLeaderboard: '/admin/export/leaderboard',
+    participantQrCards: '/admin/participants/qr',
+    postScan: '/admin/post/scan',
   },
   groups: {
     autoGroup: '/groups/auto-group',
@@ -41,6 +43,7 @@ export const endpoints = {
       `/groups/${groupId}/confirm/${targetUserId}`,
     confirmations: (groupId: string) => `/groups/${groupId}/confirmations`,
     photo: (groupId: string) => `/groups/${groupId}/photo`,
+    skipYelYel: (groupId: string) => `/groups/${groupId}/yel-yel/skip`,
   },
   missions: {
     list: '/missions',
@@ -51,6 +54,7 @@ export const endpoints = {
     questions: (missionId: string) => `/missions/${missionId}/questions`,
     checkIn: (missionId: string) => `/missions/${missionId}/check-in`,
     checkOut: (missionId: string) => `/missions/${missionId}/check-out`,
+    verifyLocation: (missionId: string) => `/missions/${missionId}/verify-location`,
   },
   submissions: {
     uploadUrl: '/submissions/upload-url',
@@ -66,6 +70,12 @@ export const endpoints = {
     admin: '/settings/admin',
     releaseMissions: '/settings/admin/release-missions',
     announce: '/settings/admin/announce',
+  },
+  categories: {
+    list: '/group-categories',
+    detail: (id: string) => `/group-categories/${id}`,
+    assign: '/group-categories/assign',
+    distribute: '/group-categories/distribute',
   },
   leaderboard: {
     get: '/leaderboard',

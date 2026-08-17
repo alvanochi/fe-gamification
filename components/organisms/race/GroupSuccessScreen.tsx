@@ -5,12 +5,32 @@ import SponsorStrip from '@/components/organisms/SponsorStrip'
 import { Group } from '@/types/group'
 
 export default function GroupSuccessScreen({ group }: { group: Group }) {
+  // Kelompok yang melewati yel-yel dan belum mengirimnya perlu terus diingatkan
+  // — tenggatnya berjalan diam-diam sementara mereka sibuk berlomba.
+  const yelYel = group.yelYel
+  const yelYelPending = yelYel && yelYel.skipped && !yelYel.submissionStatus && !yelYel.expired
+
   return (
     <RaceShell
       eyebrow="Checkpoint 6 · Siap Berangkat"
       title={group.name}
       subtitle="Selamat, kelompok berhasil dibuat. Silakan lanjutkan ke misi-misi kamu."
     >
+      {yelYelPending && (
+        <Link
+          href="/race/missions"
+          className="mb-5 flex items-center gap-3 rounded-md border-brut bg-warning/15 px-4 py-3 brutal-press-sm"
+        >
+          <span className="text-2xl">📣</span>
+          <span className="min-w-0">
+            <span className="block font-bold text-ink">Yel-yel belum dikirim</span>
+            <span className="block text-xs text-ink/60">
+              Masih bisa dikumpulkan dari daftar misi sebelum batas waktunya habis.
+            </span>
+          </span>
+        </Link>
+      )}
+
       <ul className="space-y-2">
         {group.members.map(member => (
           <li

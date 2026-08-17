@@ -86,6 +86,9 @@ export const createMissionSchema = z
     pointMin: optionalInt(0),
     pointMax: optionalInt(0),
     requiresCheckIn: z.boolean(),
+    // Yel-yel: satu-satunya misi yang ikut muncul di rangkaian checkpoint,
+    // dengan tenggat sendiri terhitung sejak nama kelompok tersimpan.
+    isYelYel: z.boolean(),
     equipment: z.string().trim().optional(),
     scoringMode: z.enum(['FLAT', 'RANGE', 'PER_UNIT', 'TIME_BASED', 'AUTO_QUIZ']),
     pointPerUnit: optionalInt(0),

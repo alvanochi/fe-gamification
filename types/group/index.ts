@@ -15,6 +15,24 @@ export interface GroupCategory {
   id: string
   name: string
   color: string
+  sortOrder?: number
+  /** Hanya terisi di panel panitia. */
+  groupCount?: number
+}
+
+/** Keadaan misi yel-yel untuk satu kelompok. */
+export interface YelYelState {
+  missionId: string
+  title: string
+  description: string
+  deadlineAt: string | null
+  secondsLeft: number
+  deadlineHours: number
+  expired: boolean
+  skipped: boolean
+  submissionStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | null
+  /** Checkpoint yel-yel tidak perlu ditampilkan lagi. */
+  done: boolean
 }
 
 export interface GroupMember {
@@ -49,6 +67,10 @@ export interface Group {
   createdAt: string
   updatedAt: string
   members: GroupMember[]
+  /** null bila panitia belum menandai satu pun misi sebagai yel-yel. */
+  yelYel: YelYelState | null
+  /** Bila terisi, pemilihan ketua sedang di putaran kedua. */
+  runoffCandidateIds: string[] | null
 }
 
 export interface Confirmation {
@@ -63,3 +85,8 @@ export type VoteResult =
   | { status: 'VOTE_RECORDED' }
   | { status: 'LEADER_ELECTED'; leaderId: string }
   | { status: 'NEEDS_REVOTE'; newRound: number }
+  | {
+      status: 'NEEDS_RUNOFF'
+      newRound: number
+      runoffCandidates: Array<{ id: string; fullname: string }>
+    }

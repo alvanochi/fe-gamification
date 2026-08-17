@@ -48,6 +48,8 @@ export interface Mission {
   pointMin: number | null
   pointMax: number | null
   requiresCheckIn: boolean
+  /** Misi yel-yel — satu-satunya yang ikut muncul di rangkaian checkpoint. */
+  isYelYel: boolean
   equipment: string | null
   scoringMode: ScoringMode
   pointPerUnit: number | null
@@ -228,6 +230,7 @@ export interface CreateMissionPayload {
   pointMin?: number
   pointMax?: number
   requiresCheckIn: boolean
+  isYelYel: boolean
   equipment?: string
   scoringMode: ScoringMode
   pointPerUnit?: number

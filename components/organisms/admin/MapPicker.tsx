@@ -1,12 +1,15 @@
 'use client'
 
 import 'leaflet/dist/leaflet.css'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Circle, MapContainer, Marker, TileLayer, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 import Button from '@/components/elements/Button'
+import Input from '@/components/elements/Input'
 import ErrorMessage from '@/components/elements/ErrorMessage'
 import { useGeolocation } from '@/hooks/use-geolocation'
+import { useDebounce } from '@/hooks/use-debounce'
+import { usePlaceSearch, type PlaceResult } from '@/hooks/use-place-search'
 
 delete (L.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl
 L.Icon.Default.mergeOptions({
@@ -60,8 +63,55 @@ export default function MapPicker({ lat, lng, radiusMeters, onPick }: MapPickerP
     onPick(newLat.toFixed(6), newLng.toFixed(6))
   }
 
+  // Mencari nama tempat jauh lebih cepat daripada menggeser peta mencari
+  // koordinat. Ditunda 400 ms supaya tiap ketikan tidak jadi satu permintaan.
+  const [search, setSearch] = useState('')
+  const debounced = useDebounce(search, 400)
+  const { data: places, isFetching, error: searchError } = usePlaceSearch(debounced)
+
+  const choose = (place: PlaceResult) => {
+    handlePick(place.lat, place.lng)
+    setSearch('')
+  }
+
   return (
     <div>
+      <div className="relative mb-3">
+        <Input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Cari nama tempat, mis. Tugu Yogyakarta"
+        />
+
+        {debounced.trim().length >= 3 && (
+          <div className="absolute inset-x-0 top-full z-[500] mt-1 overflow-hidden rounded-md border-brut bg-paper-raised shadow-brutal-sm">
+            {isFetching ? (
+              <p className="px-4 py-3 text-sm text-ink/55">Mencari…</p>
+            ) : searchError ? (
+              <p className="px-4 py-3 text-sm text-danger">
+                Pencarian gagal. Ketuk peta untuk memilih titik secara manual.
+              </p>
+            ) : !places?.length ? (
+              <p className="px-4 py-3 text-sm text-ink/55">Tidak ada tempat yang cocok.</p>
+            ) : (
+              <ul className="max-h-56 overflow-y-auto">
+                {places.map(place => (
+                  <li key={place.id}>
+                    <button
+                      type="button"
+                      onClick={() => choose(place)}
+                      className="block w-full border-b border-ink/10 px-4 py-2.5 text-left text-sm text-ink last:border-b-0 hover:bg-primary/10"
+                    >
+                      {place.label}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
+
       <div className="mb-2 flex items-center justify-between gap-3">
         <p className="text-xs text-ink/60">
           {position

@@ -30,6 +30,10 @@ export const groupService = {
     return http.post<IApiEnvelope<VoteResult>>(endpoints.groups.voteLeader(groupId), { nomineeId })
   },
 
+  skipYelYel(groupId: string) {
+    return http.post<IApiEnvelope<{ skippedAt: string }>>(endpoints.groups.skipYelYel(groupId))
+  },
+
   updateName(groupId: string, name: string) {
     return http.put<IApiEnvelope<null>>(endpoints.groups.updateName(groupId), { name })
   },

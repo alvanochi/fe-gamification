@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Button from '@/components/elements/Button'
 import ErrorMessage from '@/components/elements/ErrorMessage'
+import LocationGate from '@/components/organisms/race/LocationGate'
 import { useMissionQuestionsQuery } from '@/hooks/use-missions'
 import { useSubmitMissionWithEvidenceMutation } from '@/hooks/use-submissions'
 import { AppError } from '@/libs/api'
@@ -15,15 +16,23 @@ import { QuestionAnswer, QuizSubmitResult } from '@/types/mission'
  * perangkat peserta. Hasilnya langsung ditampilkan tanpa perlu antre validasi.
  */
 export default function QuizForm({ missionId, disabled }: { missionId: string; disabled?: boolean }) {
-  const { data: questions, isLoading } = useMissionQuestionsQuery(missionId)
+  const { data, isLoading } = useMissionQuestionsQuery(missionId)
   const { mutate: submit, isPending, error } = useSubmitMissionWithEvidenceMutation()
   const apiError = error as AppError | null
 
   const [answers, setAnswers] = useState<Record<string, QuestionAnswer>>({})
   const [result, setResult] = useState<QuizSubmitResult | null>(null)
 
+  const questions = data?.questions
+
   if (isLoading) {
     return <p className="mt-4 text-sm text-ink/60">Memuat pertanyaan…</p>
+  }
+
+  // Soal misi berpagar koordinat baru terbuka setelah kelompok membuktikan
+  // berada di lokasinya — supaya jawaban tidak bisa disiapkan dari rumah.
+  if (data?.locked) {
+    return <LocationGate missionId={missionId} />
   }
 
   if (!questions || questions.length === 0) {

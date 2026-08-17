@@ -81,6 +81,23 @@ export const useVoteLeaderMutation = (groupId: string) => {
   })
 }
 
+/**
+ * Ketua memilih mengerjakan yel-yel belakangan.
+ *
+ * Rangkaian checkpoint langsung berlanjut; buktinya masih bisa dikirim dari
+ * daftar misi sampai tenggatnya habis.
+ */
+export const useSkipYelYelMutation = (groupId: string) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () => groupService.skipYelYel(groupId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['group', groupId] })
+    },
+  })
+}
+
 export const useUpdateGroupNameMutation = (groupId: string) => {
   const queryClient = useQueryClient()
 
