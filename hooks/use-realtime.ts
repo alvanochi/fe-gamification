@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { io, type Socket } from 'socket.io-client'
+import { pushValidation, type ValidationEvent } from '@/hooks/use-validation-feed'
 
 /**
  * Satu koneksi socket dipakai bersama seluruh halaman.
@@ -41,7 +42,20 @@ export const useRealtime = (groupId?: string | null) => {
     const refresh = (keys: string[][]) => () =>
       keys.forEach(key => queryClient.invalidateQueries({ queryKey: key }))
 
-    const handlers: Array<[string, () => void]> = [
+    // Panitia menyetujui atau menolak bukti: daftar misi, riwayat kiriman, dan
+    // skor kelompok semuanya berubah — dan peserta perlu diberi tahu, bukan
+    // hanya melihat angkanya bergeser diam-diam.
+    const onValidated = (payload: ValidationEvent) => {
+      queryClient.invalidateQueries({ queryKey: ['my-group-submissions'] })
+      queryClient.invalidateQueries({ queryKey: ['missions'] })
+      queryClient.invalidateQueries({ queryKey: ['group', groupId ?? ''] })
+      pushValidation(payload)
+    }
+
+    // Sebagian penangan menerima muatan, sebagian tidak — socket.io memanggil
+    // keduanya dengan cara yang sama.
+    const handlers: Array<[string, (...args: unknown[]) => void]> = [
+      ['submission:validated', payload => onValidated(payload as ValidationEvent)],
       ['leaderboard:changed', refresh([['leaderboard'], ['monitoring']])],
       ['missions:released', refresh([['settings'], ['missions']])],
       ['announcement', refresh([['settings']])],

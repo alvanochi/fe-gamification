@@ -6,12 +6,15 @@ import { IApiEnvelope } from '@/types/auth'
 export interface PostScanPayload {
   qrToken: string
   missionId: string
-  action: 'CHECK_IN' | 'CHECK_OUT'
+  /** Dikosongkan berarti sistem yang menyimpulkan dari keadaan kelompok. */
+  action?: 'CHECK_IN' | 'CHECK_OUT'
   queueNumber?: string
 }
 
 export interface PostScanResult {
   action: 'CHECK_IN' | 'CHECK_OUT'
+  /** True bila arah datang/pergi disimpulkan sistem, bukan dipilih petugas. */
+  inferred: boolean
   participantName: string
   groupId: string
   groupName: string | null
