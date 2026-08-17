@@ -200,12 +200,6 @@ export interface ValidateSubmissionPayload {
   rejectReason?: string
 }
 
-export interface PresignedUpload {
-  uploadUrl: string
-  fileKey: string
-  publicUrl: string
-}
-
 export interface CreateMissionPayload {
   title: string
   description: string
