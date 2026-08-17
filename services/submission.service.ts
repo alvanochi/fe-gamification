@@ -1,37 +1,38 @@
-import axios from 'axios'
 import { AppError, http } from '@/libs/api'
 import { endpoints } from '@/libs/endpoint'
 import { IApiEnvelope } from '@/types/auth'
 import {
   PendingSubmission,
-  PresignedUpload,
   Submission,
   SubmitMissionPayload,
   ValidateSubmissionPayload,
 } from '@/types/mission'
 
 /**
- * Unggah bukti ke Cloudflare R2 lalu kembalikan URL publiknya.
+ * Unggah bukti ke server, lalu kembalikan URL-nya.
  *
- * Dua langkah: minta presigned URL ke backend, lalu PUT file mentah langsung ke
- * R2. Langkah kedua sengaja memakai axios telanjang — bukan `http` — karena
- * tujuannya bukan API kita, sehingga tidak boleh membawa Authorization header
- * maupun baseURL, dan interceptor 401 di sana akan salah memaksa logout.
+ * Sebelumnya berkas dikirim langsung ke Cloudflare R2 lewat presigned URL, dan
+ * ditampilkan kembali dari domain publik R2 — yang ternyata diblokir sebagian
+ * jaringan peserta, sehingga foto yang berhasil terunggah tetap tidak pernah
+ * tampil. Sekarang berkas singgah di server yang sama dengan API-nya, jadi apa
+ * pun yang bisa memanggil API pasti bisa memuat medianya.
  */
 export const uploadEvidence = async (file: File): Promise<string> => {
-  const { data } = await http.get<IApiEnvelope<PresignedUpload>>(endpoints.submissions.uploadUrl, {
-    params: { fileName: file.name, mimeType: file.type || 'application/octet-stream' },
-  })
+  const form = new FormData()
+  form.append('file', file)
 
   try {
-    await axios.put(data.uploadUrl, file, {
-      headers: { 'Content-Type': file.type || 'application/octet-stream' },
-    })
-  } catch {
-    throw new AppError('Gagal mengunggah bukti. Periksa koneksi lalu coba lagi.')
+    const { data } = await http.post<IApiEnvelope<{ url: string }>, FormData>(
+      endpoints.uploads.create,
+      form,
+    )
+    return data.url
+  } catch (e) {
+    // Pesan dari server (mis. berkas terlalu besar) lebih berguna daripada
+    // kalimat umum, jadi diteruskan apa adanya bila ada.
+    const message = (e as AppError)?.message
+    throw new AppError(message || 'Gagal mengunggah bukti. Periksa koneksi lalu coba lagi.')
   }
-
-  return data.publicUrl
 }
 
 export const submissionService = {

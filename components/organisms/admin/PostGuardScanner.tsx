@@ -9,6 +9,8 @@ import Select from '@/components/elements/Select'
 import ErrorMessage from '@/components/elements/ErrorMessage'
 import { useMissionsQuery } from '@/hooks/use-missions'
 import { usePostScanMutation, type PostScanResult } from '@/hooks/use-post-scan'
+import { usePostQueueQuery } from '@/hooks/use-post-queue'
+import PostScoreRow from '@/components/organisms/admin/PostScoreRow'
 import { AppError } from '@/libs/api'
 import { extractToken } from '@/libs/qr-token'
 
@@ -62,6 +64,7 @@ export default function PostGuardScanner() {
 
   const { data: missions } = useMissionsQuery()
   const scan = usePostScanMutation()
+  const queue = usePostQueueQuery(missionId)
 
   // Hanya pos berpetugas yang relevan di sini; misi mandiri tidak punya meja.
   const posts = (missions ?? []).filter(m => m.requiresCheckIn)
@@ -90,13 +93,13 @@ export default function PostGuardScanner() {
 
   const record = useCallback(
     (qrToken: string) => {
-      const { missionId: mId, action: act, queueNumber: queue } = configRef.current
+      const { missionId: mId, action: act, queueNumber: antrean } = configRef.current
       scan.mutate(
         {
           qrToken,
           missionId: mId,
           action: act === 'AUTO' ? undefined : act,
-          queueNumber: queue || undefined,
+          queueNumber: antrean || undefined,
         },
         {
           onSuccess: res => {
@@ -116,6 +119,10 @@ export default function PostGuardScanner() {
                 ...prev,
               ].slice(0, 20),
             )
+            // Kelompok yang baru dipindai harus segera muncul di daftar
+            // penilaian di bawah — itu inti dari menyatukan kedua layar ini.
+            void queue.refetch()
+
             // Dilepas setelah jeda supaya kartu yang sama tidak terbaca
             // berulang selagi kamera masih mengarah padanya.
             setTimeout(() => {
@@ -139,7 +146,7 @@ export default function PostGuardScanner() {
         },
       )
     },
-    [scan],
+    [scan, queue],
   )
 
   const tick = useCallback(
@@ -324,9 +331,57 @@ export default function PostGuardScanner() {
         <ErrorMessage message={cameraError ?? undefined} className="mt-3" />
       </div>
 
-      {log.length > 0 && (
+      {missionId && queue.data && (
         <div className="rounded-lg border-brut bg-paper-raised p-5 shadow-brutal-sm">
-          <h3 className="font-display text-lg text-ink">Catatan Pemindaian</h3>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="font-display text-xl text-ink">Di Pos Sekarang</h3>
+            <span className="font-mono text-xs text-ink/45">
+              {queue.data.active.length} kelompok
+            </span>
+          </div>
+
+          {queue.data.active.length === 0 ? (
+            <p className="mt-3 rounded-md border-brut border-dashed bg-paper px-4 py-6 text-center text-sm text-ink/55">
+              Belum ada kelompok di pos ini. Pindai QR peserta yang datang.
+            </p>
+          ) : (
+            <ul className="mt-3 space-y-2">
+              {queue.data.active.map(row => (
+                <PostScoreRow
+                  key={row.checkInId}
+                  row={row}
+                  mission={queue.data.mission}
+                  onScored={() => queue.refetch()}
+                />
+              ))}
+            </ul>
+          )}
+
+          {queue.data.departed.length > 0 && (
+            <>
+              <p className="mt-6 font-mono text-[10px] uppercase tracking-widest text-ink/45">
+                Sudah pergi · {queue.data.departed.length} kelompok
+              </p>
+              <ul className="mt-2 space-y-2 opacity-70">
+                {queue.data.departed.map(row => (
+                  <PostScoreRow
+                    key={row.checkInId}
+                    row={row}
+                    mission={queue.data.mission}
+                    onScored={() => queue.refetch()}
+                  />
+                ))}
+              </ul>
+            </>
+          )}
+        </div>
+      )}
+
+      {log.length > 0 && (
+        <details className="rounded-lg border-brut bg-paper-raised p-5 shadow-brutal-sm">
+          <summary className="cursor-pointer font-display text-lg text-ink">
+            Catatan Pemindaian
+          </summary>
           <ul className="mt-3 space-y-2">
             {log.map((row, i) => (
               <li
@@ -340,8 +395,9 @@ export default function PostGuardScanner() {
               </li>
             ))}
           </ul>
-        </div>
+        </details>
       )}
+
     </div>
   )
 }

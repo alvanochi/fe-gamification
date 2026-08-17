@@ -35,6 +35,7 @@ export const endpoints = {
     exportLeaderboard: '/admin/export/leaderboard',
     participantQrCards: '/admin/participants/qr',
     postScan: '/admin/post/scan',
+    postQueue: (missionId: string) => `/admin/post/${missionId}/queue`,
   },
   groups: {
     autoGroup: '/groups/auto-group',
@@ -58,8 +59,10 @@ export const endpoints = {
     checkOut: (missionId: string) => `/missions/${missionId}/check-out`,
     verifyLocation: (missionId: string) => `/missions/${missionId}/verify-location`,
   },
+  uploads: {
+    create: '/uploads',
+  },
   submissions: {
-    uploadUrl: '/submissions/upload-url',
     myGroup: '/submissions/my-group',
     pending: '/submissions/pending',
     submit: '/submissions',
