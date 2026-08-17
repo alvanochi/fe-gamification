@@ -14,6 +14,15 @@ import { extractToken } from '@/libs/qr-token'
 
 type ScanState = 'idle' | 'starting' | 'scanning'
 
+/** AUTO membiarkan server menyimpulkan datang atau pergi dari keadaan kelompok. */
+type ActionMode = 'AUTO' | 'CHECK_IN' | 'CHECK_OUT'
+
+interface Flash {
+  ok: boolean
+  title: string
+  detail: string
+}
+
 const waktu = () => new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
 
 /**
@@ -37,14 +46,17 @@ export default function PostGuardScanner() {
   // dirender ulang saat pilihan pos atau mode berubah.
   const configRef = useRef<{
     missionId: string
-    action: 'CHECK_IN' | 'CHECK_OUT'
+    action: ActionMode
     queueNumber: string
-  }>({ missionId: '', action: 'CHECK_IN', queueNumber: '' })
+  }>({ missionId: '', action: 'AUTO', queueNumber: '' })
 
   const [state, setState] = useState<ScanState>('idle')
   const [cameraError, setCameraError] = useState<string | null>(null)
   const [missionId, setMissionId] = useState('')
-  const [action, setAction] = useState<'CHECK_IN' | 'CHECK_OUT'>('CHECK_IN')
+  const [action, setAction] = useState<ActionMode>('AUTO')
+  // Umpan balik sebesar layar: di bawah terik matahari, dengan antrean di
+  // depan, satu baris teks di daftar tidak akan terbaca.
+  const [flash, setFlash] = useState<Flash | null>(null)
   const [queueNumber, setQueueNumber] = useState('')
   const [log, setLog] = useState<Array<{ at: string; text: string; ok: boolean }>>([])
 
@@ -68,14 +80,32 @@ export default function PostGuardScanner() {
 
   useEffect(() => stop, [stop])
 
+  // Kilat hasil pemindaian hilang sendiri; petugas tidak perlu menutupnya
+  // sebelum melayani orang berikutnya.
+  useEffect(() => {
+    if (!flash) return
+    const timer = setTimeout(() => setFlash(null), flash.ok ? 2000 : 4000)
+    return () => clearTimeout(timer)
+  }, [flash])
+
   const record = useCallback(
     (qrToken: string) => {
       const { missionId: mId, action: act, queueNumber: queue } = configRef.current
       scan.mutate(
-        { qrToken, missionId: mId, action: act, queueNumber: queue || undefined },
+        {
+          qrToken,
+          missionId: mId,
+          action: act === 'AUTO' ? undefined : act,
+          queueNumber: queue || undefined,
+        },
         {
           onSuccess: res => {
             const d = res.data as PostScanResult
+            setFlash({
+              ok: true,
+              title: d.action === 'CHECK_IN' ? 'DATANG' : 'PERGI',
+              detail: d.groupName ?? 'Kelompok',
+            })
             setLog(prev =>
               [
                 {
@@ -93,6 +123,11 @@ export default function PostGuardScanner() {
             }, 2500)
           },
           onError: (err: unknown) => {
+            setFlash({
+              ok: false,
+              title: 'GAGAL',
+              detail: (err as AppError).message || 'Tidak tercatat',
+            })
             setLog(prev =>
               [
                 { at: waktu(), ok: false, text: (err as AppError).message || 'Gagal mencatat' },
@@ -190,8 +225,9 @@ export default function PostGuardScanner() {
         <div className="mt-4 flex gap-2">
           {(
             [
-              ['CHECK_IN', 'Kedatangan'],
-              ['CHECK_OUT', 'Kepergian'],
+              ['AUTO', 'Otomatis'],
+              ['CHECK_IN', 'Datang'],
+              ['CHECK_OUT', 'Pergi'],
             ] as const
           ).map(([value, label]) => (
             <button
@@ -208,7 +244,13 @@ export default function PostGuardScanner() {
           ))}
         </div>
 
-        {action === 'CHECK_IN' && (
+        <p className="mt-2 text-xs text-ink/55">
+          {action === 'AUTO'
+            ? 'Kelompok yang belum tercatat di pos ini dianggap datang; yang sudah, dianggap pergi. Kamu tidak perlu menekan apa pun antar peserta.'
+            : 'Mode dikunci manual. Kembalikan ke Otomatis bila antreannya campur datang dan pergi.'}
+        </p>
+
+        {action !== 'CHECK_OUT' && (
           <div className="mt-4">
             <Label htmlFor="antrean">Nomor antrean (opsional)</Label>
             <Input
@@ -228,11 +270,25 @@ export default function PostGuardScanner() {
         </h3>
         <p className="mt-1 text-sm text-ink/60">
           {missionId
-            ? `Arahkan kamera ke QR peserta untuk mencatat ${action === 'CHECK_IN' ? 'kedatangan' : 'kepergian'} kelompoknya.`
+            ? 'Arahkan kamera ke kartu QR peserta — kartu cetak dari panitia, atau QR di layar ponselnya. Cukup satu orang dari tiap kelompok; sisanya ikut tercatat.'
             : 'Pilih pos terlebih dahulu, lalu mulai memindai.'}
         </p>
 
-        <div className="mt-4 overflow-hidden rounded-md border-brut bg-ink/90">
+        <div className="relative mt-4 overflow-hidden rounded-md border-brut bg-ink/90">
+          {flash && (
+            <div
+              role="status"
+              aria-live="assertive"
+              className={`absolute inset-0 z-10 flex flex-col items-center justify-center px-4 text-center ${
+                flash.ok ? 'bg-success' : 'bg-danger'
+              }`}
+            >
+              <p className="font-display text-5xl text-white drop-shadow sm:text-6xl">
+                {flash.title}
+              </p>
+              <p className="mt-2 max-w-xs text-base font-bold text-white/90">{flash.detail}</p>
+            </div>
+          )}
           <video
             ref={videoRef}
             playsInline

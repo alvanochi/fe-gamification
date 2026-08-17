@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
 import MissionCard from '@/components/organisms/race/MissionCard'
+import Pagination from '@/components/fragments/Pagination'
+import AnnouncementPopup from '@/components/fragments/AnnouncementPopup'
+import ValidationToast from '@/components/fragments/ValidationToast'
 import { useProfileQuery } from '@/hooks/use-profile'
 import { useMissionsQuery, useMyCheckInsQuery } from '@/hooks/use-missions'
 import { useMyGroupSubmissionsQuery } from '@/hooks/use-submissions'
@@ -12,12 +15,17 @@ import { useMyAssignmentsQuery } from '@/hooks/use-barter'
 import { useDebounce } from '@/hooks/use-debounce'
 import { useSettingsQuery } from '@/hooks/use-settings'
 import { useRealtime } from '@/hooks/use-realtime'
-import AnnouncementPopup from '@/components/fragments/AnnouncementPopup'
-import { getLatestSubmissionForMission } from '@/utils/mission/submission-status'
 import { MISSION_CATEGORY_LABEL, MISSION_TYPE_LABEL } from '@/utils/mission/type-meta'
-import { Mission, Submission } from '@/types/mission'
+import {
+  SECTION_META,
+  SECTION_ORDER,
+  sectionOf,
+  sortBySection,
+  statusOf,
+  type MissionStatus,
+} from '@/utils/mission/grouping'
 
-type StatusFilter = 'SEMUA' | 'BELUM' | 'MENUNGGU' | 'SELESAI'
+type StatusFilter = 'SEMUA' | MissionStatus
 
 const STATUS_FILTERS: Array<{ value: StatusFilter; label: string }> = [
   { value: 'SEMUA', label: 'Semua' },
@@ -25,12 +33,6 @@ const STATUS_FILTERS: Array<{ value: StatusFilter; label: string }> = [
   { value: 'MENUNGGU', label: 'Menunggu Validasi' },
   { value: 'SELESAI', label: 'Selesai' },
 ]
-
-const statusOf = (mission: Mission, submissions: Submission[]): StatusFilter => {
-  const latest = getLatestSubmissionForMission(submissions, mission.id)
-  if (!latest || latest.status === 'REJECTED') return 'BELUM'
-  return latest.status === 'APPROVED' ? 'SELESAI' : 'MENUNGGU'
-}
 
 export default function RaceMissionsPage() {
   const router = useRouter()
@@ -44,7 +46,16 @@ export default function RaceMissionsPage() {
 
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<StatusFilter>('SEMUA')
+  const [page, setPage] = useState(1)
+  const [perPage, setPerPage] = useState(10)
   const debouncedSearch = useDebounce(search, 300)
+
+  // Mengubah saringan berarti daftar yang lain sama sekali — mulai lagi dari
+  // halaman pertama, bukan bertahan di nomor halaman lama.
+  const changeFilter = (apply: () => void) => {
+    apply()
+    setPage(1)
+  }
 
   const profile = profileQuery.data
   const hasNoGroup = !profileQuery.isLoading && !profile?.groupId
@@ -59,7 +70,7 @@ export default function RaceMissionsPage() {
   const visibleMissions = useMemo(() => {
     const keyword = debouncedSearch.trim().toLowerCase()
 
-    return missions.filter(mission => {
+    const filtered = missions.filter(mission => {
       if (status !== 'SEMUA' && statusOf(mission, submissions) !== status) return false
       if (!keyword) return true
 
@@ -76,7 +87,15 @@ export default function RaceMissionsPage() {
         .toLowerCase()
         .includes(keyword)
     })
+
+    return sortBySection(filtered, submissions)
   }, [missions, submissions, status, debouncedSearch])
+
+  const totalPages = Math.max(1, Math.ceil(visibleMissions.length / perPage))
+  // Hasil pencarian bisa menyusut sementara pembaca masih di halaman jauh;
+  // dijepit saat render supaya layarnya tidak pernah kosong.
+  const safePage = Math.min(page, totalPages)
+  const pageItems = visibleMissions.slice((safePage - 1) * perPage, safePage * perPage)
 
   const initialLoading =
     profileQuery.isLoading || missionsQuery.isLoading || submissionsQuery.isLoading
@@ -121,18 +140,18 @@ export default function RaceMissionsPage() {
     SELESAI: missions.filter(m => statusOf(m, submissions) === 'SELESAI').length,
   }
 
+  const progress = missions.length ? Math.round((counts.SELESAI / missions.length) * 100) : 0
+
   return (
     <div className="min-h-[100dvh] bg-paper px-4 py-10 sm:px-8">
       <AnnouncementPopup />
+      <ValidationToast />
+
       <div className="mx-auto max-w-5xl">
         <Link href="/race" className="font-mono text-xs uppercase tracking-widest text-secondary">
           ← Kembali
         </Link>
         <h1 className="mt-2 font-display text-3xl text-ink sm:text-4xl">Misi Saya</h1>
-        <p className="mt-2 text-sm text-ink/60">
-          Kerjakan misi bersama timmu untuk mengumpulkan poin. Misi wajib harus diselesaikan lebih
-          dulu.
-        </p>
 
         {missions.length === 0 ? (
           <p className="mt-8 rounded-md border-brut bg-paper-raised p-6 text-center text-sm text-ink/60">
@@ -140,13 +159,39 @@ export default function RaceMissionsPage() {
           </p>
         ) : (
           <>
+            {/* Kemajuan tim dalam satu baris — lebih cepat ditangkap daripada
+                menghitung sendiri dari daftar. */}
+            <div className="mt-4 rounded-md border-brut bg-paper-raised px-4 py-3">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <p className="font-bold text-ink">
+                  {counts.SELESAI} dari {missions.length} misi selesai
+                </p>
+                <p className="font-mono text-xs text-ink/50">
+                  {counts.MENUNGGU} menunggu validasi · {counts.BELUM} belum
+                </p>
+              </div>
+              <div
+                role="progressbar"
+                aria-valuenow={progress}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="Kemajuan misi tim"
+                className="mt-2 h-3 w-full overflow-hidden rounded-full border-brut-sm bg-paper"
+              >
+                <div
+                  className="h-full bg-success transition-[width] duration-500"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+
             {/* Menempel di atas saat menggulir — dengan puluhan misi, kolom cari
                 yang ikut hilang ke atas membuat pencarian jadi merepotkan. */}
             <div className="sticky top-0 z-30 -mx-4 mt-6 border-b-brut bg-paper px-4 py-4 sm:-mx-8 sm:px-8">
               <input
                 type="search"
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={e => changeFilter(() => setSearch(e.target.value))}
                 placeholder="Cari misi, lokasi, atau kategori…"
                 className="w-full rounded-md border-brut bg-paper-raised px-4 py-3 font-medium text-ink shadow-brutal-sm focus:outline-none"
               />
@@ -156,7 +201,7 @@ export default function RaceMissionsPage() {
                   <button
                     key={filter.value}
                     type="button"
-                    onClick={() => setStatus(filter.value)}
+                    onClick={() => changeFilter(() => setStatus(filter.value))}
                     aria-pressed={status === filter.value}
                     className={`rounded-full border-brut-sm px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wide brutal-press-sm ${
                       status === filter.value
@@ -175,25 +220,47 @@ export default function RaceMissionsPage() {
                 Tidak ada misi yang cocok dengan pencarianmu.
               </p>
             ) : (
-              <>
-                <p className="mt-6 font-mono text-xs uppercase tracking-widest text-ink/45">
-                  Menampilkan {visibleMissions.length} dari {missions.length} misi
-                </p>
+              <div className="mt-6 space-y-8">
+                {SECTION_ORDER.map(key => {
+                  // Tiap halaman menampilkan bagian yang kebetulan jatuh di
+                  // dalamnya; daftar sudah diurutkan mengikuti urutan bagian,
+                  // jadi satu bagian jarang terpotong dua halaman.
+                  const inSection = pageItems.filter(m => sectionOf(m, submissions) === key)
+                  if (inSection.length === 0) return null
 
-                {/* Dua kolom di layar lebar supaya tidak menumpuk memanjang.
-                    items-start menjaga tiap kartu setinggi isinya sendiri. */}
-                <ul className="mt-3 grid items-start gap-4 lg:grid-cols-2">
-                  {visibleMissions.map(mission => (
-                    <MissionCard
-                      key={mission.id}
-                      mission={mission}
-                      submissions={submissions}
-                      checkIn={checkIns.find(c => c.missionId === mission.id) ?? null}
-                      assignment={assignments.find(a => a.missionId === mission.id) ?? null}
-                    />
-                  ))}
-                </ul>
-              </>
+                  const meta = SECTION_META[key]
+                  return (
+                    <section key={key}>
+                      <div className="flex flex-wrap items-baseline gap-x-3">
+                        <h2 className={`font-display text-xl ${meta.accent}`}>{meta.title}</h2>
+                        <span className="font-mono text-xs text-ink/40">{inSection.length} misi</span>
+                      </div>
+                      <p className="mt-0.5 text-sm text-ink/55">{meta.hint}</p>
+
+                      <ul className="mt-3 grid items-start gap-4 lg:grid-cols-2">
+                        {inSection.map(mission => (
+                          <MissionCard
+                            key={mission.id}
+                            mission={mission}
+                            submissions={submissions}
+                            checkIn={checkIns.find(c => c.missionId === mission.id) ?? null}
+                            assignment={assignments.find(a => a.missionId === mission.id) ?? null}
+                          />
+                        ))}
+                      </ul>
+                    </section>
+                  )
+                })}
+
+                <Pagination
+                  page={safePage}
+                  perPage={perPage}
+                  total={visibleMissions.length}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  onPerPageChange={value => changeFilter(() => setPerPage(value))}
+                />
+              </div>
             )}
           </>
         )}
