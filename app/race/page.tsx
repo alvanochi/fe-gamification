@@ -6,6 +6,7 @@ import NoGroupStep from '@/components/organisms/race/NoGroupStep'
 import GroupSelfieStep from '@/components/organisms/race/GroupSelfieStep'
 import VoteLeaderStep from '@/components/organisms/race/VoteLeaderStep'
 import NameGroupStep from '@/components/organisms/race/NameGroupStep'
+import YelYelStep from '@/components/organisms/race/YelYelStep'
 import GroupSuccessScreen from '@/components/organisms/race/GroupSuccessScreen'
 import BoardingPassPanel from '@/components/organisms/race/BoardingPassPanel'
 import CheckInGate from '@/components/organisms/race/CheckInGate'
@@ -27,7 +28,13 @@ export default function RacePage() {
   // semua perangkat kelompok tanpa menunggu polling.
   useRealtime(groupId)
 
-  const groupQuery = useGroupQuery(groupId, query => (query.state.data?.nameSetAt ? false : 3000))
+  // Berhenti menyegarkan begitu onboarding benar-benar tuntas — termasuk
+  // yel-yel, yang tenggatnya masih berjalan setelah kelompok dinamai.
+  const groupQuery = useGroupQuery(groupId, query => {
+    const data = query.state.data
+    if (!data?.nameSetAt) return 3000
+    return data.yelYel && !data.yelYel.done ? 3000 : false
+  })
   const initialLoading =
     profileQuery.isLoading || (!!groupId && groupQuery.isLoading)
 
@@ -110,6 +117,17 @@ export default function RacePage() {
       <>
         {chrome}
         <NameGroupStep group={group} myId={profile.id} />
+      </>
+    )
+  }
+
+  // Yel-yel menutup rangkaian checkpoint. Kelompok yang sudah mengirimnya,
+  // memilih melewatinya, atau kehabisan waktu langsung lanjut ke perlombaan.
+  if (group.yelYel && !group.yelYel.done) {
+    return (
+      <>
+        {chrome}
+        <YelYelStep group={group} yelYel={group.yelYel} myId={profile.id} />
       </>
     )
   }

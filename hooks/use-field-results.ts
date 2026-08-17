@@ -7,6 +7,7 @@ export interface AdminGroup {
   id: string
   name: string
   score: number
+  categoryId: string | null
 }
 
 export interface FieldResultPayload {

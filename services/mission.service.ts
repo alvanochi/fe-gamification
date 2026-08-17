@@ -27,7 +27,18 @@ export const missionService = {
   },
 
   questions(missionId: string) {
-    return http.get<IApiEnvelope<MissionQuestion[]>>(endpoints.missions.questions(missionId))
+    // `locked` menandai soal yang belum terbuka karena kelompok belum
+    // membuktikan berada di lokasi misi.
+    return http.get<IApiEnvelope<{ locked: boolean; questions: MissionQuestion[] }>>(
+      endpoints.missions.questions(missionId),
+    )
+  },
+
+  verifyLocation(missionId: string, lat: number, lng: number) {
+    return http.post<
+      IApiEnvelope<{ verified: boolean; distance: number; alreadyVerified: boolean }>,
+      { lat: number; lng: number }
+    >(endpoints.missions.verifyLocation(missionId), { lat, lng })
   },
 
   setQuestions(missionId: string, questions: unknown[]) {

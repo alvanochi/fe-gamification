@@ -51,6 +51,25 @@ export const useMissionQuestionsQuery = (missionId: string) => {
   })
 }
 
+/**
+ * Peserta membuktikan sudah berdiri di lokasi misi.
+ *
+ * Koordinat diambil dari perangkat lalu diperiksa server; jaraknya tidak
+ * pernah dihitung di sisi klien. Berhasilnya membuka soal misi.
+ */
+export const useVerifyLocationMutation = (missionId: string) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ lat, lng }: { lat: number; lng: number }) =>
+      missionService.verifyLocation(missionId, lat, lng),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mission-questions', missionId] })
+      queryClient.invalidateQueries({ queryKey: ['my-checkins'] })
+    },
+  })
+}
+
 export const useSetQuestionsMutation = () => {
   const queryClient = useQueryClient()
 

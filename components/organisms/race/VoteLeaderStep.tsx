@@ -19,7 +19,14 @@ export default function VoteLeaderStep({ group, myId }: VoteLeaderStepProps) {
   // jadi jangan sampai terkirim karena salah ketuk.
   const [pendingNominee, setPendingNominee] = useState<GroupMember | null>(null)
   const { mutate: vote, isPending, variables } = useVoteLeaderMutation(group.id)
-  const candidates = group.members.filter(m => m.id !== myId)
+
+  // Putaran kedua mempersempit pilihan ke calon yang tadi seri di puncak.
+  // Mengulang dari seluruh anggota cenderung menghasilkan kebuntuan yang sama.
+  const runoff = group.runoffCandidateIds
+  const isRunoff = !!runoff?.length
+  const candidates = group.members.filter(
+    m => m.id !== myId && (!isRunoff || runoff!.includes(m.id)),
+  )
 
   const handleVote = (nomineeId: string) => {
     setNotice(null)
@@ -27,8 +34,12 @@ export default function VoteLeaderStep({ group, myId }: VoteLeaderStepProps) {
       onSuccess: response => {
         const result = response.data as VoteResult
         setVotedFor(nomineeId)
-        if (result.status === 'NEEDS_REVOTE') {
-          setNotice('Hasil voting seri — silakan vote ulang.')
+        if (result.status === 'NEEDS_RUNOFF') {
+          const names = result.runoffCandidates.map(c => c.fullname).join(' dan ')
+          setNotice(`Suara seri antara ${names}. Pilih salah satu dari mereka.`)
+          setVotedFor(null)
+        } else if (result.status === 'NEEDS_REVOTE') {
+          setNotice('Belum ada yang memenuhi syarat — silakan pilih lagi.')
           setVotedFor(null)
         }
       },
@@ -42,10 +53,20 @@ export default function VoteLeaderStep({ group, myId }: VoteLeaderStepProps) {
 
   return (
     <RaceShell
-      eyebrow="Checkpoint 4 · Voting Ketua"
+      eyebrow={isRunoff ? 'Checkpoint 4 · Putaran Kedua' : 'Checkpoint 4 · Voting Ketua'}
       title="PILIH KETUA TIM"
-      subtitle="Setiap anggota memilih satu nama. Ketua sah jika suara terbanyak tanpa hasil seri."
+      subtitle={
+        isRunoff
+          ? 'Putaran pertama berakhir seri. Pilih satu dari calon yang tersisa.'
+          : 'Setiap anggota memilih satu nama. Ketua sah jika suara terbanyak tanpa hasil seri.'
+      }
     >
+      {isRunoff && candidates.length === 0 && (
+        <p className="mb-4 rounded-md border-brut bg-warning/15 px-4 py-3 text-sm text-ink/70">
+          Kamu salah satu calon di putaran ini, jadi tidak ikut memilih. Tunggu suara anggota lain.
+        </p>
+      )}
+
       <ul className="space-y-3">
         {candidates.map(member => {
           const isSelected = votedFor === member.id

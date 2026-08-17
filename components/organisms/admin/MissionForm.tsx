@@ -50,6 +50,7 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
       clueType: 'NONE',
       proofType: 'FOTO',
       requiresCheckIn: false,
+      isYelYel: false,
       scoringMode: 'FLAT',
     },
   })
@@ -384,6 +385,20 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
           <input type="checkbox" className="h-4 w-4 border-brut-sm" {...register('requiresCheckIn')} />
           Wajib check-in di pos sebelum mengirim bukti
         </label>
+        <p className="text-xs text-ink/55">
+          Kedatangan dan kepergian di pos ini dicatat petugas lewat pemindaian QR peserta, bukan
+          oleh peserta sendiri.
+        </p>
+
+        <label className="flex items-center gap-2 text-sm font-bold text-ink">
+          <input type="checkbox" className="h-4 w-4 border-brut-sm" {...register('isYelYel')} />
+          Jadikan ini misi yel-yel
+        </label>
+        <p className="text-xs text-ink/55">
+          Misi yel-yel muncul sebagai checkpoint terakhir sebelum perlombaan, dengan tenggat sendiri
+          yang mulai berjalan begitu kelompok diberi nama. Hanya boleh ada satu — menandai misi ini
+          otomatis melepas penandanya dari misi lain.
+        </p>
       </div>
 
       {type === 'SOAL_LOKASI' && (

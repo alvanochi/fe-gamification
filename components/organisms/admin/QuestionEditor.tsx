@@ -53,9 +53,11 @@ export default function QuestionEditor({ mission, onClose }: { mission: Mission;
 
   useEffect(() => {
     if (!existing) return
+    // Panitia tidak pernah dipagari lokasi, jadi `locked` selalu false di sini.
+    const rows = existing.questions
     setQuestions(
-      existing.length
-        ? existing.map(q => ({
+      rows.length
+        ? rows.map(q => ({
             questionText: q.questionText,
             imageUrl: q.imageUrl ?? undefined,
             type: q.type,
