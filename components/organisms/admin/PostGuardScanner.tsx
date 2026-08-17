@@ -10,6 +10,7 @@ import ErrorMessage from '@/components/elements/ErrorMessage'
 import { useMissionsQuery } from '@/hooks/use-missions'
 import { usePostScanMutation, type PostScanResult } from '@/hooks/use-post-scan'
 import { AppError } from '@/libs/api'
+import { extractToken } from '@/libs/qr-token'
 
 type ScanState = 'idle' | 'starting' | 'scanning'
 
@@ -121,9 +122,12 @@ export default function PostGuardScanner() {
           const found = jsQR(image.data, image.width, image.height, {
             inversionAttempts: 'dontInvert',
           })
-          if (found?.data && found.data !== lastTokenRef.current) {
-            lastTokenRef.current = found.data
-            record(found.data)
+          // Kartu cetak berisi URL; QR di layar peserta berisi token telanjang.
+          // Keduanya harus sampai ke server sebagai token.
+          const token = found?.data ? extractToken(found.data) : null
+          if (token && token !== lastTokenRef.current) {
+            lastTokenRef.current = token
+            record(token)
           }
         }
       }

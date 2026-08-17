@@ -7,6 +7,7 @@ import Button from '@/components/elements/Button'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
 import { useParticipantQrCardsQuery, type ParticipantQrCard } from '@/hooks/use-qr-cards'
 import { useDebounce } from '@/hooks/use-debounce'
+import { qrLoginUrl } from '@/libs/qr-token'
 
 /** Satu kartu QR siap gunting. */
 function Card({ participant }: { participant: ParticipantQrCard }) {
@@ -15,7 +16,9 @@ function Card({ participant }: { participant: ParticipantQrCard }) {
 
   useEffect(() => {
     if (!canvasRef.current || !token) return
-    QRCode.toCanvas(canvasRef.current, token, {
+    // URL, bukan token telanjang — supaya kamera bawaan ponsel peserta
+    // langsung membuka halaman masuknya.
+    QRCode.toCanvas(canvasRef.current, qrLoginUrl(token), {
       width: 150,
       margin: 1,
       errorCorrectionLevel: 'M',

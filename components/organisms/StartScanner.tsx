@@ -8,18 +8,7 @@ import Button from '@/components/elements/Button'
 import ErrorMessage from '@/components/elements/ErrorMessage'
 import { authService } from '@/services/auth.service'
 import { AppError } from '@/libs/api'
-
-/** Ambil token dari isi QR — baik berupa URL maupun token telanjang. */
-const extractToken = (raw: string): string | null => {
-  const trimmed = raw.trim()
-  try {
-    const url = new URL(trimmed)
-    return url.searchParams.get('t') ?? url.searchParams.get('token')
-  } catch {
-    // Bukan URL — anggap isinya token itu sendiri.
-    return trimmed || null
-  }
-}
+import { extractToken } from '@/libs/qr-token'
 
 /**
  * Tombol Mulai di beranda: membuka kamera, memindai QR cetak peserta, lalu

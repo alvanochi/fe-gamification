@@ -6,6 +6,7 @@ import Button from '@/components/elements/Button'
 import ErrorMessage from '@/components/elements/ErrorMessage'
 import { useCheckInByQrMutation } from '@/hooks/use-checkin'
 import { AppError } from '@/libs/api'
+import { extractToken } from '@/libs/qr-token'
 
 type ScanState = 'idle' | 'starting' | 'scanning'
 
@@ -61,9 +62,10 @@ export default function QrScanner() {
           inversionAttempts: 'dontInvert',
         })
 
-        if (found?.data && found.data !== lastTokenRef.current) {
-          lastTokenRef.current = found.data
-          checkIn(found.data, {
+        const token = found?.data ? extractToken(found.data) : null
+        if (token && token !== lastTokenRef.current) {
+          lastTokenRef.current = token
+          checkIn(token, {
             onSuccess: res => setFeedback(res.message),
             // Token yang gagal dilepas lagi agar bisa dicoba ulang.
             onError: () => {
