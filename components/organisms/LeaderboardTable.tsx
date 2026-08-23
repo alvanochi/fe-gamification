@@ -17,7 +17,7 @@ export default function LeaderboardTable({
 }) {
   if (rows.length === 0) {
     return (
-      <p className="rounded-md border-brut border-primary/30 bg-[#1f1b16] px-6 py-8 text-center text-sm text-paper/60">
+      <p className="rounded-md border-brut border-primary/30 bg-scoreboard-raised px-6 py-8 text-center text-sm text-scoreboard-ink/60">
         Belum ada poin yang masuk. Klasemen akan terisi begitu misi pertama disetujui panitia.
       </p>
     )
@@ -38,7 +38,7 @@ export default function LeaderboardTable({
             <div className="flex min-w-0 items-center gap-4">
               <span className="w-8 shrink-0 font-display text-lg text-primary">{index + 1}</span>
               <span className="shrink-0 text-lg">{MEDALS[index] ?? ''}</span>
-              <span className="truncate font-bold text-paper">
+              <span className="truncate font-bold text-scoreboard-ink">
                 {row.name}
                 {isMe && <span className="ml-2 font-mono text-[10px] text-primary">TIM KAMU</span>}
               </span>

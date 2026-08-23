@@ -1,5 +1,5 @@
 const STEPS = [
-  { title: 'Scan QR', desc: 'Pindai QR yang diberikan panitia — kamu langsung masuk ke akunmu.' },
+  { title: 'Masuk', desc: 'Cari namamu di kolom masuk, isi nomor teleponmu, dan kamu langsung di dalam.' },
   { title: 'Gabung Tim', desc: 'Panitia membentuk tim, dan sistem mengacak siapa saja anggotanya.' },
   { title: 'Konfirmasi', desc: 'Temukan anggota timmu di lokasi, lalu unggah satu foto bersama.' },
   { title: 'Pilih Ketua', desc: 'Satu suara per anggota. Ketua terpilih, lalu beri nama tim kalian.' },

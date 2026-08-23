@@ -4,20 +4,11 @@ import { useRef } from 'react'
 import { useGSAP } from '@gsap/react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import Button from '@/components/elements/Button'
 import SponsorStrip from '@/components/organisms/SponsorStrip'
-import { useLenis } from '@/providers/SmoothScrollProvider'
 
 gsap.registerPlugin(ScrollTrigger)
 
 export default function FooterCtaSection() {
-  const lenis = useLenis()
-
-  const goToLogin = () => {
-    if (lenis) lenis.scrollTo('#masuk', { offset: -88 })
-    else document.querySelector('#masuk')?.scrollIntoView({ behavior: 'smooth' })
-  }
-
   const ref = useRef<HTMLDivElement>(null)
 
   useGSAP(
@@ -69,11 +60,6 @@ export default function FooterCtaSection() {
             <p className="mx-auto mt-3 max-w-md text-ink/70">
               Cari namamu, masukkan nomor teleponmu, dan langsung mulai bertanding bersama timmu.
             </p>
-            <div className="mt-8 flex flex-wrap justify-center gap-4">
-              <Button size="lg" variant="primary" onClick={goToLogin}>
-                Masuk
-              </Button>
-            </div>
           </div>
         </div>
 
