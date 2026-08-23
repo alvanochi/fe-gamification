@@ -61,18 +61,31 @@ export default function LoginSection() {
   }
 
   return (
-    <section id="masuk" className="scroll-mt-24 px-6 py-20">
+    <section
+      id="masuk"
+      className="scroll-mt-24 border-t-brut bg-scoreboard px-6 py-24 text-scoreboard-ink"
+    >
       <div className="mx-auto max-w-md">
-        <p className="text-center font-mono text-xs uppercase tracking-[0.3em] text-secondary">
-          Sudah Terdaftar?
-        </p>
-        <h2 className="mt-2 text-center font-display text-3xl text-ink sm:text-4xl">MASUK</h2>
-        <p className="mx-auto mt-3 max-w-sm text-center text-sm text-ink/60">
+        <div className="flex items-center justify-center gap-3">
+          <span aria-hidden className="h-px w-10 bg-primary" />
+          <span className="font-mono text-xs uppercase tracking-[0.3em] text-primary">
+            Garis Start
+          </span>
+          <span aria-hidden className="h-px w-10 bg-primary" />
+        </div>
+
+        <h2 className="mt-3 text-center font-display text-4xl text-scoreboard-ink sm:text-5xl">
+          MASUK
+        </h2>
+        <p className="mx-auto mt-3 max-w-sm text-center text-sm text-scoreboard-ink/60">
           Cari namamu, lalu masukkan nomor telepon yang kamu berikan saat didaftarkan panitia.
         </p>
 
         <div className="mt-8 rounded-lg border-brut-lg bg-paper-raised p-6 shadow-brutal-lg">
           <Label htmlFor="cari-nama" required>
+            <span className="mr-2 inline-flex size-5 items-center justify-center rounded-full bg-primary font-mono text-[10px] text-primary-ink">
+              1
+            </span>
             Nama lengkap
           </Label>
 
@@ -144,6 +157,13 @@ export default function LoginSection() {
 
           <div className="mt-5">
             <Label htmlFor="nomor-telepon" required>
+              <span
+                className={`mr-2 inline-flex size-5 items-center justify-center rounded-full font-mono text-[10px] ${
+                  picked ? 'bg-primary text-primary-ink' : 'bg-ink/15 text-ink/45'
+                }`}
+              >
+                2
+              </span>
               Nomor telepon
             </Label>
             <Input
@@ -153,7 +173,7 @@ export default function LoginSection() {
               inputMode="tel"
               value={phone}
               onChange={e => setPhone(e.target.value)}
-              placeholder="08…"
+              placeholder={picked ? '08…' : 'Pilih namamu dulu'}
               disabled={!picked}
               onKeyDown={e => {
                 if (e.key === 'Enter') void submit()
@@ -173,13 +193,6 @@ export default function LoginSection() {
             Masuk
           </Button>
 
-          <p className="mt-4 text-center text-xs text-ink/50">
-            Panitia masuk lewat{' '}
-            <a href="/auth/login" className="font-bold text-secondary underline">
-              halaman panitia
-            </a>
-            .
-          </p>
         </div>
       </div>
     </section>

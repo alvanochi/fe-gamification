@@ -3,18 +3,8 @@
 import { useRef } from 'react'
 import { useGSAP } from '@gsap/react'
 import { gsap } from 'gsap'
-import Button from '@/components/elements/Button'
-import { useLenis } from '@/providers/SmoothScrollProvider'
 
 export default function HeroSection() {
-  const lenis = useLenis()
-
-  // Satu-satunya ajakan di layar pembuka: turun ke kolom masuk.
-  const goToLogin = () => {
-    if (lenis) lenis.scrollTo('#masuk', { offset: -88 })
-    else document.querySelector('#masuk')?.scrollIntoView({ behavior: 'smooth' })
-  }
-
   const ref = useRef<HTMLDivElement>(null)
 
   useGSAP(
@@ -82,19 +72,6 @@ export default function HeroSection() {
             selesaikan misi, dukung UMKM lokal, dan rebut posisi puncak leaderboard.
           </p>
 
-          {/* Peserta didaftarkan panitia sebelum acara, jadi tidak ada
-              pendaftaran mandiri di sini. Jalan masuknya satu: cari nama, isi
-              nomor telepon — di kaki halaman. */}
-          <div className="mt-8 flex flex-wrap gap-4" id="daftar">
-            <div data-hero-cta>
-              <Button size="lg" variant="primary" onClick={goToLogin}>
-                Masuk
-              </Button>
-            </div>
-          </div>
-          <p className="mt-3 text-sm text-ink/60">
-            Belum terdaftar? Hubungi panitia di meja registrasi.
-          </p>
         </div>
       </div>
     </section>

@@ -36,6 +36,14 @@
   --color-ink: var(--ink);
   --color-paper: var(--paper);
   --color-paper-raised: var(--paper-raised);
+
+  /* Papan skor sengaja gelap di kedua tema — ia ditonton dari layar proyektor
+     di ruangan yang lampunya diredupkan. Warnanya karena itu tidak ikut
+     membalik: `ink`/`paper` yang membalik justru membuat teksnya menghilang
+     di atas kartu yang tetap gelap. */
+  --color-scoreboard: #171512;
+  --color-scoreboard-raised: #1f1b16;
+  --color-scoreboard-ink: #f5f1e6;
   --color-primary: var(--primary);
   --color-primary-ink: var(--primary-ink);
   --color-secondary: var(--secondary);

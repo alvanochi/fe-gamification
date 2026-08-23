@@ -20,7 +20,7 @@ export default function LeaderboardPage() {
   useRealtime(null)
 
   return (
-    <div className="min-h-[100dvh] bg-ink px-4 py-10 text-paper sm:px-8">
+    <div className="min-h-[100dvh] bg-scoreboard px-4 py-10 text-scoreboard-ink sm:px-8">
       <div className="mx-auto max-w-3xl">
         {/* Klasemen dibuka dari mana-mana — beranda, layar misi, panel panitia.
             Memaksa kembali ke beranda membuang tempat pembaca tadi berada. */}
@@ -43,7 +43,7 @@ export default function LeaderboardPage() {
           </Button>
         </div>
 
-        <p className="mt-3 text-sm text-paper/60">
+        <p className="mt-3 text-sm text-scoreboard-ink/60">
           Poin masuk otomatis setiap panitia menyetujui bukti misi, dan papan ini langsung ikut
           berubah saat itu juga.
           {dataUpdatedAt > 0 && (
@@ -51,7 +51,7 @@ export default function LeaderboardPage() {
           )}
         </p>
 
-        <div className="mt-8 rounded-lg border-brut-lg border-primary bg-[#1f1b16] p-4 shadow-brutal-lg sm:p-6">
+        <div className="mt-8 rounded-lg border-brut-lg border-primary bg-scoreboard-raised p-4 shadow-brutal-lg sm:p-6">
           {isLoading ? (
             <CardSkeleton />
           ) : error ? (

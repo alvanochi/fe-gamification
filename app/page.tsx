@@ -18,8 +18,8 @@ export default function Home() {
         <LeaderboardTeaserSection />
         <SponsorUmkmMarqueeSection />
       </main>
-      <LoginSection />
       <FooterCtaSection />
+      <LoginSection />
     </div>
   )
 }
