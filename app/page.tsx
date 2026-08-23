@@ -4,6 +4,7 @@ import HowItWorksSection from '@/components/organisms/landing/HowItWorksSection'
 import LeaderboardTeaserSection from '@/components/organisms/landing/LeaderboardTeaserSection'
 import SponsorUmkmMarqueeSection from '@/components/organisms/landing/SponsorUmkmMarqueeSection'
 import FooterCtaSection from '@/components/organisms/landing/FooterCtaSection'
+import LoginSection from '@/components/organisms/landing/LoginSection'
 import InteractiveBackground from '@/components/elements/InteractiveBackground'
 
 export default function Home() {
@@ -17,6 +18,7 @@ export default function Home() {
         <LeaderboardTeaserSection />
         <SponsorUmkmMarqueeSection />
       </main>
+      <LoginSection />
       <FooterCtaSection />
     </div>
   )

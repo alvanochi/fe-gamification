@@ -2,6 +2,7 @@ export const endpoints = {
   auth: {
     login: '/authentications',
     loginQr: '/authentications/qr',
+    loginParticipant: '/authentications/participant',
     refresh: '/authentications',
     logout: '/authentications',
   },
@@ -10,6 +11,7 @@ export const endpoints = {
     me: '/users/me/profile',
     getById: (id: string) => `/users/${id}`,
     checkInByQr: '/users/check-in/qr',
+    search: '/users/search',
   },
   sponsors: {
     list: '/sponsors',
@@ -31,6 +33,10 @@ export const endpoints = {
     accountRole: (userId: string) => `/admin/accounts/${userId}/role`,
     accountRoles: '/admin/accounts/roles',
     accountQrTokens: '/admin/accounts/qr-tokens',
+    account: (userId: string) => `/admin/accounts/${userId}`,
+    sheetAccountTemplate: '/admin/sheets/accounts/template',
+    sheetAccounts: '/admin/sheets/accounts',
+    sheetGroups: '/admin/sheets/groups',
     verifyBarter: (assignmentId: string) => `/admin/barter/${assignmentId}/verify`,
     exportLeaderboard: '/admin/export/leaderboard',
     participantQrCards: '/admin/participants/qr',

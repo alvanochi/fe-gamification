@@ -369,8 +369,12 @@ export default function MissionCard({
 
       {canSubmit && mission.type === 'SOAL_LOKASI' && (
         <div className="mt-4 space-y-3">
-          {textAnswerInput}
           {evidencePicker}
+          {/* Isian teks hanya diminta bila misinya memang tidak meminta berkas.
+              Sebelumnya keduanya wajib sekaligus, sehingga misi lokasi yang
+              buktinya foto tetap menolak dikirim sampai peserta mengarang
+              jawaban teks yang tidak pernah diminta. */}
+          {!needsFile && textAnswerInput}
 
           <Button
             variant="secondary"
@@ -389,9 +393,8 @@ export default function MissionCard({
             loading={isPending}
             disabled={
               blockedByCheckIn ||
-              (needsFile && !evidenceFile) ||
-              !answerText.trim() ||
-              !geolocation.coords
+              !geolocation.coords ||
+              (needsFile ? !evidenceFile : !answerText.trim())
             }
             onClick={handleSubmitSoalLokasi}
           >

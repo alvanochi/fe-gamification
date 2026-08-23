@@ -3,7 +3,6 @@
 import { useRef } from 'react'
 import { useGSAP } from '@gsap/react'
 import { gsap } from 'gsap'
-import Link from 'next/link'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Button from '@/components/elements/Button'
 import ThemeToggle from '@/components/elements/ThemeToggle'
@@ -81,13 +80,12 @@ export default function StickyNav() {
 
         <div className="flex items-center gap-3">
           <ThemeToggle />
-          {/* Pendaftaran mandiri ditiadakan: peserta didaftarkan panitia lalu
-              menerima QR cetak. Yang tersisa hanya jalan masuk lewat pindai. */}
-          <Link href="/scan" className="hidden sm:inline-flex">
-            <Button size="sm" variant="primary">
-              Pindai QR
-            </Button>
-          </Link>
+          {/* Pendaftaran mandiri ditiadakan: peserta didaftarkan panitia. QR
+              cetaknya kini hanya dipakai untuk lapor pos, jadi jalan masuknya
+              adalah kolom nama & nomor telepon di kaki halaman. */}
+          <Button size="sm" variant="primary" onClick={() => scrollTo('#masuk')}>
+            Masuk
+          </Button>
         </div>
       </div>
     </nav>

@@ -10,7 +10,6 @@ const LINKS = [
   { href: '/admin/control', label: 'Kendali Acara' },
   { href: '/admin/monitoring', label: 'Monitoring' },
   { href: '/admin/validation', label: 'Validasi' },
-  { href: '/admin/check-in', label: 'Check-in QR' },
   { href: '/admin/post', label: 'Pos' },
   { href: '/admin/barter', label: 'Barter' },
   { href: '/admin/missions', label: 'Kelola Misi', superOnly: true },

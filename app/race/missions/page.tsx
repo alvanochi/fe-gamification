@@ -8,6 +8,7 @@ import MissionCard from '@/components/organisms/race/MissionCard'
 import Pagination from '@/components/fragments/Pagination'
 import AnnouncementPopup from '@/components/fragments/AnnouncementPopup'
 import ValidationToast from '@/components/fragments/ValidationToast'
+import BoardingPassPanel from '@/components/organisms/race/BoardingPassPanel'
 import { useProfileQuery } from '@/hooks/use-profile'
 import { useMissionsQuery, useMyCheckInsQuery } from '@/hooks/use-missions'
 import { useMyGroupSubmissionsQuery } from '@/hooks/use-submissions'
@@ -146,6 +147,10 @@ export default function RaceMissionsPage() {
     <div className="min-h-[100dvh] bg-paper px-4 py-10 sm:px-8">
       <AnnouncementPopup />
       <ValidationToast />
+      {/* QR peserta dipakai petugas pos sepanjang perlombaan, jadi ia harus
+          terjangkau dari layar misi — bukan hanya dari rangkaian checkpoint
+          yang sudah ditinggalkan. */}
+      <BoardingPassPanel />
 
       <div className="mx-auto max-w-5xl">
         <Link href="/race" className="font-mono text-xs uppercase tracking-widest text-secondary">
@@ -221,6 +226,17 @@ export default function RaceMissionsPage() {
               </p>
             ) : (
               <div className="mt-6 space-y-8">
+                {/* Di atas daftar: dengan kartu misi setinggi ini, kendali
+                    halaman di kaki daftar berarti menggulir jauh hanya untuk
+                    pindah halaman. */}
+                <Pagination
+                  page={safePage}
+                  perPage={perPage}
+                  total={visibleMissions.length}
+                  totalPages={totalPages}
+                  onPageChange={setPage}
+                  onPerPageChange={value => changeFilter(() => setPerPage(value))}
+                />
                 {SECTION_ORDER.map(key => {
                   // Tiap halaman menampilkan bagian yang kebetulan jatuh di
                   // dalamnya; daftar sudah diurutkan mengikuti urutan bagian,
@@ -252,14 +268,6 @@ export default function RaceMissionsPage() {
                   )
                 })}
 
-                <Pagination
-                  page={safePage}
-                  perPage={perPage}
-                  total={visibleMissions.length}
-                  totalPages={totalPages}
-                  onPageChange={setPage}
-                  onPerPageChange={value => changeFilter(() => setPerPage(value))}
-                />
               </div>
             )}
           </>

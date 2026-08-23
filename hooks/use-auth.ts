@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
+import { userService } from '@/services/user.service'
 import { authService } from '@/services/auth.service'
 
 export const useLoginMutation = () => {
@@ -24,7 +25,13 @@ export const useLoginMutation = () => {
       // cosmetic flicker).
       queryClient.clear()
 
-      router.push('/race')
+      // Halaman masuk ini sekarang khusus panitia — peserta masuk lewat kolom
+      // nama & nomor telepon di beranda. Mengantar mereka ke /race berarti
+      // mendaratkan panitia di layar peserta yang tidak berlaku bagi mereka,
+      // lalu memaksa mencari sendiri tautan ke panelnya.
+      const profile = (await userService.getProfile()).data
+      const isPanitia = profile.role === 'ADMIN' || profile.role === 'SUPER_ADMIN'
+      router.replace(isPanitia ? '/admin/monitoring' : '/race')
     },
     onError: (error: Error) => {
       console.error(error)
