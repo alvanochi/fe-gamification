@@ -5,6 +5,7 @@ import Button from '@/components/elements/Button'
 import Input from '@/components/elements/Input'
 import Label from '@/components/elements/Label'
 import ErrorMessage from '@/components/elements/ErrorMessage'
+import SponsorLogo from '@/components/fragments/SponsorLogo'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
 import {
   useAdminSponsorsQuery,
@@ -24,9 +25,8 @@ function SponsorRow({ sponsor }: { sponsor: SponsorAdmin }) {
   return (
     <li className="rounded-md border-brut bg-paper p-4">
       <div className="flex items-center gap-4">
-        <div className="flex h-14 w-24 shrink-0 items-center justify-center rounded-sm border-brut-sm bg-paper-raised p-1">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={sponsor.logoUrl} alt={sponsor.name} className="max-h-full max-w-full object-contain" />
+        <div className="flex h-14 w-24 shrink-0 items-center justify-center rounded-sm border-brut-sm bg-white p-1">
+          <SponsorLogo src={sponsor.logoUrl} name={sponsor.name} className="max-h-full max-w-full" />
         </div>
 
         <div className="min-w-0 flex-1">

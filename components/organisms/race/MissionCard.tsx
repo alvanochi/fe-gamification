@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react'
 import Button from '@/components/elements/Button'
 import ErrorMessage from '@/components/elements/ErrorMessage'
+import SponsorLogo from '@/components/fragments/SponsorLogo'
 import { useSubmitMissionWithEvidenceMutation } from '@/hooks/use-submissions'
 import { useCheckInMutation, useCheckOutMutation } from '@/hooks/use-missions'
 import { useSponsorsQuery } from '@/hooks/use-sponsors'
@@ -263,8 +264,9 @@ export default function MissionCard({
       {/* FR-11: penanda misi yang didukung sponsor. */}
       {sponsor && (
         <div className="mt-3 flex items-center gap-2 rounded-md border-brut-sm border-secondary bg-secondary/10 px-3 py-2">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={sponsor.logoUrl} alt={sponsor.name} className="h-6 w-auto max-w-[64px] object-contain" />
+          <span className="flex h-6 w-auto min-w-10 max-w-[64px] items-center justify-center rounded-sm bg-white px-1">
+            <SponsorLogo src={sponsor.logoUrl} name={sponsor.name} className="max-h-5 max-w-full" />
+          </span>
           <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-secondary">
             Misi didukung {sponsor.name}
           </p>
