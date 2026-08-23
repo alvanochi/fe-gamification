@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import Button from '@/components/elements/Button'
 import LeaderboardTable from '@/components/organisms/LeaderboardTable'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
@@ -9,6 +9,7 @@ import { useHasSession, useProfileQuery } from '@/hooks/use-profile'
 import { useRealtime } from '@/hooks/use-realtime'
 
 export default function LeaderboardPage() {
+  const router = useRouter()
   const { data: rows, isLoading, isFetching, error, refetch, dataUpdatedAt } = useLeaderboardQuery()
   // Endpoint klasemen terbuka, jadi halaman ini tetap bisa dibuka tanpa sesi
   // (mis. dari layar proyektor); profil hanya dipakai untuk menyorot tim sendiri
@@ -21,9 +22,15 @@ export default function LeaderboardPage() {
   return (
     <div className="min-h-[100dvh] bg-ink px-4 py-10 text-paper sm:px-8">
       <div className="mx-auto max-w-3xl">
-        <Link href="/" className="font-mono text-xs uppercase tracking-widest text-primary">
-          ← Beranda
-        </Link>
+        {/* Klasemen dibuka dari mana-mana — beranda, layar misi, panel panitia.
+            Memaksa kembali ke beranda membuang tempat pembaca tadi berada. */}
+        <button
+          type="button"
+          onClick={() => (window.history.length > 1 ? router.back() : router.push('/'))}
+          className="font-mono text-xs uppercase tracking-widest text-primary"
+        >
+          ← Kembali
+        </button>
 
         <div className="mt-2 flex flex-wrap items-end justify-between gap-4">
           <div>

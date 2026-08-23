@@ -97,3 +97,82 @@ export const useSetAccountRolesBulkMutation = () => {
     },
   })
 }
+
+export interface AccountPayload {
+  fullname?: string
+  phoneNumber?: string
+  email?: string | null
+  businessName?: string | null
+  role?: AccountRole
+}
+
+export const useCreateAccountMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: AccountPayload) =>
+      http.post<IApiEnvelope<{ id: string; fullname: string }>, AccountPayload>(
+        endpoints.admin.accounts,
+        payload,
+      ),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-accounts'] }),
+  })
+}
+
+export const useUpdateAccountMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ userId, ...payload }: { userId: string } & AccountPayload) =>
+      http.put<IApiEnvelope<{ id: string }>, AccountPayload>(
+        endpoints.admin.account(userId),
+        payload,
+      ),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-accounts'] }),
+  })
+}
+
+export const useDeleteAccountMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (userId: string) =>
+      http.delete<IApiEnvelope<null>>(endpoints.admin.account(userId)),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin-accounts'] }),
+  })
+}
+
+export interface SheetImportResult {
+  created?: number
+  updated?: number
+  placed?: number
+  groups?: number
+  skipped: Array<{ row: number; name: string; reason: string }>
+}
+
+/**
+ * Unggah lembar kerja peserta atau susunan kelompok.
+ *
+ * Daftar peserta acara ini hidup di spreadsheet jauh sebelum sistemnya ada,
+ * dan panitia menata pembagian kelompok jauh lebih cepat di sana.
+ */
+export const useSheetImportMutation = (kind: 'accounts' | 'groups') => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (file: File) => {
+      const form = new FormData()
+      form.append('file', file)
+      return http.post<IApiEnvelope<SheetImportResult>, FormData>(
+        kind === 'accounts' ? endpoints.admin.sheetAccounts : endpoints.admin.sheetGroups,
+        form,
+      )
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-accounts'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-groups'] })
+      queryClient.invalidateQueries({ queryKey: ['group-categories'] })
+      queryClient.invalidateQueries({ queryKey: ['monitoring'] })
+    },
+  })
+}

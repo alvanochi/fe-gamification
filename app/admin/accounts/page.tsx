@@ -19,8 +19,8 @@ export default function AdminAccountsPage() {
             <AdminNav />
           </div>
           <p className="mt-2 text-sm text-ink/60">
-            Semua orang di acara ini dalam satu daftar. Pilih beberapa sekaligus untuk mencetak
-            kartu QR-nya, atau — bila kamu Super Admin — mengubah perannya.
+            Semua akun acara ini dalam satu daftar. Buat satu per satu atau unggah dari Excel,
+            pilih beberapa sekaligus untuk mencetak kartu QR, dan atur perannya bila perlu.
           </p>
 
           <div className="mt-8">

@@ -17,7 +17,8 @@ import { Group } from '@/types/group'
  * kelompok berisi enam orang.
  */
 export default function GroupSelfieStep({ group, myId }: { group: Group; myId: string }) {
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const cameraInputRef = useRef<HTMLInputElement>(null)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const { mutate: completePhoto, isPending, error } = useGroupPhotoMutation(group.id)
@@ -28,6 +29,12 @@ export default function GroupSelfieStep({ group, myId }: { group: Group; myId: s
   const me = group.members.find(m => m.id === myId)
   const others = group.members.filter(m => m.id !== myId)
   const ordered = me ? [me, ...others] : group.members
+
+  const pick = (file?: File | null) => {
+    if (!file) return
+    setPhotoFile(file)
+    setPreviewUrl(URL.createObjectURL(file))
+  }
 
   const alreadyUploaded = !!group.photoCompletedAt
   const uploaderName = group.photoByName ?? null
@@ -79,26 +86,28 @@ export default function GroupSelfieStep({ group, myId }: { group: Group; myId: s
         </div>
       ) : (
         <div className="mt-6 space-y-3">
-          {/* capture="user" meminta kamera depan langsung terbuka di ponsel.
-              Di desktop peramban tetap menampilkan pemilih berkas — itu batas
-              yang tidak bisa dipaksakan dari sisi web. */}
+          {/* Dua jalur terpisah. `capture` memaksa kamera dan di banyak ponsel
+              justru menutup akses ke galeri, padahal kelompok sering sudah
+              memotret duluan dengan aplikasi kamera bawaan. */}
           <input
-            ref={fileInputRef}
+            ref={cameraInputRef}
             type="file"
             accept="image/*"
             capture="user"
             className="hidden"
-            onChange={e => {
-              const file = e.target.files?.[0]
-              if (!file) return
-              setPhotoFile(file)
-              setPreviewUrl(URL.createObjectURL(file))
-            }}
+            onChange={e => pick(e.target.files?.[0])}
+          />
+          <input
+            ref={galleryInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/*"
+            className="hidden"
+            onChange={e => pick(e.target.files?.[0])}
           />
 
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => cameraInputRef.current?.click()}
             className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-md border-brut bg-paper"
           >
             {previewUrl ? (
@@ -110,6 +119,15 @@ export default function GroupSelfieStep({ group, myId }: { group: Group; myId: s
               </span>
             )}
           </button>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Button size="sm" variant="secondary" onClick={() => cameraInputRef.current?.click()}>
+              Buka Kamera
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => galleryInputRef.current?.click()}>
+              Pilih dari Galeri
+            </Button>
+          </div>
 
           <Button
             size="lg"

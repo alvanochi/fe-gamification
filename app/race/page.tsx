@@ -1,6 +1,7 @@
 'use client'
 
-import Link from 'next/link'
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
 import NoGroupStep from '@/components/organisms/race/NoGroupStep'
 import GroupSelfieStep from '@/components/organisms/race/GroupSelfieStep'
@@ -9,7 +10,6 @@ import NameGroupStep from '@/components/organisms/race/NameGroupStep'
 import YelYelStep from '@/components/organisms/race/YelYelStep'
 import GroupSuccessScreen from '@/components/organisms/race/GroupSuccessScreen'
 import BoardingPassPanel from '@/components/organisms/race/BoardingPassPanel'
-import CheckInGate from '@/components/organisms/race/CheckInGate'
 import LogoutButton from '@/components/fragments/LogoutButton'
 import AnnouncementPopup from '@/components/fragments/AnnouncementPopup'
 import { useRealtime } from '@/hooks/use-realtime'
@@ -17,8 +17,8 @@ import { useProfileQuery } from '@/hooks/use-profile'
 import { useGroupQuery } from '@/hooks/use-group'
 
 export default function RacePage() {
-  // Disegarkan berkala agar gerbang kehadiran membuka sendiri setelah dipindai.
-  const profileQuery = useProfileQuery({ refetchInterval: 3000 })
+  const router = useRouter()
+  const profileQuery = useProfileQuery()
   const profile = profileQuery.data
   const groupId = profile?.groupId ?? null
 
@@ -38,16 +38,15 @@ export default function RacePage() {
   const initialLoading =
     profileQuery.isLoading || (!!groupId && groupQuery.isLoading)
 
+  // Rangkaian checkpoint ini milik peserta seluruhnya — panitia tidak punya
+  // kelompok, tidak memilih ketua, dan tidak mengirim yel-yel. Mendaratkan
+  // mereka di sini hanya menyisakan layar yang menunggu sesuatu yang tidak
+  // akan pernah terjadi.
   const isPanitia = profile?.role === 'ADMIN' || profile?.role === 'SUPER_ADMIN'
 
-  const adminLink = isPanitia ? (
-    <Link
-      href="/admin/missions"
-      className="fixed right-4 top-4 z-50 rounded-md border-brut bg-secondary px-4 py-2 font-display text-xs uppercase text-secondary-ink shadow-brutal-sm brutal-press-sm"
-    >
-      Panel Panitia
-    </Link>
-  ) : null
+  useEffect(() => {
+    if (isPanitia) router.replace('/admin/monitoring')
+  }, [isPanitia, router])
 
   // Ditempelkan di setiap checkpoint, bukan hanya di layar sukses — peserta
   // perlu menunjukkan QR-nya sejak tiba di meja registrasi.
@@ -55,7 +54,6 @@ export default function RacePage() {
     <>
       <AnnouncementPopup />
       <LogoutButton floating />
-      {adminLink}
       <BoardingPassPanel />
     </>
   )
@@ -70,16 +68,10 @@ export default function RacePage() {
 
   if (!profile) return null
 
-  // Gerbang kehadiran: peserta yang belum dipindai panitia berhenti di sini.
-  // Panitia tidak ikut dipindai, jadi tidak dihadang.
-  if (profile.role === 'PARTICIPANT' && !profile.checkInAt) {
-    return (
-      <>
-        <LogoutButton floating />
-        <CheckInGate profile={profile} />
-      </>
-    )
-  }
+  // Tidak ada lagi gerbang kehadiran di sini. Kehadiran ditandai saat peserta
+  // masuk dengan nama & nomor teleponnya, jadi menahan mereka lagi untuk
+  // dipindai panitia berarti mengantre dua kali untuk hal yang sama. QR
+  // peserta tetap dipakai, tetapi untuk lapor pos.
 
   if (!groupId || !groupQuery.data) {
     return (
