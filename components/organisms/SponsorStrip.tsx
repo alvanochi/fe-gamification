@@ -1,5 +1,6 @@
 'use client'
 
+import SponsorLogo from '@/components/fragments/SponsorLogo'
 import { useSponsorsQuery } from '@/hooks/use-sponsors'
 
 /**
@@ -26,14 +27,11 @@ export default function SponsorStrip({
       <ul className="mt-3 flex flex-wrap items-center justify-center gap-3">
         {sponsors.map(sponsor => {
           const logo = (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={sponsor.logoUrl}
-              alt={sponsor.name}
-              title={sponsor.name}
-              loading="lazy"
-              className="h-10 w-auto max-w-[120px] object-contain"
-            />
+            // Alas putih supaya logo gelap beralas tembus pandang tetap
+            // terbaca di mode gelap.
+            <span className="flex h-10 w-auto min-w-16 max-w-[120px] items-center justify-center rounded-sm bg-white px-2">
+              <SponsorLogo src={sponsor.logoUrl} name={sponsor.name} className="max-h-8 max-w-full" />
+            </span>
           )
 
           return (
