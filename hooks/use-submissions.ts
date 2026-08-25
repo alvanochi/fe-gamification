@@ -28,6 +28,22 @@ export const usePendingSubmissionsQuery = () => {
   })
 }
 
+/**
+ * Berapa banyak yang menunggu panitia.
+ *
+ * Ringan dengan sengaja: navigasi panel ada di setiap halaman, dan menarik
+ * seluruh antrean beserta URL buktinya tiap sepuluh detik hanya untuk
+ * menampilkan satu angka jelas terlalu mahal.
+ */
+export const usePendingCountsQuery = (enabled = true) => {
+  return useQuery({
+    queryKey: ['pending-counts'],
+    queryFn: async () => (await submissionService.pendingCounts()).data,
+    enabled,
+    refetchInterval: 10_000,
+  })
+}
+
 export const useValidateSubmissionMutation = () => {
   const queryClient = useQueryClient()
 
@@ -36,6 +52,7 @@ export const useValidateSubmissionMutation = () => {
       submissionService.validate(submissionId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pending-submissions'] })
+      queryClient.invalidateQueries({ queryKey: ['pending-counts'] })
     },
   })
 }

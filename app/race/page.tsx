@@ -12,6 +12,7 @@ import GroupSuccessScreen from '@/components/organisms/race/GroupSuccessScreen'
 import QrPosPanel from '@/components/organisms/race/QrPosPanel'
 import LogoutButton from '@/components/fragments/LogoutButton'
 import AnnouncementPopup from '@/components/fragments/AnnouncementPopup'
+import AppToast from '@/components/fragments/AppToast'
 import { useRealtime } from '@/hooks/use-realtime'
 import { useProfileQuery } from '@/hooks/use-profile'
 import { useGroupQuery } from '@/hooks/use-group'
@@ -53,6 +54,9 @@ export default function RacePage() {
   const chrome = (
     <>
       <AnnouncementPopup />
+      {/* Hasil validasi panitia dan pemindaian QR di pos sampai ke peserta
+          sebagai kabar, bukan sebagai angka yang bergeser diam-diam. */}
+      <AppToast />
       <LogoutButton floating />
       <QrPosPanel />
     </>
@@ -127,7 +131,7 @@ export default function RacePage() {
   return (
     <>
       {chrome}
-      <GroupSuccessScreen group={group} />
+      <GroupSuccessScreen group={group} myId={profile.id} />
     </>
   )
 }

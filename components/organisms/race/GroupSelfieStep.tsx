@@ -5,6 +5,7 @@ import RaceShell from '@/components/fragments/RaceShell'
 import Button from '@/components/elements/Button'
 import ErrorMessage from '@/components/elements/ErrorMessage'
 import MediaPicker from '@/components/fragments/MediaPicker'
+import MemberList from '@/components/fragments/MemberList'
 import FormationCountdown from '@/components/organisms/race/FormationCountdown'
 import { IMAGE_ACCEPT } from '@/utils/mission/type-meta'
 import { useGroupPhotoMutation } from '@/hooks/use-group'
@@ -23,12 +24,6 @@ export default function GroupSelfieStep({ group, myId }: { group: Group; myId: s
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const { mutate: completePhoto, isPending, error } = useGroupPhotoMutation(group.id)
   const apiError = error as AppError | null
-
-  // Diri sendiri selalu di urutan teratas supaya peserta tidak perlu menggulir
-  // mencari namanya di kelompok berisi enam orang.
-  const me = group.members.find(m => m.id === myId)
-  const others = group.members.filter(m => m.id !== myId)
-  const ordered = me ? [me, ...others] : group.members
 
   const pick = (file: File) => {
     setPhotoFile(file)
@@ -50,23 +45,12 @@ export default function GroupSelfieStep({ group, myId }: { group: Group; myId: s
       {/* Lencana kategori kelompok disembunyikan bersama fitur kategori —
           lihat catatan di /admin/categories. */}
 
-      <ul className="mt-4 space-y-2">
-        {ordered.map(member => (
-          <li
-            key={member.id}
-            className={`flex items-center justify-between gap-3 rounded-md border-brut px-4 py-3 ${
-              member.id === myId ? 'bg-primary/15' : 'bg-paper'
-            }`}
-          >
-            <span className="truncate font-bold text-ink">{member.fullname}</span>
-            {member.id === myId && (
-              <span className="shrink-0 rounded-sm border-brut-sm bg-primary px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-widest text-primary-ink">
-                Kamu
-              </span>
-            )}
-          </li>
-        ))}
-      </ul>
+      <MemberList
+        members={group.members}
+        myId={myId}
+        leaderId={group.leaderId}
+        className="mt-4"
+      />
 
       {alreadyUploaded ? (
         <div className="mt-6 rounded-md border-brut !border-success bg-paper px-4 py-4 text-center">

@@ -16,8 +16,8 @@ import { useDebounce } from '@/hooks/use-debounce'
 import { usePagination } from '@/hooks/use-pagination'
 import { AppError } from '@/libs/api'
 import QuestionEditor from '@/components/organisms/admin/QuestionEditor'
-import { Mission } from '@/types/mission'
-import { groupByMissionType } from '@/utils/mission/grouping'
+import { Mission, MissionType } from '@/types/mission'
+import { MISSION_TYPE_ORDER, groupByMissionType } from '@/utils/mission/grouping'
 import {
   MISSION_TYPE_LABEL as TYPE_LABEL,
   MISSION_TYPE_COLOR_VAR as TYPE_COLOR_VAR,
@@ -177,17 +177,19 @@ export default function MissionList() {
   const { data: missions, isLoading, error } = useMissionsQuery()
   const [editingQuestions, setEditingQuestions] = useState<Mission | null>(null)
   const [search, setSearch] = useState('')
+  const [typeFilter, setTypeFilter] = useState<MissionType | 'SEMUA'>('SEMUA')
   const debounced = useDebounce(search, 300)
 
   const filtered = useMemo(() => {
     const keyword = debounced.trim().toLowerCase()
-    if (!keyword) return missions ?? []
-    return (missions ?? []).filter(m =>
-      `${m.title} ${m.description} ${m.locationName ?? ''} ${TYPE_LABEL[m.type]}`
+    return (missions ?? []).filter(m => {
+      if (typeFilter !== 'SEMUA' && m.type !== typeFilter) return false
+      if (!keyword) return true
+      return `${m.title} ${m.description} ${m.locationName ?? ''} ${TYPE_LABEL[m.type]}`
         .toLowerCase()
-        .includes(keyword),
-    )
-  }, [missions, debounced])
+        .includes(keyword)
+    })
+  }, [missions, debounced, typeFilter])
 
   const pagination = usePagination(filtered)
 
@@ -241,6 +243,44 @@ export default function MissionList() {
         placeholder="Cari misi, lokasi, atau jenisnya…"
       />
 
+      {/* Saringan per jenis misi. Dengan puluhan misi di satu acara, menyunting
+          "semua Soal Lokasi" berarti memindai seluruh daftar tanpa ini. */}
+      <div className="flex flex-wrap gap-2">
+        {(['SEMUA', ...MISSION_TYPE_ORDER] as const).map(value => {
+          const active = typeFilter === value
+          const count =
+            value === 'SEMUA'
+              ? (missions ?? []).length
+              : (missions ?? []).filter(m => m.type === value).length
+
+          return (
+            <button
+              key={value}
+              type="button"
+              aria-pressed={active}
+              onClick={() => {
+                setTypeFilter(value)
+                pagination.resetPage()
+              }}
+              style={
+                active && value !== 'SEMUA'
+                  ? { backgroundColor: TYPE_COLOR_VAR[value], color: '#fff' }
+                  : undefined
+              }
+              className={`rounded-full border-brut-sm px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wide brutal-press-sm ${
+                active && value === 'SEMUA'
+                  ? 'bg-primary text-primary-ink'
+                  : active
+                    ? ''
+                    : 'bg-paper-raised text-ink/70'
+              }`}
+            >
+              {value === 'SEMUA' ? 'Semua jenis' : TYPE_LABEL[value]} ({count})
+            </button>
+          )
+        })}
+      </div>
+
       <Pagination
         page={pagination.page}
         perPage={pagination.perPage}
@@ -252,7 +292,7 @@ export default function MissionList() {
 
       {filtered.length === 0 ? (
         <p className="rounded-md border-brut bg-paper-raised p-6 text-center text-sm text-ink/60">
-          Tidak ada misi yang cocok dengan pencarianmu.
+          Tidak ada misi yang cocok dengan pencarian dan saringanmu.
         </p>
       ) : (
         groupByMissionType(pagination.pageItems, mission => mission.type).map(group => (

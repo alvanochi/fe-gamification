@@ -46,6 +46,13 @@ export const submissionService = {
     return http.get<IApiEnvelope<PendingSubmission[]>>(endpoints.submissions.pending)
   },
 
+  /** Hanya angkanya — dibaca lencana navigasi di setiap halaman panel. */
+  pendingCounts() {
+    return http.get<IApiEnvelope<{ submissions: number; barterSteps: number; total: number }>>(
+      endpoints.submissions.pendingCount,
+    )
+  },
+
   submit(payload: SubmitMissionPayload) {
     return http.post<IApiEnvelope<{ id: string }>, SubmitMissionPayload>(
       endpoints.submissions.submit,

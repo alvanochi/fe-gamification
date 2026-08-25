@@ -14,6 +14,10 @@ export interface BarterQueueItem {
   groupId: string
   groupName: string
   missionTitle: string
+  /** Rantai barter kelompok ini — sasaran tombol "Akhiri". */
+  assignmentId: string
+  /** Berapa pertukaran kelompok ini yang sudah disetujui sebelumnya. */
+  approvedSteps: number
 }
 
 export const useBarterQueueQuery = () =>
@@ -35,6 +39,30 @@ export const useValidateBarterStepMutation = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['barter-queue'] })
       qc.invalidateQueries({ queryKey: ['leaderboard'] })
+      qc.invalidateQueries({ queryKey: ['pending-counts'] })
+    },
+  })
+}
+
+/**
+ * Mengakhiri rantai barter satu kelompok dengan nilai akhir.
+ *
+ * Bigger Better tidak punya garis akhir alami — kelompok bisa terus menukar
+ * sampai waktu habis. Panitialah yang menutupnya, dan setelah itu misinya
+ * berhenti muncul sebagai tugas di layar kelompok tersebut.
+ */
+export const useFinishBarterMutation = () => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (vars: { assignmentId: string; point: number }) =>
+      http.post<IApiEnvelope<{ point: number }>, { point: number }>(
+        endpoints.admin.finishBarter(vars.assignmentId),
+        { point: vars.point },
+      ),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['barter-queue'] })
+      qc.invalidateQueries({ queryKey: ['leaderboard'] })
+      qc.invalidateQueries({ queryKey: ['pending-counts'] })
     },
   })
 }

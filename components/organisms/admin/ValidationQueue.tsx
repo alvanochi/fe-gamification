@@ -66,7 +66,9 @@ function QueueCard({ submission }: { submission: PendingSubmission }) {
   const [units, setUnits] = useState('')
   const [timeSeconds, setTimeSeconds] = useState('')
   const [rejectReason, setRejectReason] = useState('')
-  const [isRejecting, setIsRejecting] = useState(false)
+  // Dua keputusan yang sama-sama tidak bisa dibatalkan: poin yang sudah masuk
+  // ikut mengubah klasemen, dan penolakan mengembalikan misinya ke peserta.
+  const [pending, setPending] = useState<'APPROVE' | 'REJECT' | null>(null)
 
   const parsedPoint = Number(awardedPoint)
   const pointValid = hasRange
@@ -188,7 +190,7 @@ function QueueCard({ submission }: { submission: PendingSubmission }) {
           className="flex-1"
           loading={actingOn === 'REJECTED'}
           disabled={isPending}
-          onClick={() => setIsRejecting(true)}
+          onClick={() => setPending('REJECT')}
         >
           Tolak
         </Button>
@@ -197,15 +199,7 @@ function QueueCard({ submission }: { submission: PendingSubmission }) {
           className="flex-1"
           loading={actingOn === 'APPROVED'}
           disabled={isPending || !pointValid}
-          onClick={() =>
-            validate({
-              submissionId: submission.id,
-              status: 'APPROVED',
-              awardedPoint: hasRange ? parsedPoint : undefined,
-              units: isPerUnit ? Number(units) : undefined,
-              timeSeconds: isTimeBased ? Number(timeSeconds) : undefined,
-            })
-          }
+          onClick={() => setPending('APPROVE')}
         >
           Setujui
         </Button>
@@ -221,12 +215,48 @@ function QueueCard({ submission }: { submission: PendingSubmission }) {
       )}
       <ErrorMessage message={apiError?.message} className="mt-2" />
 
+      <ConfirmModal
+        open={pending === 'APPROVE'}
+        title={`Setujui bukti ${submission.groupName}?`}
+        description={
+          <>
+            <p>
+              <strong>{submission.missionTitle}</strong> akan ditandai selesai dan poinnya langsung
+              masuk ke klasemen.
+            </p>
+            <p className="mt-2 font-bold text-ink">
+              Poin yang diberikan:{' '}
+              {hasRange
+                ? parsedPoint
+                : previewPoint !== null
+                  ? previewPoint
+                  : submission.pointWeight}
+            </p>
+          </>
+        }
+        confirmLabel="Ya, Setujui"
+        loading={actingOn === 'APPROVED'}
+        onConfirm={() =>
+          validate(
+            {
+              submissionId: submission.id,
+              status: 'APPROVED',
+              awardedPoint: hasRange ? parsedPoint : undefined,
+              units: isPerUnit ? Number(units) : undefined,
+              timeSeconds: isTimeBased ? Number(timeSeconds) : undefined,
+            },
+            { onSettled: () => setPending(null) },
+          )
+        }
+        onCancel={() => setPending(null)}
+      />
+
       {/* Penolakan dikonfirmasi, dan alasannya diketik di dialog yang sama.
           Sebelumnya kolom alasan berdiri di kartu — mudah terlewat — dan satu
           ketukan langsung menolak bukti tanpa penjelasan apa pun untuk tim
           yang menerimanya. */}
       <ConfirmModal
-        open={isRejecting}
+        open={pending === 'REJECT'}
         title={`Tolak bukti ${submission.groupName}?`}
         description={
           <>
@@ -252,10 +282,10 @@ function QueueCard({ submission }: { submission: PendingSubmission }) {
               status: 'REJECTED',
               rejectReason: rejectReason.trim() || undefined,
             },
-            { onSettled: () => setIsRejecting(false) },
+            { onSettled: () => setPending(null) },
           )
         }
-        onCancel={() => setIsRejecting(false)}
+        onCancel={() => setPending(null)}
       />
     </li>
   )

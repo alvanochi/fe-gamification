@@ -36,7 +36,7 @@ export const endpoints = {
     account: (userId: string) => `/admin/accounts/${userId}`,
     sheetAccountTemplate: '/admin/sheets/accounts/template',
     sheetAccounts: '/admin/sheets/accounts',
-    verifyBarter: (assignmentId: string) => `/admin/barter/${assignmentId}/verify`,
+    finishBarter: (assignmentId: string) => `/admin/barter/${assignmentId}/finish`,
     exportLeaderboard: '/admin/export/leaderboard',
     participantQrCards: '/admin/participants/qr',
     postScan: '/admin/post/scan',
@@ -55,6 +55,8 @@ export const endpoints = {
   },
   missions: {
     list: '/missions',
+    /** Papan misi peserta: pencarian, saringan, dan halaman dihitung server. */
+    board: '/missions/board',
     detail: (missionId: string) => `/missions/${missionId}`,
     myAssignments: '/missions/my-assignments',
     myCheckIns: '/missions/my-checkins',
@@ -70,6 +72,7 @@ export const endpoints = {
   submissions: {
     myGroup: '/submissions/my-group',
     pending: '/submissions/pending',
+    pendingCount: '/submissions/pending/count',
     submit: '/submissions',
     validate: (submissionId: string) => `/submissions/${submissionId}/validate`,
     barterStep: '/submissions/barter-steps',

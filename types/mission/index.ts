@@ -59,6 +59,41 @@ export interface Mission {
   updatedAt: string
 }
 
+/** Keadaan sebuah misi bagi satu kelompok — dihitung server. */
+export type MissionBoardStatus = 'BELUM' | 'MENUNGGU' | 'SELESAI'
+
+export interface BoardMission extends Mission {
+  groupStatus: MissionBoardStatus
+  /** Sesinya hampir tutup, atau misi ini menahan misi lain. */
+  urgent: boolean
+  /** Sisa menit sampai sesi misi tutup; null bila misinya tanpa sesi. */
+  minutesToSessionEnd: number | null
+  /** Rantai barter yang sudah diakhiri panitia. */
+  barterClosed: boolean
+}
+
+/** Papan misi peserta: sudah dicari, disaring, diurutkan, dan dipenggal server. */
+export interface MissionBoard {
+  page: number
+  perPage: number
+  total: number
+  totalPages: number
+  counts: Record<'SEMUA' | MissionBoardStatus, number>
+  typeCounts: Record<MissionType, number>
+  urgentCount: number
+  urgentWindowMinutes: number
+  items: BoardMission[]
+}
+
+export interface MissionBoardParams {
+  search?: string
+  status?: 'SEMUA' | MissionBoardStatus
+  type?: 'SEMUA' | MissionType
+  urgent?: boolean
+  page?: number
+  perPage?: number
+}
+
 export interface MissionQuestionOption {
   id: string
   optionText: string
@@ -199,6 +234,16 @@ export interface ValidateSubmissionPayload {
   rejectReason?: string
 }
 
+/** Satu soal misi kuis, disusun bersamaan dengan misinya. */
+export interface MissionQuestionPayload {
+  questionText: string
+  imageUrl?: string
+  type: QuestionType
+  answerKey?: string
+  point: number
+  options?: Array<{ optionText: string; isCorrect: boolean }>
+}
+
 export interface CreateMissionPayload {
   title: string
   description: string
@@ -229,4 +274,6 @@ export interface CreateMissionPayload {
   pointPerUnit?: number
   maxUnits?: number
   timeTargetSeconds?: number
+  /** Wajib untuk misi KUIS — soalnya ikut dikirim saat misi dibuat. */
+  questions?: MissionQuestionPayload[]
 }

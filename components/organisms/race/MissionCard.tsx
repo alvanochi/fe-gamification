@@ -12,7 +12,7 @@ import { useGeolocation } from '@/hooks/use-geolocation'
 import { AppError } from '@/libs/api'
 import BarterChain from '@/components/organisms/race/BarterChain'
 import QuizForm from '@/components/organisms/race/QuizForm'
-import { Assignment, Mission, MissionCheckIn, Submission } from '@/types/mission'
+import { Assignment, BoardMission, Mission, MissionCheckIn, Submission } from '@/types/mission'
 import { getLatestSubmissionForMission } from '@/utils/mission/submission-status'
 import {
   CLUE_TYPE_LABEL,
@@ -119,7 +119,7 @@ export default function MissionCard({
   checkIn,
   assignment,
 }: {
-  mission: Mission
+  mission: BoardMission
   submissions: Submission[]
   checkIn?: MissionCheckIn | null
   assignment?: Assignment | null
@@ -208,6 +208,18 @@ export default function MissionCard({
           {mission.requiresCheckIn && ' · PERLU CHECK-IN'}
         </p>
       </div>
+
+      {/* Penanda mendesak: sesi misi ini hampir tutup, atau misi ini yang
+          menahan misi lain terbuka. Ditaruh di kepala kartu supaya terbaca
+          bersama jenis misinya, tanpa perlu membuka detailnya. */}
+      {mission.urgent && (
+        <p className="border-b-brut-sm bg-danger px-5 py-1.5 font-mono text-[11px] font-bold uppercase tracking-widest text-white">
+          ⏳{' '}
+          {mission.minutesToSessionEnd != null && mission.minutesToSessionEnd >= 0
+            ? `Sesi tutup ${mission.minutesToSessionEnd} menit lagi`
+            : 'Kerjakan dulu — misi lain menunggu ini'}
+        </p>
+      )}
 
       <div className="p-5">
         <div className="flex items-start justify-between gap-3">

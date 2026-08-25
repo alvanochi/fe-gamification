@@ -2,9 +2,10 @@ import Link from 'next/link'
 import RaceShell from '@/components/fragments/RaceShell'
 import Button from '@/components/elements/Button'
 import SponsorStrip from '@/components/organisms/SponsorStrip'
+import MemberList from '@/components/fragments/MemberList'
 import { Group } from '@/types/group'
 
-export default function GroupSuccessScreen({ group }: { group: Group }) {
+export default function GroupSuccessScreen({ group, myId }: { group: Group; myId: string }) {
   // Kelompok yang melewati yel-yel dan belum mengirimnya perlu terus diingatkan
   // — tenggatnya berjalan diam-diam sementara mereka sibuk berlomba.
   const yelYel = group.yelYel
@@ -31,21 +32,7 @@ export default function GroupSuccessScreen({ group }: { group: Group }) {
         </Link>
       )}
 
-      <ul className="space-y-2">
-        {group.members.map(member => (
-          <li
-            key={member.id}
-            className="flex items-center justify-between rounded-md border-brut bg-paper px-4 py-3"
-          >
-            <span className="font-bold text-ink">{member.fullname}</span>
-            {member.id === group.leaderId && (
-              <span className="rounded-sm border-brut-sm bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-primary-ink">
-                Ketua
-              </span>
-            )}
-          </li>
-        ))}
-      </ul>
+      <MemberList members={group.members} myId={myId} leaderId={group.leaderId} />
 
       <Link href="/race/missions">
         <Button size="lg" className="mt-6 w-full">

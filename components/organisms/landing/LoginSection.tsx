@@ -129,26 +129,45 @@ export default function LoginSection() {
                       Nama itu tidak ditemukan. Coba ejaan lain, atau tanya panitia.
                     </p>
                   ) : (
-                    <ul className="max-h-56 overflow-y-auto">
-                      {matches.map(m => (
-                        <li key={m.id}>
-                          <button
-                            type="button"
-                            onClick={() => setPicked(m)}
-                            className="block w-full border-b border-ink/10 px-4 py-2.5 text-left last:border-b-0 hover:bg-primary/10"
-                          >
-                            <span className="block truncate text-sm font-bold text-ink">
-                              {m.fullname}
-                            </span>
-                            {m.businessName && (
-                              <span className="block truncate text-xs text-ink/50">
-                                {m.businessName}
+                    <>
+                      <p className="border-b border-ink/10 px-4 py-2 font-mono text-[10px] uppercase tracking-widest text-ink/45">
+                        {matches.length} nama cocok · ketuk namamu
+                      </p>
+                      {/* `data-lenis-prevent` melepaskan daftar ini dari
+                          penggulir halus halaman. Tanpa itu Lenis menelan
+                          gulirannya dan memindahkan seluruh halaman, sehingga
+                          daftar nama terasa macet — persis keluhan di lapangan.
+                          `overscroll-contain` menahan gulirannya agar tidak
+                          merembet ke halaman setelah sampai ujung. */}
+                      <ul
+                        data-lenis-prevent
+                        className="max-h-72 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
+                      >
+                        {matches.map(m => (
+                          <li key={m.id}>
+                            <button
+                              type="button"
+                              onClick={() => setPicked(m)}
+                              className="block w-full border-b border-ink/10 px-4 py-3.5 text-left last:border-b-0 hover:bg-primary/10 active:bg-primary/20"
+                            >
+                              <span className="block truncate text-sm font-bold text-ink">
+                                {m.fullname}
                               </span>
-                            )}
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
+                              {m.businessName && (
+                                <span className="block truncate text-xs text-ink/50">
+                                  {m.businessName}
+                                </span>
+                              )}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                      {matches.length > 6 && (
+                        <p className="border-t border-ink/10 px-4 py-2 text-center font-mono text-[10px] uppercase tracking-widest text-ink/40">
+                          Gulir di dalam kotak ini · atau ketik lebih lengkap
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
               )}

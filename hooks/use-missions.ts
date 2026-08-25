@@ -1,11 +1,27 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { missionService } from '@/services/mission.service'
-import { CreateMissionPayload } from '@/types/mission'
+import { CreateMissionPayload, MissionBoardParams } from '@/types/mission'
 
 export const useMissionsQuery = () => {
   return useQuery({
     queryKey: ['missions'],
     queryFn: async () => (await missionService.list()).data,
+  })
+}
+
+/**
+ * Papan misi peserta.
+ *
+ * Kata kunci, saringan, dan nomor halaman ikut menjadi kunci cache: tiap
+ * kombinasi adalah pertanyaan yang berbeda ke server, dan `placeholderData`
+ * menahan hasil sebelumnya tetap tampil supaya daftarnya tidak berkedip kosong
+ * setiap kali peserta mengetik satu huruf.
+ */
+export const useMissionBoardQuery = (params: MissionBoardParams) => {
+  return useQuery({
+    queryKey: ['mission-board', params],
+    queryFn: async () => (await missionService.board(params)).data,
+    placeholderData: previous => previous,
   })
 }
 

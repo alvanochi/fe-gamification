@@ -27,6 +27,7 @@ export default function VoteLeaderStep({ group, myId }: VoteLeaderStepProps) {
   const candidates = group.members.filter(
     m => m.id !== myId && (!isRunoff || runoff!.includes(m.id)),
   )
+  const myName = group.members.find(m => m.id === myId)?.fullname ?? 'Kamu'
 
   const handleVote = (nomineeId: string) => {
     setNotice(null)
@@ -61,6 +62,16 @@ export default function VoteLeaderStep({ group, myId }: VoteLeaderStepProps) {
           : 'Setiap anggota memilih satu nama. Ketua sah jika suara terbanyak tanpa hasil seri.'
       }
     >
+      {/* Namamu sendiri tidak ikut jadi kandidat — kamu tidak bisa memilih
+          dirimu sendiri. Ditampilkan di sini supaya tetap jelas kamu masuk
+          kelompok ini, sama seperti di checkpoint lain. */}
+      <p className="mb-4 flex items-center justify-between gap-3 rounded-md border-brut bg-primary/15 px-4 py-2">
+        <span className="truncate font-bold text-ink">{myName}</span>
+        <span className="shrink-0 rounded-sm border-brut-sm bg-primary px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-widest text-primary-ink">
+          Kamu
+        </span>
+      </p>
+
       {isRunoff && candidates.length === 0 && (
         <p className="mb-4 rounded-md border-brut bg-warning/15 px-4 py-3 text-sm text-ink/70">
           Kamu salah satu calon di putaran ini, jadi tidak ikut memilih. Tunggu suara anggota lain.

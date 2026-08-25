@@ -1,6 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import dynamic from 'next/dynamic'
+import { useRouter } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import Button from '@/components/elements/Button'
@@ -9,6 +11,13 @@ import Input from '@/components/elements/Input'
 import TextArea from '@/components/elements/TextArea'
 import Select from '@/components/elements/Select'
 import ErrorMessage from '@/components/elements/ErrorMessage'
+import ConfirmModal from '@/components/fragments/ConfirmModal'
+import QuestionsBuilder, {
+  emptyQuestion,
+  questionsValid,
+  toQuestionPayload,
+  type DraftQuestion,
+} from '@/components/organisms/admin/QuestionsBuilder'
 
 const MapPicker = dynamic(() => import('@/components/organisms/admin/MapPicker'), {
   ssr: false,
@@ -30,8 +39,15 @@ import { AppError } from '@/libs/api'
 import { Mission } from '@/types/mission'
 
 export default function MissionForm({ existingMissions }: { existingMissions: Mission[] }) {
-  const { mutate: createMission, isPending, error, isSuccess, reset } = useCreateMissionMutation()
+  const router = useRouter()
+  const { mutate: createMission, isPending, error, reset } = useCreateMissionMutation()
   const { data: sponsors } = useSponsorsQuery()
+
+  // Soal kuis disusun di form yang sama. Misi kuis tanpa soal tidak bisa
+  // dikerjakan siapa pun, jadi memisahkannya ke layar lain hanya membuka
+  // peluang misi terbit dalam keadaan setengah jadi.
+  const [questions, setQuestions] = useState<DraftQuestion[]>([emptyQuestion()])
+  const [createdTitle, setCreatedTitle] = useState<string | null>(null)
 
   const {
     register,
@@ -63,11 +79,15 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
   const geoRadius = watch('geoRadius')
   const apiError = error as AppError | null
 
+  const isQuiz = type === 'KUIS'
+  const quizReady = !isQuiz || questionsValid(questions)
+
   const onSubmit = (values: CreateMissionFormValues) => {
     reset()
     createMission(
       {
         ...values,
+        questions: isQuiz ? toQuestionPayload(questions) : undefined,
         openAt: values.openAt ? new Date(values.openAt).toISOString() : undefined,
         // Select yang tidak dipilih mengirim string kosong. sponsorId punya
         // foreign key ke sponsors, jadi '' akan ditolak database — kirim
@@ -76,7 +96,9 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
         prerequisiteId: values.prerequisiteId || undefined,
       },
       {
-        onSuccess: () =>
+        onSuccess: () => {
+          setCreatedTitle(values.title)
+          setQuestions([emptyQuestion()])
           resetForm({
             title: '',
             description: '',
@@ -105,7 +127,8 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
             pointPerUnit: '',
             maxUnits: '',
             timeTargetSeconds: '',
-          }),
+          })
+        },
       },
     )
   }
@@ -117,11 +140,6 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
     >
       <h3 className="font-display text-2xl text-ink">Buat Misi Baru</h3>
 
-      {isSuccess && (
-        <div className="rounded-md border-brut !border-success bg-paper p-4 text-sm font-bold text-success">
-          Misi berhasil dibuat.
-        </div>
-      )}
       {apiError?.message && (
         <div className="rounded-md border-brut !border-danger bg-paper p-4 text-sm font-bold text-danger">
           {apiError.message}
@@ -418,9 +436,55 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
         </div>
       )}
 
-      <Button type="submit" size="lg" className="w-full" loading={isPending}>
+      {isQuiz && (
+        <div className="space-y-4 rounded-md border-brut-sm border-secondary bg-paper p-4">
+          <div>
+            <p className="font-mono text-xs uppercase tracking-widest text-secondary">
+              Pertanyaan Kuis
+            </p>
+            <p className="mt-1 text-xs text-ink/55">
+              Jawaban peserta diperiksa server saat itu juga. Poin misi dijumlahkan dari jawaban
+              yang benar, jadi isian Poin di atas tidak dipakai untuk misi kuis.
+            </p>
+          </div>
+
+          <QuestionsBuilder questions={questions} onChange={setQuestions} />
+        </div>
+      )}
+
+      <Button type="submit" size="lg" className="w-full" loading={isPending} disabled={!quizReady}>
         Simpan Misi
       </Button>
+      {!quizReady && (
+        <p className="text-xs font-bold text-danger">
+          Lengkapi pertanyaan kuisnya dulu — misi kuis tanpa soal tidak bisa dikerjakan peserta.
+        </p>
+      )}
+
+      {/* Konfirmasi bahwa misinya benar-benar tersimpan. Sebelumnya hanya ada
+          sebaris teks hijau di kepala form yang sudah tergulung jauh ke atas
+          begitu panitia menekan tombol simpan di kakinya. */}
+      <ConfirmModal
+        open={!!createdTitle}
+        title="Misi berhasil dibuat 🎉"
+        description={
+          <>
+            <p>
+              <strong>{createdTitle}</strong> sudah masuk daftar misi.
+            </p>
+            <p className="mt-2">
+              Buat misi berikutnya sekarang, atau lihat hasilnya di daftar misi.
+            </p>
+          </>
+        }
+        confirmLabel="Lihat Daftar Misi"
+        cancelLabel="Buat Misi Lagi"
+        onConfirm={() => {
+          setCreatedTitle(null)
+          router.push('/admin/missions')
+        }}
+        onCancel={() => setCreatedTitle(null)}
+      />
     </form>
   )
 }

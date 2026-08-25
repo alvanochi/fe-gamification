@@ -1,7 +1,14 @@
 import { http } from '@/libs/api'
 import { endpoints } from '@/libs/endpoint'
 import { IApiEnvelope } from '@/types/auth'
-import { CreateMissionPayload, Mission, MissionCheckIn, MissionQuestion } from '@/types/mission'
+import {
+  CreateMissionPayload,
+  Mission,
+  MissionBoard,
+  MissionBoardParams,
+  MissionCheckIn,
+  MissionQuestion,
+} from '@/types/mission'
 
 export const missionService = {
   list() {
@@ -46,6 +53,20 @@ export const missionService = {
       endpoints.missions.questions(missionId),
       { questions },
     )
+  },
+
+  /** Papan misi peserta — seluruh penyaringan dikerjakan server. */
+  board(params: MissionBoardParams) {
+    return http.get<IApiEnvelope<MissionBoard>>(endpoints.missions.board, {
+      params: {
+        search: params.search || undefined,
+        status: params.status && params.status !== 'SEMUA' ? params.status : undefined,
+        type: params.type && params.type !== 'SEMUA' ? params.type : undefined,
+        urgent: params.urgent ? 1 : undefined,
+        page: params.page,
+        perPage: params.perPage,
+      },
+    })
   },
 
   myCheckIns() {

@@ -98,8 +98,14 @@ export default function BarterChain({
       )}
 
       {isLocked ? (
-        <p className="rounded-md border-brut bg-paper px-4 py-3 text-sm font-bold text-ink/60">
-          Rantai barter sudah dinilai panitia.
+        <p
+          className={`rounded-md border-brut bg-paper px-4 py-3 text-sm font-bold ${
+            assignment.status === 'ACCEPTED' ? '!border-success text-success' : 'text-ink/60'
+          }`}
+        >
+          {assignment.status === 'ACCEPTED'
+            ? 'Rantai barter sudah diakhiri panitia dan diberi nilai akhir.'
+            : 'Rantai barter dihentikan panitia. Pertukaran terakhir ditolak, jadi misi ini ditutup untuk kelompokmu.'}
         </p>
       ) : (
         <div className="space-y-3 rounded-md border-brut border-dashed bg-paper px-4 py-4">
