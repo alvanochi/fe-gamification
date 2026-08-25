@@ -4,7 +4,6 @@ import { useRef } from 'react'
 import { useGSAP } from '@gsap/react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import SponsorStrip from '@/components/organisms/SponsorStrip'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -63,8 +62,9 @@ export default function FooterCtaSection() {
           </div>
         </div>
 
-        {/* FR-10: penempatan logo sponsor di area non-intrusif. */}
-        <SponsorStrip className="mt-12" />
+        {/* Deretan "Didukung oleh" dilepas dari sini: logo sponsor sudah
+            tampil di seksi sponsor tepat di atasnya, jadi mengulanginya di
+            bawah garis finish hanya menggandakan hal yang sama. */}
 
         <div className="mt-10 flex flex-col items-center gap-2 text-center text-sm text-ink/60">
           <p className="font-display text-base text-ink">MILLIONAIRE RACE</p>

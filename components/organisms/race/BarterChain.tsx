@@ -2,7 +2,9 @@
 
 import { useState } from 'react'
 import Button from '@/components/elements/Button'
+import Input from '@/components/elements/Input'
 import ErrorMessage from '@/components/elements/ErrorMessage'
+import MediaPicker from '@/components/fragments/MediaPicker'
 import {
   useBarterStepsQuery,
   useCreateAssignmentMutation,
@@ -10,6 +12,7 @@ import {
 } from '@/hooks/use-barter'
 import { AppError } from '@/libs/api'
 import { Assignment } from '@/types/mission'
+import { IMAGE_ACCEPT, VIDEO_ACCEPT } from '@/utils/mission/type-meta'
 
 /**
  * Rantai barter "Bigger Better" (MR6): kelompok menukar satu barang ke barang
@@ -34,6 +37,12 @@ export default function BarterChain({
   // MR6 meminta "FOTO PERTUKARAN BARANG DARI BARANG 1 KE BARANG SELANJUTNYA",
   // jadi foto diterima — video tetap boleh bila peserta merekamnya.
   const [proofFile, setProofFile] = useState<File | null>(null)
+  const [proofPreview, setProofPreview] = useState<string | null>(null)
+
+  const pickProof = (file: File) => {
+    setProofFile(file)
+    setProofPreview(URL.createObjectURL(file))
+  }
 
   const apiError = (createAssignment.error ?? submitStep.error) as AppError | null
   const isLocked = assignment?.status === 'ACCEPTED' || assignment?.status === 'REJECTED'
@@ -98,23 +107,23 @@ export default function BarterChain({
             Langkah {nextStepNo} · dari {itemFrom}
           </p>
 
-          <input
+          <Input
             value={itemTo}
             onChange={e => setItemTo(e.target.value)}
             placeholder="Ditukar jadi barang apa?"
-            className="w-full rounded-md border-brut-sm bg-paper-raised px-3 py-2 text-sm font-medium text-ink focus:outline-none"
           />
-          <input
+          <Input
             value={partnerName}
             onChange={e => setPartnerName(e.target.value)}
             placeholder="Nama pemilik barang (opsional)"
-            className="w-full rounded-md border-brut-sm bg-paper-raised px-3 py-2 text-sm font-medium text-ink focus:outline-none"
           />
-          <input
-            type="file"
-            accept="image/*,video/*"
-            onChange={e => setProofFile(e.target.files?.[0] ?? null)}
-            className="w-full text-xs text-ink/70"
+          <MediaPicker
+            onPick={pickProof}
+            previewUrl={proofPreview}
+            previewIsVideo={!!proofFile?.type.startsWith('video/')}
+            accept={`${IMAGE_ACCEPT},${VIDEO_ACCEPT}`}
+            allowVideo
+            label="Ketuk untuk memotret pertukaran"
           />
 
           <Button
@@ -137,6 +146,7 @@ export default function BarterChain({
                     setItemTo('')
                     setPartnerName('')
                     setProofFile(null)
+                    setProofPreview(null)
                   },
                 },
               )

@@ -1,5 +1,23 @@
 import { getLatestSubmissionForMission } from '@/utils/mission/submission-status'
-import { Mission, Submission } from '@/types/mission'
+import { Mission, MissionType, Submission } from '@/types/mission'
+
+/**
+ * Urutan tetap tipe misi, dipakai di layar peserta maupun antrean validasi.
+ *
+ * Dengan urutan yang sama di mana-mana, panitia yang berpindah antar layar
+ * tidak perlu mencari ulang letak tiap kelompok misi.
+ */
+export const MISSION_TYPE_ORDER: MissionType[] = [
+  'TANTANGAN',
+  'BIGGER_BETTER',
+  'SOAL_LOKASI',
+  'KUIS',
+]
+
+/** Pecah satu daftar menjadi kelompok per tipe misi, tanpa kelompok kosong. */
+export const groupByMissionType = <T>(items: T[], typeOf: (item: T) => MissionType) =>
+  MISSION_TYPE_ORDER.map(type => ({ type, items: items.filter(item => typeOf(item) === type) }))
+    .filter(group => group.items.length > 0)
 
 export type MissionStatus = 'BELUM' | 'MENUNGGU' | 'SELESAI'
 
@@ -85,11 +103,18 @@ export const sectionOf = (mission: Mission, submissions: Submission[]): SectionK
   return mission.requiresCheckIn || mission.category === 'TERSTRUKTUR' ? 'DI_POS' : 'MANDIRI'
 }
 
-/** Urutkan misi mengikuti urutan bagian, supaya tiap halaman tetap rapi. */
+/**
+ * Urutkan misi mengikuti urutan bagian lalu tipenya, supaya tiap halaman tetap
+ * rapi: satu bagian jarang terpotong dua halaman, dan di dalamnya misi bertipe
+ * sama selalu berdampingan.
+ */
 export const sortBySection = (missions: Mission[], submissions: Submission[]): Mission[] =>
   [...missions].sort((a, b) => {
-    const diff =
+    const bySection =
       SECTION_ORDER.indexOf(sectionOf(a, submissions)) -
       SECTION_ORDER.indexOf(sectionOf(b, submissions))
-    return diff !== 0 ? diff : a.title.localeCompare(b.title, 'id')
+    if (bySection !== 0) return bySection
+
+    const byType = MISSION_TYPE_ORDER.indexOf(a.type) - MISSION_TYPE_ORDER.indexOf(b.type)
+    return byType !== 0 ? byType : a.title.localeCompare(b.title, 'id')
   })

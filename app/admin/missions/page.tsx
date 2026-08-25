@@ -1,35 +1,34 @@
 'use client'
 
-import AdminGate from '@/components/fragments/AdminGate'
-import AdminNav from '@/components/fragments/AdminNav'
-import MissionForm from '@/components/organisms/admin/MissionForm'
+import Link from 'next/link'
+import AdminPageShell from '@/components/fragments/AdminPageShell'
 import MissionList from '@/components/organisms/admin/MissionList'
-import { useMissionsQuery } from '@/hooks/use-missions'
 
+/**
+ * Daftar misi berdiri sendiri, terpisah dari form pembuatannya.
+ *
+ * Sebelumnya keduanya berbagi satu layar berkolom dua: form sepanjang tiga
+ * layar di kiri, daftar berisi puluhan misi di kanan, dan keduanya bergulir
+ * bersamaan. Memeriksa satu misi berarti kehilangan tempat di form, dan
+ * sebaliknya.
+ */
 export default function AdminMissionsPage() {
-  const missionsQuery = useMissionsQuery()
-
   return (
-    <AdminGate requireSuperAdmin>
-      <div className="min-h-[100dvh] bg-paper px-4 py-10 sm:px-8">
-        <div className="mx-auto max-w-6xl">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="font-mono text-xs uppercase tracking-[0.3em] text-secondary">Panel Panitia</p>
-              <h1 className="mt-2 font-display text-3xl text-ink sm:text-4xl">Kelola Misi</h1>
-            </div>
-            <AdminNav />
-          </div>
-          <p className="mt-2 text-sm text-ink/60">
-            Buat & pantau misi Tantangan, Bigger Better, dan Soal Lokasi untuk peserta.
-          </p>
-
-          <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-            <MissionForm existingMissions={missionsQuery.data ?? []} />
-            <MissionList />
-          </div>
-        </div>
+    <AdminPageShell
+      requireSuperAdmin
+      title="Kelola Misi"
+      description="Daftar seluruh misi Tantangan, Bigger Better, Soal Lokasi, dan Kuis untuk peserta."
+    >
+      <div className="mb-6">
+        <Link
+          href="/admin/missions/new"
+          className="inline-flex rounded-md border-brut bg-primary px-5 py-3 font-display text-sm uppercase text-primary-ink shadow-brutal brutal-press"
+        >
+          + Buat Misi Baru
+        </Link>
       </div>
-    </AdminGate>
+
+      <MissionList />
+    </AdminPageShell>
   )
 }

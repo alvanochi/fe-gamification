@@ -66,14 +66,7 @@ export default function PostScoreRow({
     <li className="rounded-md border-brut bg-paper-raised">
       <div className="flex flex-wrap items-center gap-3 px-4 py-3">
         <div className="min-w-0 flex-1">
-          <p className="truncate font-bold text-ink">
-            {row.queueNumber && (
-              <span className="mr-2 rounded-sm border-brut-sm bg-paper px-1.5 py-0.5 font-mono text-[10px]">
-                {row.queueNumber}
-              </span>
-            )}
-            {row.groupName}
-          </p>
+          <p className="truncate font-bold text-ink">{row.groupName}</p>
           <p className="truncate font-mono text-[11px] text-ink/45">
             datang {jam(row.checkedInAt)}
             {row.scannedName ? ` · dari ${row.scannedName}` : ''}

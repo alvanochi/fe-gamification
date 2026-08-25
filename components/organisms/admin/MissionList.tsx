@@ -1,17 +1,23 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Button from '@/components/elements/Button'
+import Input from '@/components/elements/Input'
 import ErrorMessage from '@/components/elements/ErrorMessage'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
+import ConfirmModal from '@/components/fragments/ConfirmModal'
+import Pagination from '@/components/fragments/Pagination'
 import {
   useDeleteMissionMutation,
   useMissionsQuery,
   useUpdateMissionMutation,
 } from '@/hooks/use-missions'
+import { useDebounce } from '@/hooks/use-debounce'
+import { usePagination } from '@/hooks/use-pagination'
 import { AppError } from '@/libs/api'
 import QuestionEditor from '@/components/organisms/admin/QuestionEditor'
 import { Mission } from '@/types/mission'
+import { groupByMissionType } from '@/utils/mission/grouping'
 import {
   MISSION_TYPE_LABEL as TYPE_LABEL,
   MISSION_TYPE_COLOR_VAR as TYPE_COLOR_VAR,
@@ -21,7 +27,7 @@ import {
   formatMissionPoints,
 } from '@/utils/mission/type-meta'
 
-function MissionCard({
+function MissionRow({
   mission,
   indexedById,
   onEditQuestions,
@@ -33,6 +39,12 @@ function MissionCard({
   const prerequisite = mission.prerequisiteId ? indexedById.get(mission.prerequisiteId) : null
   const { mutate: update, isPending: isUpdating } = useUpdateMissionMutation()
   const { mutate: remove, isPending: isDeleting, error: deleteError } = useDeleteMissionMutation()
+
+  const [pointDraft, setPointDraft] = useState<string | null>(null)
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
+
+  const parsedPoint = Number(pointDraft)
+  const pointValid = pointDraft !== null && Number.isInteger(parsedPoint) && parsedPoint >= 0
 
   return (
     <li
@@ -79,56 +91,105 @@ function MissionCard({
         {mission.openAt && <span>buka: {new Date(mission.openAt).toLocaleString('id-ID')}</span>}
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        {mission.type === 'KUIS' && (
+      {/* Poin disunting di tempat. Sebelumnya lewat prompt() bawaan peramban:
+          tanpa gaya, tanpa validasi sampai ditutup, dan diblokir sebagian
+          peramban seluler. */}
+      {pointDraft !== null ? (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <Input
+            className="w-32"
+            type="number"
+            min={0}
+            value={pointDraft}
+            onChange={e => setPointDraft(e.target.value)}
+            error={!pointValid}
+          />
+          <Button
+            size="sm"
+            loading={isUpdating}
+            disabled={!pointValid}
+            onClick={() =>
+              update(
+                { missionId: mission.id, pointWeight: parsedPoint },
+                { onSuccess: () => setPointDraft(null) },
+              )
+            }
+          >
+            Simpan Poin
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setPointDraft(null)}>
+            Batal
+          </Button>
+        </div>
+      ) : (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {mission.type === 'KUIS' && (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="flex-1"
+              onClick={() => onEditQuestions(mission)}
+            >
+              Kelola Pertanyaan
+            </Button>
+          )}
           <Button
             variant="secondary"
             size="sm"
             className="flex-1"
-            onClick={() => onEditQuestions(mission)}
+            onClick={() => setPointDraft(String(mission.pointWeight))}
           >
-            Kelola Pertanyaan
+            Ubah Poin
           </Button>
-        )}
-        <Button
-          variant="secondary"
-          size="sm"
-          className="flex-1"
-          loading={isUpdating}
-          onClick={() => {
-            const next = prompt(`Ubah poin untuk "${mission.title}"`, String(mission.pointWeight))
-            if (next === null) return
+          <Button
+            variant="danger"
+            size="sm"
+            className="flex-1"
+            loading={isDeleting}
+            onClick={() => setIsConfirmingDelete(true)}
+          >
+            Hapus
+          </Button>
+        </div>
+      )}
 
-            const pointWeight = Number(next)
-            if (!Number.isInteger(pointWeight) || pointWeight < 0) {
-              alert('Poin harus berupa bilangan bulat non-negatif.')
-              return
-            }
-            update({ missionId: mission.id, pointWeight })
-          }}
-        >
-          Ubah Poin
-        </Button>
-        <Button
-          variant="danger"
-          size="sm"
-          className="flex-1"
-          loading={isDeleting}
-          onClick={() => {
-            if (confirm(`Hapus misi "${mission.title}"?`)) remove(mission.id)
-          }}
-        >
-          Hapus
-        </Button>
-      </div>
       <ErrorMessage message={(deleteError as AppError | null)?.message} className="mt-2" />
+
+      <ConfirmModal
+        open={isConfirmingDelete}
+        title={`Hapus misi "${mission.title}"?`}
+        description="Misi yang sudah dikerjakan kelompok sebaiknya dibiarkan — riwayat penilaiannya menempel padanya."
+        confirmLabel="Ya, hapus"
+        confirmVariant="danger"
+        loading={isDeleting}
+        onConfirm={() => remove(mission.id, { onSettled: () => setIsConfirmingDelete(false) })}
+        onCancel={() => setIsConfirmingDelete(false)}
+      />
     </li>
   )
 }
 
+/**
+ * Daftar misi milik Super Admin: dicari, berhalaman, dan dikelompokkan per
+ * jenis misi — sama seperti yang dilihat peserta di layar misinya.
+ */
 export default function MissionList() {
   const { data: missions, isLoading, error } = useMissionsQuery()
   const [editingQuestions, setEditingQuestions] = useState<Mission | null>(null)
+  const [search, setSearch] = useState('')
+  const debounced = useDebounce(search, 300)
+
+  const filtered = useMemo(() => {
+    const keyword = debounced.trim().toLowerCase()
+    if (!keyword) return missions ?? []
+    return (missions ?? []).filter(m =>
+      `${m.title} ${m.description} ${m.locationName ?? ''} ${TYPE_LABEL[m.type]}`
+        .toLowerCase()
+        .includes(keyword),
+    )
+  }, [missions, debounced])
+
+  const pagination = usePagination(filtered)
 
   if (isLoading) {
     return (
@@ -151,7 +212,7 @@ export default function MissionList() {
   if (!missions || missions.length === 0) {
     return (
       <p className="rounded-md border-brut bg-paper-raised p-6 text-center text-sm text-ink/60">
-        Belum ada misi. Buat misi pertama di form sebelah.
+        Belum ada misi. Mulai dari tombol Buat Misi Baru di atas.
       </p>
     )
   }
@@ -169,15 +230,53 @@ export default function MissionList() {
   }
 
   return (
-    <ul className="space-y-4">
-      {missions.map(mission => (
-        <MissionCard
-          key={mission.id}
-          mission={mission}
-          indexedById={indexedById}
-          onEditQuestions={setEditingQuestions}
-        />
-      ))}
-    </ul>
+    <div className="space-y-6">
+      <Input
+        type="search"
+        value={search}
+        onChange={e => {
+          setSearch(e.target.value)
+          pagination.resetPage()
+        }}
+        placeholder="Cari misi, lokasi, atau jenisnya…"
+      />
+
+      <Pagination
+        page={pagination.page}
+        perPage={pagination.perPage}
+        total={pagination.total}
+        totalPages={pagination.totalPages}
+        onPageChange={pagination.setPage}
+        onPerPageChange={pagination.setPerPage}
+      />
+
+      {filtered.length === 0 ? (
+        <p className="rounded-md border-brut bg-paper-raised p-6 text-center text-sm text-ink/60">
+          Tidak ada misi yang cocok dengan pencarianmu.
+        </p>
+      ) : (
+        groupByMissionType(pagination.pageItems, mission => mission.type).map(group => (
+          <section key={group.type}>
+            <div className="flex flex-wrap items-baseline gap-x-3">
+              <h2 className="font-display text-xl" style={{ color: TYPE_COLOR_VAR[group.type] }}>
+                {TYPE_LABEL[group.type]}
+              </h2>
+              <span className="font-mono text-xs text-ink/40">{group.items.length} misi</span>
+            </div>
+
+            <ul className="mt-3 grid items-start gap-4 lg:grid-cols-2">
+              {group.items.map(mission => (
+                <MissionRow
+                  key={mission.id}
+                  mission={mission}
+                  indexedById={indexedById}
+                  onEditQuestions={setEditingQuestions}
+                />
+              ))}
+            </ul>
+          </section>
+        ))
+      )}
+    </div>
   )
 }

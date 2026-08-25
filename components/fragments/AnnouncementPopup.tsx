@@ -51,7 +51,7 @@ export default function AnnouncementPopup({ enabled = true }: { enabled?: boolea
           {new Date(announcedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
         </p>
         <Button size="lg" className="mt-5 w-full" onClick={close}>
-          Mengerti
+          YA, SAYA SIAP!
         </Button>
       </div>
     </div>

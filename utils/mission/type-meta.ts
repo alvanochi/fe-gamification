@@ -38,19 +38,33 @@ export const PROOF_TYPE_LABEL: Record<ProofType, string> = {
   INPUT_HASIL: 'Input hasil',
 }
 
-/** `accept` untuk <input type="file"> sesuai bukti yang diminta misi. */
+/**
+ * `accept` untuk berkas dari galeri.
+ *
+ * Ekstensinya disebut satu per satu di samping `image/*`: ponsel iPhone
+ * mengirim HEIC dengan mimetype kosong atau `application/octet-stream`, dan
+ * penyaring yang hanya mengandalkan mimetype membuat foto yang sah tidak bisa
+ * dipilih sama sekali.
+ */
+export const IMAGE_ACCEPT = 'image/*,.jpg,.jpeg,.png,.gif,.bmp,.webp,.heic,.heif,.avif,.tif,.tiff'
+export const VIDEO_ACCEPT = 'video/*,.mp4,.mov,.m4v,.webm,.avi,.mkv,.3gp'
+
 export const PROOF_ACCEPT: Record<ProofType, string> = {
-  FOTO: 'image/*',
-  VIDEO: 'video/*',
-  FOTO_VIDEO: 'image/*,video/*',
+  FOTO: IMAGE_ACCEPT,
+  VIDEO: VIDEO_ACCEPT,
+  FOTO_VIDEO: `${IMAGE_ACCEPT},${VIDEO_ACCEPT}`,
   LINK_SOSMED: '',
   LAPORAN_PETUGAS: '',
-  INPUT_HASIL: 'image/*',
+  INPUT_HASIL: IMAGE_ACCEPT,
 }
 
 /** Misi yang buktinya bukan unggahan file dari peserta. */
 export const isFileProof = (proofType: ProofType) =>
   proofType === 'FOTO' || proofType === 'VIDEO' || proofType === 'FOTO_VIDEO' || proofType === 'INPUT_HASIL'
+
+export const allowsPhotoProof = (proofType: ProofType) => proofType !== 'VIDEO'
+export const allowsVideoProof = (proofType: ProofType) =>
+  proofType === 'VIDEO' || proofType === 'FOTO_VIDEO'
 
 interface ScoringShape {
   pointWeight: number

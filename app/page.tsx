@@ -1,7 +1,10 @@
 import StickyNav from '@/components/organisms/landing/StickyNav'
 import HeroSection from '@/components/organisms/landing/HeroSection'
 import HowItWorksSection from '@/components/organisms/landing/HowItWorksSection'
-import LeaderboardTeaserSection from '@/components/organisms/landing/LeaderboardTeaserSection'
+// Klasemen disembunyikan dari beranda: papan skor sedang tidak dipamerkan ke
+// publik. Seksinya dibiarkan utuh supaya bisa dinyalakan kembali dengan satu
+// baris ketika panitia memintanya.
+// import LeaderboardTeaserSection from '@/components/organisms/landing/LeaderboardTeaserSection'
 import SponsorUmkmMarqueeSection from '@/components/organisms/landing/SponsorUmkmMarqueeSection'
 import FooterCtaSection from '@/components/organisms/landing/FooterCtaSection'
 import LoginSection from '@/components/organisms/landing/LoginSection'
@@ -15,7 +18,7 @@ export default function Home() {
       <main className="flex-1">
         <HeroSection />
         <HowItWorksSection />
-        <LeaderboardTeaserSection />
+        {/* <LeaderboardTeaserSection /> */}
         <SponsorUmkmMarqueeSection />
       </main>
       <FooterCtaSection />

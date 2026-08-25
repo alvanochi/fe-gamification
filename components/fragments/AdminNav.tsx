@@ -5,7 +5,12 @@ import { usePathname } from 'next/navigation'
 import LogoutButton from '@/components/fragments/LogoutButton'
 import { useProfileQuery } from '@/hooks/use-profile'
 
-/** `superOnly` menandai halaman yang mengubah konten permainan (BRD Bab 4). */
+/**
+ * `superOnly` menandai halaman yang mengubah konten permainan (BRD Bab 4).
+ *
+ * Menu Kategori disembunyikan bersama seluruh fitur kategori kelompok —
+ * masternya masih ada di /admin/categories bila suatu saat dinyalakan lagi.
+ */
 const LINKS = [
   { href: '/admin/control', label: 'Kendali Acara' },
   { href: '/admin/monitoring', label: 'Monitoring' },
@@ -13,9 +18,11 @@ const LINKS = [
   { href: '/admin/post', label: 'Pos' },
   { href: '/admin/barter', label: 'Barter' },
   { href: '/admin/missions', label: 'Kelola Misi', superOnly: true },
-  { href: '/admin/categories', label: 'Kategori', superOnly: true },
+  // { href: '/admin/categories', label: 'Kategori', superOnly: true },
   { href: '/admin/sponsors', label: 'Sponsor', superOnly: true },
-  { href: '/admin/accounts', label: 'Akun & Kartu QR' },
+  // Master akun & kelompok memegang identitas seluruh peserta, jadi ia
+  // sepenuhnya milik Super Admin — termasuk membacanya.
+  { href: '/admin/accounts', label: 'Akun & Kelompok', superOnly: true },
   { href: '/leaderboard', label: 'Klasemen' },
 ]
 

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import jsQR from 'jsqr'
 import Button from '@/components/elements/Button'
-import Input from '@/components/elements/Input'
 import Label from '@/components/elements/Label'
 import Select from '@/components/elements/Select'
 import ErrorMessage from '@/components/elements/ErrorMessage'
@@ -13,11 +12,20 @@ import { usePostQueueQuery } from '@/hooks/use-post-queue'
 import PostScoreRow from '@/components/organisms/admin/PostScoreRow'
 import { AppError } from '@/libs/api'
 import { extractToken } from '@/libs/qr-token'
+import { formatTime } from '@/utils/format/formatDate'
 
 type ScanState = 'idle' | 'starting' | 'scanning'
 
 /** AUTO membiarkan server menyimpulkan datang atau pergi dari keadaan kelompok. */
 type ActionMode = 'AUTO' | 'CHECK_IN' | 'CHECK_OUT'
+
+const ACTION_MODES: Array<[ActionMode, string]> = [
+  // "DATANG - PERGI" menyebut apa yang sebenarnya dilakukan tombol ini:
+  // pemindaian pertama mencatat kedatangan, pemindaian berikutnya kepergian.
+  ['AUTO', 'DATANG - PERGI'],
+  ['CHECK_IN', 'Datang'],
+  ['CHECK_OUT', 'Pergi'],
+]
 
 interface Flash {
   ok: boolean
@@ -25,7 +33,7 @@ interface Flash {
   detail: string
 }
 
-const waktu = () => new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+const waktu = () => formatTime(new Date().toISOString())
 
 /**
  * Layar petugas pos.
@@ -46,11 +54,10 @@ export default function PostGuardScanner() {
   const lastTokenRef = useRef<string | null>(null)
   // Nilai terbaru untuk dibaca dari dalam loop kamera, yang tidak ikut
   // dirender ulang saat pilihan pos atau mode berubah.
-  const configRef = useRef<{
-    missionId: string
-    action: ActionMode
-    queueNumber: string
-  }>({ missionId: '', action: 'AUTO', queueNumber: '' })
+  const configRef = useRef<{ missionId: string; action: ActionMode }>({
+    missionId: '',
+    action: 'AUTO',
+  })
 
   const [state, setState] = useState<ScanState>('idle')
   const [cameraError, setCameraError] = useState<string | null>(null)
@@ -59,7 +66,6 @@ export default function PostGuardScanner() {
   // Umpan balik sebesar layar: di bawah terik matahari, dengan antrean di
   // depan, satu baris teks di daftar tidak akan terbaca.
   const [flash, setFlash] = useState<Flash | null>(null)
-  const [queueNumber, setQueueNumber] = useState('')
   const [log, setLog] = useState<Array<{ at: string; text: string; ok: boolean }>>([])
 
   const { data: missions } = useMissionsQuery()
@@ -70,8 +76,8 @@ export default function PostGuardScanner() {
   const posts = (missions ?? []).filter(m => m.requiresCheckIn)
 
   useEffect(() => {
-    configRef.current = { missionId, action, queueNumber }
-  }, [missionId, action, queueNumber])
+    configRef.current = { missionId, action }
+  }, [missionId, action])
 
   const stop = useCallback(() => {
     if (frameRef.current !== null) cancelAnimationFrame(frameRef.current)
@@ -93,14 +99,9 @@ export default function PostGuardScanner() {
 
   const record = useCallback(
     (qrToken: string) => {
-      const { missionId: mId, action: act, queueNumber: antrean } = configRef.current
+      const { missionId: mId, action: act } = configRef.current
       scan.mutate(
-        {
-          qrToken,
-          missionId: mId,
-          action: act === 'AUTO' ? undefined : act,
-          queueNumber: antrean || undefined,
-        },
+        { qrToken, missionId: mId, action: act === 'AUTO' ? undefined : act },
         {
           onSuccess: res => {
             const d = res.data as PostScanResult
@@ -130,18 +131,26 @@ export default function PostGuardScanner() {
             }, 2500)
           },
           onError: (err: unknown) => {
-            setFlash({
-              ok: false,
-              title: 'GAGAL',
-              detail: (err as AppError).message || 'Tidak tercatat',
-            })
+            const message = (err as AppError).message || 'Gagal mencatat'
+            setFlash({ ok: false, title: 'GAGAL', detail: message })
+
+            // Kegagalan yang sama tidak dicatat dua kali berturut-turut.
+            // Penyebab tersering — kelompok yang memang sudah check-out —
+            // terbaca ulang tiap frame selama kartunya masih di depan kamera,
+            // dan tanpa penjagaan ini catatan pemindaian terisi puluhan baris
+            // identik yang menenggelamkan pemindaian sungguhan sebelumnya.
             setLog(prev =>
-              [
-                { at: waktu(), ok: false, text: (err as AppError).message || 'Gagal mencatat' },
-                ...prev,
-              ].slice(0, 20),
+              prev[0] && !prev[0].ok && prev[0].text === message
+                ? prev
+                : [{ at: waktu(), ok: false, text: message }, ...prev].slice(0, 20),
             )
-            lastTokenRef.current = null
+
+            // Token yang sama ditahan sejenak, persis seperti pemindaian yang
+            // berhasil — kalau langsung dilepas, kartu yang masih terarah ke
+            // kamera akan memicu permintaan gagal berulang-ulang.
+            setTimeout(() => {
+              lastTokenRef.current = null
+            }, 2500)
           },
         },
       )
@@ -230,13 +239,7 @@ export default function PostGuardScanner() {
         )}
 
         <div className="mt-4 flex gap-2">
-          {(
-            [
-              ['AUTO', 'Otomatis'],
-              ['CHECK_IN', 'Datang'],
-              ['CHECK_OUT', 'Pergi'],
-            ] as const
-          ).map(([value, label]) => (
+          {ACTION_MODES.map(([value, label]) => (
             <button
               key={value}
               type="button"
@@ -254,21 +257,8 @@ export default function PostGuardScanner() {
         <p className="mt-2 text-xs text-ink/55">
           {action === 'AUTO'
             ? 'Kelompok yang belum tercatat di pos ini dianggap datang; yang sudah, dianggap pergi. Kamu tidak perlu menekan apa pun antar peserta.'
-            : 'Mode dikunci manual. Kembalikan ke Otomatis bila antreannya campur datang dan pergi.'}
+            : 'Mode dikunci manual. Kembalikan ke DATANG - PERGI bila peserta yang datang dan pergi bercampur.'}
         </p>
-
-        {action !== 'CHECK_OUT' && (
-          <div className="mt-4">
-            <Label htmlFor="antrean">Nomor antrean (opsional)</Label>
-            <Input
-              id="antrean"
-              value={queueNumber}
-              onChange={e => setQueueNumber(e.target.value)}
-              placeholder="mis. A-07"
-              className="mt-2"
-            />
-          </div>
-        )}
       </div>
 
       <div className="rounded-lg border-brut bg-paper-raised p-5 shadow-brutal-sm">

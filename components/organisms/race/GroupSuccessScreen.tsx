@@ -58,7 +58,7 @@ export default function GroupSuccessScreen({ group }: { group: Group }) {
         </Button>
       </Link>
 
-      {/* Boarding pass QR kini dirender BoardingPassPanel di seluruh checkpoint,
+      {/* QR pos kini dirender QrPosPanel di seluruh checkpoint,
           jadi tidak perlu digandakan di sini. */}
 
       {/* FR-10: sponsor juga tampil di halaman profil kelompok. */}

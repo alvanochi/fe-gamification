@@ -93,8 +93,7 @@ export const useCheckInMutation = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ missionId, queueNumber }: { missionId: string; queueNumber?: string }) =>
-      missionService.checkIn(missionId, queueNumber),
+    mutationFn: ({ missionId }: { missionId: string }) => missionService.checkIn(missionId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mission-checkins'] })
     },

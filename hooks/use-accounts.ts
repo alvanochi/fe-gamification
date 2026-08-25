@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { http } from '@/libs/api'
 import { endpoints } from '@/libs/endpoint'
 import { IApiEnvelope } from '@/types/auth'
+import { DEFAULT_PER_PAGE } from '@/hooks/use-pagination'
+import type { SkippedRow } from '@/hooks/use-admin-groups'
 
 export type AccountRole = 'PARTICIPANT' | 'ADMIN' | 'SUPER_ADMIN'
 
@@ -14,6 +16,8 @@ export interface Account {
   role: AccountRole
   checkInAt: string | null
   groupId: string | null
+  /** null bila peserta belum masuk kelompok mana pun. */
+  groupName: string | null
   /** Token itu sendiri tidak ikut dikirim — hanya penanda sudah ada atau belum. */
   hasQrToken: boolean
 }
@@ -31,7 +35,7 @@ export const useAccountsQuery = (
   search: string,
   role: AccountRole | '',
   page: number,
-  perPage: number,
+  perPage: number = DEFAULT_PER_PAGE,
 ) => {
   return useQuery({
     queryKey: ['admin-accounts', search, role, page, perPage],
@@ -142,21 +146,44 @@ export const useDeleteAccountMutation = () => {
   })
 }
 
+/**
+ * Menghapus akun terpilih sekaligus.
+ *
+ * Akun yang sudah meninggalkan jejak permainan dilewati server beserta
+ * alasannya, jadi hasilnya bukan sekadar berhasil atau gagal.
+ */
+export const useDeleteAccountsBulkMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (userIds: string[]) =>
+      http.delete<IApiEnvelope<{ deleted: number; skipped: SkippedRow[] }>>(
+        endpoints.admin.accounts,
+        { data: { userIds } },
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-accounts'] })
+      queryClient.invalidateQueries({ queryKey: ['admin-groups'] })
+    },
+  })
+}
+
 export interface SheetImportResult {
-  created?: number
-  updated?: number
-  placed?: number
-  groups?: number
+  created: number
+  updated: number
   skipped: Array<{ row: number; name: string; reason: string }>
 }
 
 /**
- * Unggah lembar kerja peserta atau susunan kelompok.
+ * Unggah lembar kerja peserta — satu lembar untuk data peserta sekaligus
+ * pembagian kelompoknya.
  *
  * Daftar peserta acara ini hidup di spreadsheet jauh sebelum sistemnya ada,
- * dan panitia menata pembagian kelompok jauh lebih cepat di sana.
+ * dan panitia menata pembagian kelompok jauh lebih cepat di sana. Kolom
+ * Kelompok menempel pada baris pesertanya, jadi tidak ada dua berkas yang
+ * harus dijaga agar tetap sepakat.
  */
-export const useSheetImportMutation = (kind: 'accounts' | 'groups') => {
+export const useSheetImportMutation = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -164,14 +191,13 @@ export const useSheetImportMutation = (kind: 'accounts' | 'groups') => {
       const form = new FormData()
       form.append('file', file)
       return http.post<IApiEnvelope<SheetImportResult>, FormData>(
-        kind === 'accounts' ? endpoints.admin.sheetAccounts : endpoints.admin.sheetGroups,
+        endpoints.admin.sheetAccounts,
         form,
       )
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-accounts'] })
       queryClient.invalidateQueries({ queryKey: ['admin-groups'] })
-      queryClient.invalidateQueries({ queryKey: ['group-categories'] })
       queryClient.invalidateQueries({ queryKey: ['monitoring'] })
     },
   })

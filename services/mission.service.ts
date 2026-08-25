@@ -52,11 +52,8 @@ export const missionService = {
     return http.get<IApiEnvelope<MissionCheckIn[]>>(endpoints.missions.myCheckIns)
   },
 
-  checkIn(missionId: string, queueNumber?: string) {
-    return http.post<IApiEnvelope<{ id: string }>, { queueNumber?: string }>(
-      endpoints.missions.checkIn(missionId),
-      { queueNumber },
-    )
+  checkIn(missionId: string) {
+    return http.post<IApiEnvelope<{ id: string }>>(endpoints.missions.checkIn(missionId))
   },
 
   checkOut(missionId: string) {

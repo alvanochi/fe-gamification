@@ -3,21 +3,12 @@
 import { useState } from 'react'
 import Button from '@/components/elements/Button'
 import Input from '@/components/elements/Input'
-import ErrorMessage from '@/components/elements/ErrorMessage'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
-import ConfirmModal from '@/components/fragments/ConfirmModal'
 import Pagination from '@/components/fragments/Pagination'
-import {
-  useGenerateGroupsMutation,
-  useGroupDetailQuery,
-  useMonitoringQuery,
-  type GroupProgress,
-} from '@/hooks/use-monitoring'
+import { useGroupDetailQuery, useMonitoringQuery, type GroupProgress } from '@/hooks/use-monitoring'
 import { useDebounce } from '@/hooks/use-debounce'
-import { AppError } from '@/libs/api'
-
-const waktu = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : '—'
+import { DEFAULT_PER_PAGE } from '@/hooks/use-pagination'
+import { formatTime as waktu } from '@/utils/format/formatDate'
 
 /** Tahap onboarding kelompok, dibaca dari jejak yang sudah tersimpan. */
 const tahap = (g: GroupProgress) => {
@@ -89,7 +80,6 @@ function GroupDetail({ group, onClose }: { group: GroupProgress; onClose: () => 
                     <p className="font-bold text-ink">{c.missionTitle}</p>
                     <p className="mt-0.5 text-xs text-ink/55">
                       masuk {waktu(c.checkedInAt)} oleh {c.checkedInByName}
-                      {c.queueNumber ? ` · antrean ${c.queueNumber}` : ''}
                       {c.checkedOutAt
                         ? ` · keluar ${waktu(c.checkedOutAt)}`
                         : ' · belum check-out'}
@@ -155,13 +145,10 @@ function GroupDetail({ group, onClose }: { group: GroupProgress; onClose: () => 
 
 export default function MonitoringBoard() {
   const [page, setPage] = useState(1)
-  const [perPage, setPerPage] = useState(25)
+  const [perPage, setPerPage] = useState(DEFAULT_PER_PAGE)
   const { data, isLoading } = useMonitoringQuery(page, perPage)
-  const generate = useGenerateGroupsMutation()
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState<GroupProgress | null>(null)
-  const [confirmGenerate, setConfirmGenerate] = useState(false)
-  const [feedback, setFeedback] = useState<string | null>(null)
   const debounced = useDebounce(search, 300)
 
   if (isLoading) return <CardSkeleton />
@@ -194,38 +181,25 @@ export default function MonitoringBoard() {
         ))}
       </div>
 
-      {feedback && (
-        <div className="rounded-md border-brut !border-success bg-paper p-4 text-sm font-bold text-success">
-          {feedback}
-        </div>
-      )}
+      {/* Pembentukan kelompok dilakukan dari master Akun & Kelompok, tempat
+          panitia bisa melihat siapa yang dimasukkan ke mana. Mengacaknya dari
+          layar pemantauan berarti menekan tombol tanpa melihat akibatnya. */}
+      <Input
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        placeholder="Cari kelompok…"
+      />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Input
-          className="flex-1"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          placeholder="Cari kelompok…"
-        />
-        <Button
-          size="sm"
-          loading={generate.isPending}
-          disabled={(data?.waitingForGroup ?? 0) === 0}
-          onClick={() => setConfirmGenerate(true)}
-        >
-          Generate Kelompok
-          {(data?.waitingForGroup ?? 0) > 0 ? ` (${data?.waitingForGroup})` : ''}
-        </Button>
-      </div>
-      <ErrorMessage message={(generate.error as AppError | null)?.message} />
-
-      {(data?.waitingForGroup ?? 0) === 0 && (
-        <p className="text-xs text-ink/50">
-          Tombol Generate Kelompok aktif ketika ada peserta yang sudah dipindai tapi belum punya
-          kelompok. Saat ini {data?.checkedIn ?? 0} dari {data?.totalParticipants ?? 0} peserta
-          tercatat hadir, dan semuanya sudah kebagian kelompok.
-        </p>
-      )}
+      {/* Di atas daftar: pindah halaman tidak perlu menggulir melewati seluruh
+          tabel lebih dulu. */}
+      <Pagination
+        page={data?.page ?? page}
+        perPage={data?.perPage ?? perPage}
+        total={data?.totalGroups ?? 0}
+        totalPages={data?.totalPages ?? 1}
+        onPageChange={setPage}
+        onPerPageChange={setPerPage}
+      />
 
       {groups.length === 0 ? (
         <p className="rounded-md border-brut bg-paper-raised p-6 text-center text-sm text-ink/60">
@@ -274,45 +248,11 @@ export default function MonitoringBoard() {
         </div>
       )}
 
-      <Pagination
-        page={data?.page ?? page}
-        perPage={data?.perPage ?? perPage}
-        total={data?.totalGroups ?? 0}
-        totalPages={data?.totalPages ?? 1}
-        onPageChange={setPage}
-        onPerPageChange={setPerPage}
-      />
-
       <p className="text-xs text-ink/50">
         Ketuk baris untuk melihat rincian anggota, riwayat misi, dan check-in pos. Halaman
         menyegarkan sendiri tiap 10 detik.
       </p>
 
-      <ConfirmModal
-        open={confirmGenerate}
-        title="Bentuk kelompok sekarang?"
-        description={
-          <>
-            <p>
-              <strong>{data?.waitingForGroup ?? 0} peserta</strong> yang sudah hadir dan belum
-              punya kelompok akan diacak ke dalam kelompok berisi maksimal 6 orang.
-            </p>
-            <p className="mt-2">
-              Peserta yang belum dipindai panitia tidak ikut. Jalankan lagi setelah gelombang
-              berikutnya check-in.
-            </p>
-          </>
-        }
-        confirmLabel="Ya, Bentuk Kelompok"
-        loading={generate.isPending}
-        onConfirm={() =>
-          generate.mutate(undefined, {
-            onSuccess: res => setFeedback(res.message),
-            onSettled: () => setConfirmGenerate(false),
-          })
-        }
-        onCancel={() => setConfirmGenerate(false)}
-      />
     </div>
   )
 }

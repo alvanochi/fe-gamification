@@ -9,7 +9,6 @@ export interface PostQueueRow {
   groupId: string
   groupName: string
   groupScore: number
-  queueNumber: string | null
   checkedInAt: string
   checkedOutAt: string | null
   /** Peserta yang QR-nya dipindai petugas. */

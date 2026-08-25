@@ -1,11 +1,12 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import Button from '@/components/elements/Button'
+import Input from '@/components/elements/Input'
 import ErrorMessage from '@/components/elements/ErrorMessage'
+import MediaPicker from '@/components/fragments/MediaPicker'
 import SponsorLogo from '@/components/fragments/SponsorLogo'
 import { useSubmitMissionWithEvidenceMutation } from '@/hooks/use-submissions'
-import { useCheckInMutation, useCheckOutMutation } from '@/hooks/use-missions'
 import { useSponsorsQuery } from '@/hooks/use-sponsors'
 import { useGeolocation } from '@/hooks/use-geolocation'
 import { AppError } from '@/libs/api'
@@ -20,57 +21,12 @@ import {
   MISSION_TYPE_LABEL,
   PROOF_ACCEPT,
   PROOF_TYPE_LABEL,
+  allowsPhotoProof,
+  allowsVideoProof,
   formatMissionPoints,
   describeScoring,
   isFileProof,
 } from '@/utils/mission/type-meta'
-
-function EvidencePicker({
-  onPick,
-  previewUrl,
-  accept,
-  label,
-  isVideo,
-}: {
-  onPick: (file: File) => void
-  previewUrl: string | null
-  accept: string
-  label: string
-  isVideo: boolean
-}) {
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  return (
-    <div>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept={accept}
-        className="hidden"
-        onChange={e => {
-          const file = e.target.files?.[0]
-          if (file) onPick(file)
-        }}
-      />
-      <button
-        type="button"
-        onClick={() => fileInputRef.current?.click()}
-        className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-md border-brut bg-paper"
-      >
-        {previewUrl ? (
-          isVideo ? (
-            <video src={previewUrl} className="h-full w-full object-cover" muted playsInline />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={previewUrl} alt="Pratinjau bukti" className="h-full w-full object-cover" />
-          )
-        ) : (
-          <span className="px-4 text-center text-sm font-bold text-ink/50">{label}</span>
-        )}
-      </button>
-    </div>
-  )
-}
 
 function StatusBanner({
   status,
@@ -100,7 +56,16 @@ function StatusBanner({
   )
 }
 
-/** Baris-baris detail MR6: kategori, lokasi, sesi, durasi, bukti yang diminta. */
+/**
+ * Baris-baris detail MR6: kategori, lokasi, sesi, durasi, bukti yang diminta.
+ *
+ * Tiap keterangan berdiri di kotaknya sendiri. Sebelumnya semuanya berdempetan
+ * sebagai daftar dua kolom tanpa garis, sehingga "Waktu Bebas Pemain 1 orang"
+ * terbaca sebagai satu kalimat panjang, bukan tiga fakta terpisah.
+ *
+ * Peralatan sengaja tidak ikut: daftar alat adalah urusan panitia yang menata
+ * pos, bukan hal yang perlu dibaca peserta dari layarnya.
+ */
 function MissionMeta({ mission }: { mission: Mission }) {
   const rows: Array<[string, string]> = [['Kategori', MISSION_CATEGORY_LABEL[mission.category]]]
 
@@ -112,14 +77,13 @@ function MissionMeta({ mission }: { mission: Mission }) {
   rows.push(['Pemain', `${mission.participantCount} orang`])
   rows.push(['Pembuktian', PROOF_TYPE_LABEL[mission.proofType]])
   rows.push(['Penilaian', describeScoring(mission)])
-  if (mission.equipment) rows.push(['Peralatan', mission.equipment])
 
   return (
-    <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+    <dl className="mt-4 grid gap-2 sm:grid-cols-2">
       {rows.map(([label, value]) => (
-        <div key={label} className="contents">
-          <dt className="font-mono uppercase tracking-wide text-ink/45">{label}</dt>
-          <dd className="whitespace-pre-line font-semibold text-ink/80">{value}</dd>
+        <div key={label} className="rounded-md border-brut-sm bg-paper px-3 py-2">
+          <dt className="font-mono text-[10px] uppercase tracking-widest text-ink/45">{label}</dt>
+          <dd className="mt-0.5 whitespace-pre-line text-sm font-bold text-ink/80">{value}</dd>
         </div>
       ))}
     </dl>
@@ -166,20 +130,15 @@ export default function MissionCard({
   const [evidenceFile, setEvidenceFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [answerText, setAnswerText] = useState('')
-  const [queueNumber, setQueueNumber] = useState('')
   const geolocation = useGeolocation()
 
   const { data: sponsors } = useSponsorsQuery()
   const sponsor = mission.sponsorId ? sponsors?.find(s => s.id === mission.sponsorId) : undefined
 
   const { mutate: submitMission, isPending, error } = useSubmitMissionWithEvidenceMutation()
-  const checkInMutation = useCheckInMutation()
-  const checkOutMutation = useCheckOutMutation()
-
-  const apiError = (error ?? checkInMutation.error ?? checkOutMutation.error) as AppError | null
+  const apiError = error as AppError | null
 
   const needsFile = isFileProof(mission.proofType)
-  const isVideoProof = mission.proofType === 'VIDEO'
   // Misi terstruktur wajib check-in dulu — tombol kirim baru terbuka setelahnya.
   const blockedByCheckIn = mission.requiresCheckIn && !checkIn
 
@@ -210,17 +169,19 @@ export default function MissionCard({
   }
 
   const evidencePicker = needsFile ? (
-    <EvidencePicker
+    <MediaPicker
       onPick={handlePickEvidence}
       previewUrl={previewUrl}
+      previewIsVideo={!!evidenceFile?.type.startsWith('video/')}
       accept={PROOF_ACCEPT[mission.proofType]}
-      isVideo={isVideoProof}
-      label={`Ketuk untuk pilih ${PROOF_TYPE_LABEL[mission.proofType].toLowerCase()} bukti`}
+      allowPhoto={allowsPhotoProof(mission.proofType)}
+      allowVideo={allowsVideoProof(mission.proofType)}
+      label={`Ketuk untuk membuka kamera — bukti ${PROOF_TYPE_LABEL[mission.proofType].toLowerCase()}`}
     />
   ) : null
 
   const textAnswerInput = (
-    <input
+    <Input
       value={answerText}
       onChange={e => setAnswerText(e.target.value)}
       placeholder={
@@ -230,7 +191,6 @@ export default function MissionCard({
             ? 'Tulis hasil yang kamu dapat'
             : 'Jawabanmu'
       }
-      className="w-full rounded-md border-brut bg-paper px-4 py-3 font-medium text-ink shadow-brutal-sm focus:outline-none"
     />
   )
 
@@ -241,181 +201,151 @@ export default function MissionCard({
       className="overflow-hidden rounded-lg border-brut bg-paper-raised shadow-brutal-sm"
       style={{ borderColor: MISSION_TYPE_COLOR_VAR[mission.type] }}
     >
-      <div
-        className="px-5 py-2"
-        style={{ backgroundColor: MISSION_TYPE_COLOR_VAR[mission.type] }}
-      >
+      <div className="px-5 py-2" style={{ backgroundColor: MISSION_TYPE_COLOR_VAR[mission.type] }}>
         <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-white">
           {MISSION_TYPE_LABEL[mission.type]}
           {mission.isMandatory && ' · WAJIB'}
           {mission.requiresCheckIn && ' · PERLU CHECK-IN'}
         </p>
       </div>
+
       <div className="p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h4 className="font-display text-xl text-ink">{mission.title}</h4>
-        </div>
-        <span className="shrink-0 rounded-full border-brut-sm bg-primary px-3 py-1 font-display text-sm text-primary-ink">
-          {formatMissionPoints(mission)}
-        </span>
-      </div>
-
-      {/* FR-11: penanda misi yang didukung sponsor. */}
-      {sponsor && (
-        <div className="mt-3 flex items-center gap-2 rounded-md border-brut-sm border-secondary bg-secondary/10 px-3 py-2">
-          <span className="flex h-6 w-auto min-w-10 max-w-[64px] items-center justify-center rounded-sm bg-white px-1">
-            <SponsorLogo src={sponsor.logoUrl} name={sponsor.name} className="max-h-5 max-w-full" />
+        <div className="flex items-start justify-between gap-3">
+          <h4 className="font-display text-xl leading-tight text-ink">{mission.title}</h4>
+          <span className="shrink-0 rounded-full border-brut-sm bg-primary px-3 py-1 font-display text-sm text-primary-ink">
+            {formatMissionPoints(mission)}
           </span>
-          <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-secondary">
-            Misi didukung {sponsor.name}
-          </p>
         </div>
-      )}
 
-      <p className="mt-2 text-sm text-ink/70">{mission.description}</p>
+        {/* FR-11: penanda misi yang didukung sponsor. */}
+        {sponsor && (
+          <div className="mt-3 flex items-center gap-2 rounded-md border-brut-sm border-secondary bg-secondary/10 px-3 py-2">
+            <span className="flex h-6 w-auto min-w-10 max-w-[64px] items-center justify-center rounded-sm bg-white px-1">
+              <SponsorLogo src={sponsor.logoUrl} name={sponsor.name} className="max-h-5 max-w-full" />
+            </span>
+            <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-secondary">
+              Misi didukung {sponsor.name}
+            </p>
+          </div>
+        )}
 
-      <MissionMeta mission={mission} />
-      <ClueBox mission={mission} />
+        <p className="mt-2 text-sm leading-relaxed text-ink/70">{mission.description}</p>
 
-      {mission.requiresCheckIn && (
-        <div className="mt-4 space-y-2 rounded-md border-brut bg-paper px-4 py-3">
-          <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-ink/45">
-            Check-in pos
-          </p>
+        <MissionMeta mission={mission} />
+        <ClueBox mission={mission} />
 
-          {!checkIn && (
-            <>
-              <input
-                value={queueNumber}
-                onChange={e => setQueueNumber(e.target.value)}
-                placeholder="Nomor antrean (opsional)"
-                className="w-full rounded-md border-brut-sm bg-paper-raised px-3 py-2 text-sm font-medium text-ink focus:outline-none"
-              />
-              <Button
-                size="sm"
-                variant="secondary"
-                className="w-full"
-                loading={checkInMutation.isPending}
-                onClick={() =>
-                  checkInMutation.mutate({
-                    missionId: mission.id,
-                    queueNumber: queueNumber.trim() || undefined,
-                  })
-                }
-              >
-                Check-in
-              </Button>
-            </>
-          )}
+        {mission.requiresCheckIn && (
+          <div className="mt-4 space-y-2 rounded-md border-brut bg-paper px-4 py-3">
+            <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-ink/45">
+              Check-in pos
+            </p>
 
-          {checkIn && !checkIn.checkedOutAt && (
-            <>
-              <p className="text-sm font-bold text-success">
-                Sudah check-in
-                {checkIn.queueNumber ? ` · antrean ${checkIn.queueNumber}` : ''}
+            {/* Kedatangan dan kepergian di pos berpetugas dicatat lewat
+                pemindaian QR, bukan oleh peserta sendiri — server memang
+                menolaknya. Tombol check-in di sini karena itu tidak pernah
+                bisa berhasil; yang dibutuhkan peserta adalah tahu apa yang
+                harus dilakukannya. */}
+            {!checkIn && (
+              <p className="text-sm text-ink/70">
+                Datangi posnya, lalu tunjukkan <strong>QR POS</strong>-mu ke petugas untuk dicatat
+                datang.
               </p>
-              <Button
-                size="sm"
-                variant="secondary"
-                className="w-full"
-                loading={checkOutMutation.isPending}
-                disabled={!latest}
-                onClick={() => checkOutMutation.mutate({ missionId: mission.id })}
-              >
-                Check-out
-              </Button>
-              <p className="text-xs text-ink/55">
-                {latest
-                  ? 'Jangan lupa check-out supaya antrean pos bisa lanjut ke kelompok berikutnya.'
-                  : 'Kirim bukti misi ini dulu, baru bisa check-out dari pos.'}
-              </p>
-            </>
-          )}
+            )}
 
-          {checkIn?.checkedOutAt && (
-            <p className="text-sm font-bold text-ink/60">Sudah check-out dari pos ini.</p>
-          )}
-        </div>
-      )}
+            {checkIn && !checkIn.checkedOutAt && (
+              <>
+                <p className="text-sm font-bold text-success">Sudah check-in di pos ini</p>
+                <p className="text-xs text-ink/55">
+                  {latest
+                    ? 'Tunjukkan QR POS-mu lagi ke petugas saat pergi, supaya pos bisa lanjut ke kelompok berikutnya.'
+                    : 'Kirim bukti misi ini dulu, baru minta petugas mencatat kepergianmu.'}
+                </p>
+              </>
+            )}
 
-      {latest && (
-        <div className="mt-4">
-          <StatusBanner
-            status={latest.status}
-            rejectReason={latest.rejectReason}
-            awardedPoint={latest.awardedPoint}
-          />
-        </div>
-      )}
+            {checkIn?.checkedOutAt && (
+              <p className="text-sm font-bold text-ink/60">Sudah check-out dari pos ini.</p>
+            )}
+          </div>
+        )}
 
-      {canSubmit && mission.type === 'TANTANGAN' && (
-        <div className="mt-4 space-y-3">
-          {evidencePicker}
-          {!needsFile && textAnswerInput}
-          <Button
-            size="sm"
-            className="w-full"
-            loading={isPending}
-            disabled={blockedByCheckIn || (needsFile ? !evidenceFile : !answerText.trim())}
-            onClick={handleSubmitTantangan}
-          >
-            Kirim Bukti
-          </Button>
-          {blockedByCheckIn && (
-            <p className="text-xs font-bold text-ink/50">Check-in dulu sebelum mengirim bukti.</p>
-          )}
-          <ErrorMessage message={apiError?.message} />
-        </div>
-      )}
+        {latest && (
+          <div className="mt-4">
+            <StatusBanner
+              status={latest.status}
+              rejectReason={latest.rejectReason}
+              awardedPoint={latest.awardedPoint}
+            />
+          </div>
+        )}
 
-      {canSubmit && mission.type === 'SOAL_LOKASI' && (
-        <div className="mt-4 space-y-3">
-          {evidencePicker}
-          {/* Isian teks hanya diminta bila misinya memang tidak meminta berkas.
-              Sebelumnya keduanya wajib sekaligus, sehingga misi lokasi yang
-              buktinya foto tetap menolak dikirim sampai peserta mengarang
-              jawaban teks yang tidak pernah diminta. */}
-          {!needsFile && textAnswerInput}
+        {canSubmit && mission.type === 'TANTANGAN' && (
+          <div className="mt-4 space-y-3">
+            {evidencePicker}
+            {!needsFile && textAnswerInput}
+            <Button
+              size="sm"
+              className="w-full"
+              loading={isPending}
+              disabled={blockedByCheckIn || (needsFile ? !evidenceFile : !answerText.trim())}
+              onClick={handleSubmitTantangan}
+            >
+              Kirim Bukti
+            </Button>
+            {blockedByCheckIn && (
+              <p className="text-xs font-bold text-ink/50">Check-in dulu sebelum mengirim bukti.</p>
+            )}
+            <ErrorMessage message={apiError?.message} />
+          </div>
+        )}
 
-          <Button
-            variant="secondary"
-            size="sm"
-            className="w-full"
-            loading={geolocation.isLocating}
-            onClick={geolocation.requestLocation}
-          >
-            {geolocation.coords ? 'Lokasi Terekam ✓' : 'Ambil Lokasi Saya'}
-          </Button>
-          <ErrorMessage message={geolocation.error ?? undefined} />
+        {canSubmit && mission.type === 'SOAL_LOKASI' && (
+          <div className="mt-4 space-y-3">
+            {evidencePicker}
+            {/* Isian teks hanya diminta bila misinya memang tidak meminta berkas.
+                Sebelumnya keduanya wajib sekaligus, sehingga misi lokasi yang
+                buktinya foto tetap menolak dikirim sampai peserta mengarang
+                jawaban teks yang tidak pernah diminta. */}
+            {!needsFile && textAnswerInput}
 
-          <Button
-            size="sm"
-            className="w-full"
-            loading={isPending}
-            disabled={
-              blockedByCheckIn ||
-              !geolocation.coords ||
-              (needsFile ? !evidenceFile : !answerText.trim())
-            }
-            onClick={handleSubmitSoalLokasi}
-          >
-            Kirim Jawaban
-          </Button>
-          {blockedByCheckIn && (
-            <p className="text-xs font-bold text-ink/50">Check-in dulu sebelum mengirim jawaban.</p>
-          )}
-          <ErrorMessage message={apiError?.message} />
-        </div>
-      )}
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-full"
+              loading={geolocation.isLocating}
+              onClick={geolocation.requestLocation}
+            >
+              {geolocation.coords ? 'Lokasi Terekam ✓' : 'Ambil Lokasi Saya'}
+            </Button>
+            <ErrorMessage message={geolocation.error ?? undefined} />
 
-      {canSubmit && mission.type === 'KUIS' && (
-        <QuizForm missionId={mission.id} disabled={blockedByCheckIn} />
-      )}
+            <Button
+              size="sm"
+              className="w-full"
+              loading={isPending}
+              disabled={
+                blockedByCheckIn ||
+                !geolocation.coords ||
+                (needsFile ? !evidenceFile : !answerText.trim())
+              }
+              onClick={handleSubmitSoalLokasi}
+            >
+              Kirim Jawaban
+            </Button>
+            {blockedByCheckIn && (
+              <p className="text-xs font-bold text-ink/50">Check-in dulu sebelum mengirim jawaban.</p>
+            )}
+            <ErrorMessage message={apiError?.message} />
+          </div>
+        )}
 
-      {mission.type === 'BIGGER_BETTER' && (
-        <BarterChain missionId={mission.id} assignment={assignment} />
-      )}
+        {canSubmit && mission.type === 'KUIS' && (
+          <QuizForm missionId={mission.id} disabled={blockedByCheckIn} />
+        )}
+
+        {mission.type === 'BIGGER_BETTER' && (
+          <BarterChain missionId={mission.id} assignment={assignment} />
+        )}
       </div>
     </li>
   )

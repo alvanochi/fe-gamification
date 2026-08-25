@@ -63,7 +63,14 @@ apiClient.interceptors.response.use(
       error.response?.data?.message || error.message || 'Terjadi kesalahan pada server'
     const errors = error.response?.data?.errors
 
-    if (status === 401) {
+    // Gagal masuk bukan sesi kedaluwarsa. Sebelumnya kredensial yang salah
+    // ikut memicu pelemparan ke halaman masuk panitia — peserta yang salah
+    // ketik nomor telepon di beranda mendadak berpindah halaman dan tidak
+    // pernah sempat membaca pesan kesalahannya. Jawaban dari jalur masuk
+    // dibiarkan lewat supaya formnya sendiri yang menampilkannya.
+    const isAuthAttempt = error.config?.url?.startsWith('/authentications')
+
+    if (status === 401 && !isAuthAttempt) {
       clearAuthStorage()
 
       if (typeof window !== 'undefined' && window.location.pathname !== '/auth/login') {

@@ -1,33 +1,32 @@
 'use client'
 
-import AdminGate from '@/components/fragments/AdminGate'
-import AdminNav from '@/components/fragments/AdminNav'
-import CategoryManager from '@/components/organisms/admin/CategoryManager'
+import Link from 'next/link'
+import AdminPageShell from '@/components/fragments/AdminPageShell'
+// Fitur kategori kelompok sedang dinonaktifkan di seluruh aplikasi: kelompok
+// berlomba tanpa dipecah rombongan, jadi warnanya hanya menambah satu hal lagi
+// yang harus diurus panitia sebelum acara. Panel aslinya dibiarkan utuh —
+// menghidupkannya kembali cukup dengan membuka komentar di bawah ini dan
+// mengembalikan tautannya di AdminNav.
+// import CategoryManager from '@/components/organisms/admin/CategoryManager'
 
 export default function AdminCategoriesPage() {
   return (
-    <AdminGate requireSuperAdmin>
-      <div className="min-h-[100dvh] bg-paper px-4 py-10 sm:px-8">
-        <div className="mx-auto max-w-3xl">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="font-mono text-xs uppercase tracking-[0.3em] text-secondary">
-                Panel Panitia
-              </p>
-              <h1 className="mt-2 font-display text-3xl text-ink sm:text-4xl">Kategori Kelompok</h1>
-            </div>
-            <AdminNav />
-          </div>
-          <p className="mt-2 text-sm text-ink/60">
-            Pecah peserta jadi beberapa rombongan bila diperlukan. Warna kategori ikut tampil di
-            layar peserta dan di pemantauan.
-          </p>
-
-          <div className="mt-8">
-            <CategoryManager />
-          </div>
-        </div>
+    <AdminPageShell requireSuperAdmin title="Kategori Kelompok" width="lg">
+      <div className="rounded-lg border-brut bg-paper-raised p-6 text-sm text-ink/70">
+        <p className="font-bold text-ink">Fitur kategori sedang dinonaktifkan.</p>
+        <p className="mt-2">
+          Kelompok berlomba tanpa dibagi rombongan, jadi kategori tidak lagi tampil di layar
+          peserta, pemantauan, maupun lembar kerja.
+        </p>
+        <Link
+          href="/admin/monitoring"
+          className="mt-4 inline-block font-mono text-xs uppercase tracking-widest text-secondary underline"
+        >
+          Ke Monitoring →
+        </Link>
       </div>
-    </AdminGate>
+
+      {/* <CategoryManager /> */}
+    </AdminPageShell>
   )
 }

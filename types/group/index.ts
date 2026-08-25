@@ -1,12 +1,21 @@
+/** Lapor pos terakhir kelompok — ditampilkan di kartu QR peserta. */
+export interface LastPostScan {
+  postName: string
+  action: 'CHECK_IN' | 'CHECK_OUT'
+  at: string
+}
+
 export interface Profile {
   id: string
   email: string
   fullname: string
   role: 'PARTICIPANT' | 'ADMIN' | 'SUPER_ADMIN'
   groupId: string | null
-  /** Token boarding pass milik sendiri; hanya dikembalikan lewat profil. */
+  /** Token QR pos milik sendiri; hanya dikembalikan lewat profil. */
   qrToken: string | null
   checkInAt: string | null
+  /** null bila kelompoknya belum pernah lapor ke pos mana pun. */
+  lastPostScan: LastPostScan | null
   createdAt: string
   updatedAt: string
 }

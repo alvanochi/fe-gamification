@@ -5,6 +5,7 @@ import Button from '@/components/elements/Button'
 import Input from '@/components/elements/Input'
 import Label from '@/components/elements/Label'
 import ErrorMessage from '@/components/elements/ErrorMessage'
+import ConfirmModal from '@/components/fragments/ConfirmModal'
 import SponsorLogo from '@/components/fragments/SponsorLogo'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
 import {
@@ -16,11 +17,13 @@ import {
 import { submissionService } from '@/services/submission.service'
 import { AppError } from '@/libs/api'
 import { SponsorAdmin } from '@/types/sponsor'
+import { IMAGE_ACCEPT } from '@/utils/mission/type-meta'
 
 function SponsorRow({ sponsor }: { sponsor: SponsorAdmin }) {
   const { mutate: update, isPending: isUpdating } = useUpdateSponsorMutation()
   const { mutate: remove, isPending: isDeleting, error: deleteError } = useDeleteSponsorMutation()
   const apiError = deleteError as AppError | null
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false)
 
   return (
     <li className="rounded-md border-brut bg-paper p-4">
@@ -55,15 +58,24 @@ function SponsorRow({ sponsor }: { sponsor: SponsorAdmin }) {
           size="sm"
           className="flex-1"
           loading={isDeleting}
-          onClick={() => {
-            if (confirm(`Hapus sponsor "${sponsor.name}"?`)) remove(sponsor.id)
-          }}
+          onClick={() => setIsConfirmingDelete(true)}
         >
           Hapus
         </Button>
       </div>
 
       <ErrorMessage message={apiError?.message} className="mt-2" />
+
+      <ConfirmModal
+        open={isConfirmingDelete}
+        title={`Hapus sponsor "${sponsor.name}"?`}
+        description="Logonya hilang dari beranda, halaman kelompok, dan misi yang ditautkan ke sponsor ini."
+        confirmLabel="Ya, hapus"
+        confirmVariant="danger"
+        loading={isDeleting}
+        onConfirm={() => remove(sponsor.id, { onSettled: () => setIsConfirmingDelete(false) })}
+        onCancel={() => setIsConfirmingDelete(false)}
+      />
     </li>
   )
 }
@@ -143,10 +155,12 @@ export default function SponsorManager() {
 
         <div>
           <Label required>Logo</Label>
+          {/* Semua format foto yang lazim keluar dari ponsel maupun perkakas
+              desain: jpg, png, webp, sampai heic bawaan iPhone. */}
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*"
+            accept={IMAGE_ACCEPT}
             className="hidden"
             onChange={e => {
               const file = e.target.files?.[0]
@@ -163,7 +177,7 @@ export default function SponsorManager() {
               <img src={previewUrl} alt="Pratinjau logo" className="max-h-full max-w-full object-contain" />
             ) : (
               <span className="text-sm font-bold text-ink/50">
-                {isUploading ? 'Mengunggah…' : 'Ketuk untuk pilih logo'}
+                {isUploading ? 'Mengunggah…' : 'Ketuk untuk pilih logo (JPG, PNG, WEBP, HEIC…)'}
               </span>
             )}
           </button>

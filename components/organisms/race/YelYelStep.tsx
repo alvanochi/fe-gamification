@@ -1,16 +1,18 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import RaceShell from '@/components/fragments/RaceShell'
 import Button from '@/components/elements/Button'
 import ErrorMessage from '@/components/elements/ErrorMessage'
 import ConfirmModal from '@/components/fragments/ConfirmModal'
+import MediaPicker from '@/components/fragments/MediaPicker'
 import YelYelCountdown from '@/components/organisms/race/YelYelCountdown'
 import { useSkipYelYelMutation } from '@/hooks/use-group'
 import { useSubmitMissionMutation } from '@/hooks/use-submissions'
 import { submissionService } from '@/services/submission.service'
 import { AppError } from '@/libs/api'
+import { VIDEO_ACCEPT } from '@/utils/mission/type-meta'
 import { Group, YelYelState } from '@/types/group'
 
 /**
@@ -31,7 +33,6 @@ export default function YelYelStep({
   myId: string
 }) {
   const queryClient = useQueryClient()
-  const fileInputRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -44,10 +45,10 @@ export default function YelYelStep({
   const isLeader = group.leaderId === myId
   const busy = uploading || submitMission.isPending
 
-  const pick = (chosen: File | null) => {
+  const pick = (chosen: File) => {
     setUploadError(null)
     setFile(chosen)
-    setPreviewUrl(chosen ? URL.createObjectURL(chosen) : null)
+    setPreviewUrl(URL.createObjectURL(chosen))
   }
 
   const send = async () => {
@@ -77,28 +78,17 @@ export default function YelYelStep({
         {yelYel.description}
       </p>
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="video/*"
-        capture="environment"
-        className="hidden"
-        onChange={e => pick(e.target.files?.[0] ?? null)}
-      />
-
-      {previewUrl ? (
-        <video src={previewUrl} controls className="mt-5 w-full rounded-md border-brut" />
-      ) : (
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="mt-5 flex w-full flex-col items-center gap-2 rounded-md border-brut border-dashed bg-paper px-4 py-10
-            text-ink/60 brutal-press-sm"
-        >
-          <span className="text-4xl">🎥</span>
-          <span className="text-sm font-bold">Rekam atau pilih video yel-yel</span>
-        </button>
-      )}
+      <div className="mt-5">
+        <MediaPicker
+          onPick={pick}
+          previewUrl={previewUrl}
+          previewIsVideo
+          accept={VIDEO_ACCEPT}
+          allowPhoto={false}
+          allowVideo
+          label="🎥 Ketuk untuk merekam yel-yel"
+        />
+      </div>
 
       <ErrorMessage message={uploadError ?? undefined} className="mt-3" />
 

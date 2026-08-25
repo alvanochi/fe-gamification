@@ -1,14 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { http } from '@/libs/api'
 import { endpoints } from '@/libs/endpoint'
 import { IApiEnvelope } from '@/types/auth'
-
-export interface AdminGroup {
-  id: string
-  name: string
-  score: number
-  categoryId: string | null
-}
 
 export interface FieldResultPayload {
   groupId: string
@@ -17,13 +10,6 @@ export interface FieldResultPayload {
   timeSeconds?: number
   awardedPoint?: number
   note?: string
-}
-
-export const useAdminGroupsQuery = () => {
-  return useQuery({
-    queryKey: ['admin-groups'],
-    queryFn: async () => (await http.get<IApiEnvelope<AdminGroup[]>>(endpoints.admin.groups)).data,
-  })
 }
 
 export const useSubmitFieldResultMutation = () => {

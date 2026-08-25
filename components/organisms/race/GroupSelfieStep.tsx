@@ -1,10 +1,12 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import RaceShell from '@/components/fragments/RaceShell'
 import Button from '@/components/elements/Button'
 import ErrorMessage from '@/components/elements/ErrorMessage'
+import MediaPicker from '@/components/fragments/MediaPicker'
 import FormationCountdown from '@/components/organisms/race/FormationCountdown'
+import { IMAGE_ACCEPT } from '@/utils/mission/type-meta'
 import { useGroupPhotoMutation } from '@/hooks/use-group'
 import { AppError } from '@/libs/api'
 import { Group } from '@/types/group'
@@ -17,8 +19,6 @@ import { Group } from '@/types/group'
  * kelompok berisi enam orang.
  */
 export default function GroupSelfieStep({ group, myId }: { group: Group; myId: string }) {
-  const cameraInputRef = useRef<HTMLInputElement>(null)
-  const galleryInputRef = useRef<HTMLInputElement>(null)
   const [photoFile, setPhotoFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const { mutate: completePhoto, isPending, error } = useGroupPhotoMutation(group.id)
@@ -30,8 +30,7 @@ export default function GroupSelfieStep({ group, myId }: { group: Group; myId: s
   const others = group.members.filter(m => m.id !== myId)
   const ordered = me ? [me, ...others] : group.members
 
-  const pick = (file?: File | null) => {
-    if (!file) return
+  const pick = (file: File) => {
     setPhotoFile(file)
     setPreviewUrl(URL.createObjectURL(file))
   }
@@ -48,14 +47,8 @@ export default function GroupSelfieStep({ group, myId }: { group: Group; myId: s
     >
       <FormationCountdown group={group} />
 
-      {group.category && (
-        <p
-          className="mt-4 inline-block rounded-full border-brut-sm px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-widest"
-          style={{ backgroundColor: group.category.color, color: '#fff' }}
-        >
-          {group.category.name}
-        </p>
-      )}
+      {/* Lencana kategori kelompok disembunyikan bersama fitur kategori —
+          lihat catatan di /admin/categories. */}
 
       <ul className="mt-4 space-y-2">
         {ordered.map(member => (
@@ -86,48 +79,16 @@ export default function GroupSelfieStep({ group, myId }: { group: Group; myId: s
         </div>
       ) : (
         <div className="mt-6 space-y-3">
-          {/* Dua jalur terpisah. `capture` memaksa kamera dan di banyak ponsel
-              justru menutup akses ke galeri, padahal kelompok sering sudah
+          {/* Kameranya benar-benar terbuka di halaman ini — bukan dialog pilih
+              berkas — dan galeri tetap tersedia untuk kelompok yang sudah
               memotret duluan dengan aplikasi kamera bawaan. */}
-          <input
-            ref={cameraInputRef}
-            type="file"
-            accept="image/*"
-            capture="user"
-            className="hidden"
-            onChange={e => pick(e.target.files?.[0])}
+          <MediaPicker
+            onPick={pick}
+            previewUrl={previewUrl}
+            accept={IMAGE_ACCEPT}
+            facing="user"
+            label="Ketuk untuk membuka kamera"
           />
-          <input
-            ref={galleryInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp,image/heic,image/heif,image/*"
-            className="hidden"
-            onChange={e => pick(e.target.files?.[0])}
-          />
-
-          <button
-            type="button"
-            onClick={() => cameraInputRef.current?.click()}
-            className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-md border-brut bg-paper"
-          >
-            {previewUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={previewUrl} alt="Pratinjau selfie kelompok" className="h-full w-full object-cover" />
-            ) : (
-              <span className="px-4 text-center text-sm font-bold text-ink/50">
-                Ketuk untuk membuka kamera
-              </span>
-            )}
-          </button>
-
-          <div className="grid grid-cols-2 gap-2">
-            <Button size="sm" variant="secondary" onClick={() => cameraInputRef.current?.click()}>
-              Buka Kamera
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => galleryInputRef.current?.click()}>
-              Pilih dari Galeri
-            </Button>
-          </div>
 
           <Button
             size="lg"

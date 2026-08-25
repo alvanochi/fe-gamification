@@ -9,7 +9,7 @@ import VoteLeaderStep from '@/components/organisms/race/VoteLeaderStep'
 import NameGroupStep from '@/components/organisms/race/NameGroupStep'
 import YelYelStep from '@/components/organisms/race/YelYelStep'
 import GroupSuccessScreen from '@/components/organisms/race/GroupSuccessScreen'
-import BoardingPassPanel from '@/components/organisms/race/BoardingPassPanel'
+import QrPosPanel from '@/components/organisms/race/QrPosPanel'
 import LogoutButton from '@/components/fragments/LogoutButton'
 import AnnouncementPopup from '@/components/fragments/AnnouncementPopup'
 import { useRealtime } from '@/hooks/use-realtime'
@@ -49,12 +49,12 @@ export default function RacePage() {
   }, [isPanitia, router])
 
   // Ditempelkan di setiap checkpoint, bukan hanya di layar sukses — peserta
-  // perlu menunjukkan QR-nya sejak tiba di meja registrasi.
+  // perlu menunjukkan QR-nya sejak pos pertama.
   const chrome = (
     <>
       <AnnouncementPopup />
       <LogoutButton floating />
-      <BoardingPassPanel />
+      <QrPosPanel />
     </>
   )
 

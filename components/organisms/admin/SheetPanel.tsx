@@ -27,36 +27,29 @@ const downloadSheet = async (path: string, filename: string) => {
 }
 
 /**
- * Pertukaran data lewat lembar kerja.
+ * Pertukaran data lewat satu lembar kerja.
  *
- * Daftar peserta acara ini hidup di spreadsheet jauh sebelum sistemnya ada,
- * dan panitia menata pembagian kelompok jauh lebih cepat di sana daripada
- * lewat layar. Panel ini menerima berkasnya apa adanya, dan mengeluarkannya
- * kembali dalam bentuk yang sama.
+ * Dulu ada dua lembar berisi orang yang sama — satu daftar peserta, satu
+ * susunan kelompok — dan panitia harus menyunting keduanya lalu menjaga agar
+ * keduanya tetap sepakat. Sekarang kolom Kelompok menempel pada baris
+ * pesertanya: mengisinya berarti kelompok itu dibuat dan peserta itu
+ * ditempatkan di dalamnya, sekali unggah.
  */
-export default function SheetPanel({ canImportGroups }: { canImportGroups: boolean }) {
-  const accountsInput = useRef<HTMLInputElement>(null)
-  const groupsInput = useRef<HTMLInputElement>(null)
-
-  const importAccounts = useSheetImportMutation('accounts')
-  const importGroups = useSheetImportMutation('groups')
+export default function SheetPanel() {
+  const fileInput = useRef<HTMLInputElement>(null)
+  const importSheet = useSheetImportMutation()
 
   const [result, setResult] = useState<SheetImportResult | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [downloadError, setDownloadError] = useState<string | null>(null)
 
-  const error =
-    (importAccounts.error as AppError | null) ?? (importGroups.error as AppError | null)
+  const error = importSheet.error as AppError | null
 
-  const run = (
-    mutation: typeof importAccounts,
-    file: File | undefined,
-    input: HTMLInputElement | null,
-  ) => {
+  const run = (file?: File) => {
     if (!file) return
     setResult(null)
     setNotice(null)
-    mutation.mutate(file, {
+    importSheet.mutate(file, {
       onSuccess: res => {
         setNotice(res.message)
         setResult(res.data)
@@ -65,7 +58,7 @@ export default function SheetPanel({ canImportGroups }: { canImportGroups: boole
       // kalau nilainya tidak dikosongkan — dan mengunggah ulang berkas yang
       // baru saja diperbaiki justru hal yang paling sering dilakukan.
       onSettled: () => {
-        if (input) input.value = ''
+        if (fileInput.current) fileInput.current.value = ''
       },
     })
   }
@@ -81,88 +74,39 @@ export default function SheetPanel({ canImportGroups }: { canImportGroups: boole
     <section className="rounded-lg border-brut bg-paper-raised p-5 shadow-brutal-sm">
       <h2 className="font-display text-xl text-ink">Lembar Kerja</h2>
       <p className="mt-1 text-sm text-ink/60">
-        Unduh untuk ditata di Excel, lalu unggah kembali. Peserta dicocokkan lewat nomor telepon —
-        baris yang nomornya sudah terdaftar diperbarui, bukan digandakan.
+        Satu lembar untuk peserta sekaligus kelompoknya. Kolom:{' '}
+        <strong>Nama, Nomor Telepon, Email, Nama Usaha, Kelompok</strong>. Baris yang diberi nama
+        kelompok sama menjadi satu kelompok — kelompoknya dibuatkan bila belum ada. Peserta
+        dicocokkan lewat nomor telepon, jadi mengunggah ulang berkas yang sama memperbarui datanya,
+        bukan menggandakannya.
       </p>
 
       <input
-        ref={accountsInput}
+        ref={fileInput}
         type="file"
         accept=".xlsx,.xls,.csv"
         className="hidden"
-        onChange={e => run(importAccounts, e.target.files?.[0], accountsInput.current)}
-      />
-      <input
-        ref={groupsInput}
-        type="file"
-        accept=".xlsx,.xls,.csv"
-        className="hidden"
-        onChange={e => run(importGroups, e.target.files?.[0], groupsInput.current)}
+        onChange={e => run(e.target.files?.[0])}
       />
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-md border-brut bg-paper p-4">
-          <p className="font-bold text-ink">Daftar Peserta</p>
-          <p className="mt-1 text-xs text-ink/55">
-            Kolom: Nama, Nomor Telepon, Email, Nama Usaha, Kelompok, Kategori.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() =>
-                download(endpoints.admin.sheetAccountTemplate, 'template-peserta.xlsx')
-              }
-            >
-              Template
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => download(endpoints.admin.sheetAccounts, 'daftar-peserta.xlsx')}
-            >
-              Unduh
-            </Button>
-            <Button
-              size="sm"
-              loading={importAccounts.isPending}
-              onClick={() => accountsInput.current?.click()}
-            >
-              Unggah
-            </Button>
-          </div>
-        </div>
-
-        <div className="rounded-md border-brut bg-paper p-4">
-          <p className="font-bold text-ink">Susunan Kelompok</p>
-          <p className="mt-1 text-xs text-ink/55">
-            Isi kolom Kelompok pada tiap baris. Jumlah anggota per kelompok mengikuti banyaknya
-            baris yang kamu beri nama kelompok sama.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => download(endpoints.admin.sheetGroups, 'susunan-kelompok.xlsx')}
-            >
-              Unduh
-            </Button>
-            {canImportGroups && (
-              <Button
-                size="sm"
-                loading={importGroups.isPending}
-                onClick={() => groupsInput.current?.click()}
-              >
-                Unggah
-              </Button>
-            )}
-          </div>
-          {!canImportGroups && (
-            <p className="mt-2 text-xs text-ink/50">
-              Mengunggah susunan kelompok hanya untuk Super Admin.
-            </p>
-          )}
-        </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => download(endpoints.admin.sheetAccountTemplate, 'template-peserta.xlsx')}
+        >
+          Template
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          onClick={() => download(endpoints.admin.sheetAccounts, 'daftar-peserta.xlsx')}
+        >
+          Unduh
+        </Button>
+        <Button size="sm" loading={importSheet.isPending} onClick={() => fileInput.current?.click()}>
+          Unggah
+        </Button>
       </div>
 
       {notice && <p className="mt-4 text-sm font-bold text-success">{notice}</p>}

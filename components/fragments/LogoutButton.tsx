@@ -31,10 +31,10 @@ export default function LogoutButton({ floating = false }: { floating?: boolean 
         title="Keluar dari akun?"
         description={
           <>
-            <p>Kamu akan dikembalikan ke halaman masuk.</p>
+            <p>Kamu akan dikembalikan ke halaman utama.</p>
             <p className="mt-2">
               Progres kelompok dan misimu <strong>tidak hilang</strong> — cukup masuk lagi dengan
-              email dan nomor telepon yang sama untuk melanjutkan.
+              nama dan nomor telepon yang sama untuk melanjutkan.
             </p>
           </>
         }

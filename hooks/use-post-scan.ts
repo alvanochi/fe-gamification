@@ -8,7 +8,6 @@ export interface PostScanPayload {
   missionId: string
   /** Dikosongkan berarti sistem yang menyimpulkan dari keadaan kelompok. */
   action?: 'CHECK_IN' | 'CHECK_OUT'
-  queueNumber?: string
 }
 
 export interface PostScanResult {

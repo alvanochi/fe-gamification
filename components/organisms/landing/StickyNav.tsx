@@ -11,10 +11,12 @@ import { useLenis } from '@/providers/SmoothScrollProvider'
 gsap.registerPlugin(ScrollTrigger)
 
 // Tautan "Misi" dihapus bersama seksi tipe misi — peserta tidak perlu tahu
-// pembagian kategori misinya sebelum acara dimulai.
+// pembagian kategori misinya sebelum acara dimulai. "Leaderboard" ikut
+// disembunyikan bersama seksinya di beranda; tautan ke seksi yang tidak
+// dirender hanya akan menggulir ke tempat kosong.
 const LINKS = [
   { href: '#cara-kerja', label: 'Cara Kerja' },
-  { href: '#leaderboard', label: 'Leaderboard' },
+  // { href: '#leaderboard', label: 'Leaderboard' },
   { href: '#sponsor', label: 'Sponsor' },
 ]
 

@@ -61,9 +61,11 @@ export const useLogoutMutation = () => {
     },
     // Sesi lokal dibersihkan apa pun hasilnya — kalau token sudah kedaluwarsa
     // di server, pengguna tetap harus bisa keluar dari perangkatnya.
+    // Beranda, bukan layar masuk panitia: peserta masuk lewat kolom nama &
+    // nomor telepon di kaki beranda, jadi ke sanalah jalan kembalinya.
     onSettled: () => {
       clearSession()
-      router.push('/auth/login')
+      router.push('/')
     },
   })
 }

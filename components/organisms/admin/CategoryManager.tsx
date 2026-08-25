@@ -16,7 +16,7 @@ import {
   useAssignCategoryMutation,
   useDistributeCategoriesMutation,
 } from '@/hooks/use-categories'
-import { useAdminGroupsQuery } from '@/hooks/use-field-results'
+import { useAdminGroupsQuery } from '@/hooks/use-admin-groups'
 import { AppError } from '@/libs/api'
 import { GroupCategory } from '@/types/group'
 

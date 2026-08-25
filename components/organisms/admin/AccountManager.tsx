@@ -16,14 +16,22 @@ import {
   useCreateAccountMutation,
   useUpdateAccountMutation,
   useDeleteAccountMutation,
+  useDeleteAccountsBulkMutation,
   useSetAccountRolesBulkMutation,
   useQrTokensMutation,
   type Account,
   type AccountRole,
   type PrintableCard,
 } from '@/hooks/use-accounts'
+import {
+  useAdminGroupsQuery,
+  useCreateGroupMutation,
+  useDeleteGroupsMutation,
+  useSetGroupMembersMutation,
+  type SkippedRow,
+} from '@/hooks/use-admin-groups'
 import { useDebounce } from '@/hooks/use-debounce'
-import { useProfileQuery } from '@/hooks/use-profile'
+import { DEFAULT_PER_PAGE } from '@/hooks/use-pagination'
 import { AppError } from '@/libs/api'
 
 const ROLE_LABEL: Record<AccountRole, string> = {
@@ -40,31 +48,38 @@ const ROLE_BADGE: Record<AccountRole, string> = {
 
 const EMPTY_FORM = { fullname: '', phoneNumber: '', email: '', businessName: '' }
 
+/** Tindakan massal yang perlu dikonfirmasi lebih dulu. */
+type PendingBulk = 'DELETE_ACCOUNTS' | 'DELETE_GROUPS' | 'NEW_GROUP' | null
+
 /**
- * Manajemen akun — satu tempat untuk menemukan siapa pun di acara ini.
+ * Manajemen akun & kelompok — satu tempat untuk menemukan siapa pun di acara
+ * ini, dan menentukan ia bertanding bersama siapa.
  *
- * Daftar akun dan lembar kartu QR dulu dua halaman berisi orang yang sama, dan
- * peserta baru muncul bila dicari. Sekarang seluruh akun tampil berhalaman, dan
- * hak akses ditegakkan pada tindakannya: membaca cukup panitia, mengubah peran
- * dan menghapus tetap Super Admin.
+ * Daftar akun dan susunan kelompok dulu dua urusan terpisah: yang satu di
+ * layar, yang satu hanya lewat unggahan lembar kerja. Karena keduanya
+ * menjawab pertanyaan yang sama — "orang ini masuk ke mana?" — keduanya kini
+ * dikerjakan dari daftar yang sama: pilih beberapa nama, lalu masukkan ke
+ * kelompok, buat kelompok baru, bubarkan kelompoknya, atau hapus akunnya.
  */
 export default function AccountManager() {
-  const { data: profile } = useProfileQuery()
-  const isSuperAdmin = profile?.role === 'SUPER_ADMIN'
-
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState<AccountRole | ''>('')
   const [page, setPage] = useState(1)
-  const [perPage, setPerPage] = useState(25)
+  const [perPage, setPerPage] = useState(DEFAULT_PER_PAGE)
   const debounced = useDebounce(search, 300)
 
   const { data, isLoading } = useAccountsQuery(debounced.trim(), roleFilter, page, perPage)
+  const { data: groups } = useAdminGroupsQuery()
 
   const createAccount = useCreateAccountMutation()
   const updateAccount = useUpdateAccountMutation()
   const deleteAccount = useDeleteAccountMutation()
+  const deleteAccounts = useDeleteAccountsBulkMutation()
   const setRoles = useSetAccountRolesBulkMutation()
   const qrTokens = useQrTokensMutation()
+  const createGroup = useCreateGroupMutation()
+  const setGroupMembers = useSetGroupMembersMutation()
+  const deleteGroups = useDeleteGroupsMutation()
 
   const [picked, setPicked] = useState<string[]>([])
   const [form, setForm] = useState(EMPTY_FORM)
@@ -72,18 +87,31 @@ export default function AccountManager() {
   const [editing, setEditing] = useState<Account | null>(null)
   const [pendingDelete, setPendingDelete] = useState<Account | null>(null)
   const [pendingRole, setPendingRole] = useState<AccountRole | null>(null)
+  const [pendingBulk, setPendingBulk] = useState<PendingBulk>(null)
+  const [newGroupName, setNewGroupName] = useState('')
   const [cards, setCards] = useState<{ cards: PrintableCard[]; skipped: string[] } | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [skippedRows, setSkippedRows] = useState<SkippedRow[]>([])
 
   const error =
     (createAccount.error as AppError | null) ??
     (updateAccount.error as AppError | null) ??
     (deleteAccount.error as AppError | null) ??
+    (deleteAccounts.error as AppError | null) ??
     (setRoles.error as AppError | null) ??
-    (qrTokens.error as AppError | null)
+    (qrTokens.error as AppError | null) ??
+    (createGroup.error as AppError | null) ??
+    (setGroupMembers.error as AppError | null) ??
+    (deleteGroups.error as AppError | null)
 
   const items = data?.items ?? []
   const counts = data?.counts
+
+  // Kelompok milik akun-akun yang sedang dipilih — inilah yang dibubarkan
+  // tombol "Bubarkan Kelompok".
+  const pickedGroupIds = [
+    ...new Set(items.filter(a => picked.includes(a.id) && a.groupId).map(a => a.groupId!)),
+  ]
 
   const changeFilter = (apply: () => void) => {
     apply()
@@ -111,6 +139,14 @@ export default function AccountManager() {
     setShowForm(false)
     setEditing(null)
     setForm(EMPTY_FORM)
+  }
+
+  /** Hasil tindakan massal selalu dibaca sama: berapa berhasil, apa yang dilewati. */
+  const reportBulk = (message: string, skipped: SkippedRow[] = []) => {
+    setNotice(message)
+    setSkippedRows(skipped)
+    setPicked([])
+    setPendingBulk(null)
   }
 
   const saveForm = () => {
@@ -142,16 +178,11 @@ export default function AccountManager() {
     }
   }
 
-  const printSelected = () => {
-    setNotice(null)
-    qrTokens.mutate(picked, { onSuccess: res => setCards(res.data) })
-  }
-
   if (isLoading) return <CardSkeleton />
 
   return (
     <div className="space-y-6">
-      <SheetPanel canImportGroups={!!isSuperAdmin} />
+      <SheetPanel />
 
       {/* --- Saringan & aksi massal --- */}
       <section className="rounded-lg border-brut bg-paper-raised p-5 shadow-brutal-sm">
@@ -160,7 +191,7 @@ export default function AccountManager() {
             className="min-w-56 flex-1"
             value={search}
             onChange={e => changeFilter(() => setSearch(e.target.value))}
-            placeholder="Cari nama, email, atau nomor…"
+            placeholder="Cari nama, email, nomor, atau kelompok…"
           />
           <Select
             className="w-auto"
@@ -184,36 +215,112 @@ export default function AccountManager() {
         </div>
 
         {picked.length > 0 && (
-          <div className="mt-4 flex flex-wrap items-center gap-3 rounded-md border-brut bg-paper px-4 py-3">
-            <span className="font-bold text-ink">{picked.length} dipilih</span>
+          <div className="mt-4 space-y-3 rounded-md border-brut bg-paper px-4 py-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="font-bold text-ink">{picked.length} dipilih</span>
 
-            <Button size="sm" variant="secondary" loading={qrTokens.isPending} onClick={printSelected}>
-              Cetak Kartu QR
-            </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                loading={qrTokens.isPending}
+                onClick={() => {
+                  setNotice(null)
+                  qrTokens.mutate(picked, { onSuccess: res => setCards(res.data) })
+                }}
+              >
+                Cetak Kartu QR
+              </Button>
 
-            {isSuperAdmin && (
-              <>
-                <Select
-                  className="w-auto"
-                  value=""
-                  onChange={e => setPendingRole(e.target.value as AccountRole)}
-                >
-                  <option value="">Ubah peran ke…</option>
-                  <option value="PARTICIPANT">Peserta</option>
-                  <option value="ADMIN">Panitia Lapangan</option>
-                  <option value="SUPER_ADMIN">Super Admin</option>
-                </Select>
-              </>
-            )}
+              <Select
+                className="w-auto"
+                value=""
+                onChange={e => setPendingRole(e.target.value as AccountRole)}
+              >
+                <option value="">Ubah peran ke…</option>
+                <option value="PARTICIPANT">Peserta</option>
+                <option value="ADMIN">Panitia Lapangan</option>
+                <option value="SUPER_ADMIN">Super Admin</option>
+              </Select>
 
-            <Button size="sm" variant="ghost" onClick={() => setPicked([])}>
-              Batal pilih
-            </Button>
+              <Button
+                size="sm"
+                variant="danger"
+                onClick={() => setPendingBulk('DELETE_ACCOUNTS')}
+              >
+                Hapus Akun
+              </Button>
+
+              <Button size="sm" variant="ghost" onClick={() => setPicked([])}>
+                Batal pilih
+              </Button>
+            </div>
+
+            {/* --- Penyusunan kelompok dari akun yang dipilih --- */}
+            <div className="flex flex-wrap items-center gap-3 border-t border-ink/10 pt-3">
+              <Select
+                className="w-auto"
+                value=""
+                onChange={e => {
+                  const groupId = e.target.value
+                  if (!groupId) return
+                  setNotice(null)
+                  setGroupMembers.mutate(
+                    { groupId, userIds: picked },
+                    { onSuccess: res => reportBulk(res.message) },
+                  )
+                }}
+              >
+                <option value="">Masukkan ke kelompok…</option>
+                {(groups ?? []).map(group => (
+                  <option key={group.id} value={group.id}>
+                    {group.name}
+                  </option>
+                ))}
+              </Select>
+
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => {
+                  setNewGroupName('')
+                  setPendingBulk('NEW_GROUP')
+                }}
+              >
+                + Kelompok Baru
+              </Button>
+
+              <Button
+                size="sm"
+                variant="danger"
+                disabled={pickedGroupIds.length === 0}
+                onClick={() => setPendingBulk('DELETE_GROUPS')}
+              >
+                Bubarkan Kelompok ({pickedGroupIds.length})
+              </Button>
+
+              <p className="w-full text-xs text-ink/50">
+                Membubarkan kelompok tidak menghapus akunnya — anggotanya kembali menjadi peserta
+                tanpa kelompok dan bisa langsung dimasukkan ke kelompok lain.
+              </p>
+            </div>
           </div>
         )}
 
         {notice && <p className="mt-3 text-sm font-bold text-success">{notice}</p>}
         <ErrorMessage message={error?.message} className="mt-3" />
+
+        {skippedRows.length > 0 && (
+          <div className="mt-3 rounded-md border-brut !border-warning bg-warning/10 p-4">
+            <p className="font-bold text-ink">{skippedRows.length} dilewati</p>
+            <ul className="mt-2 space-y-1 text-sm text-ink/70">
+              {skippedRows.map(row => (
+                <li key={row.name}>
+                  <strong>{row.name}</strong> — {row.reason}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </section>
 
       {/* --- Form tambah/sunting --- */}
@@ -282,7 +389,18 @@ export default function AccountManager() {
 
       {/* --- Daftar akun --- */}
       <section className="rounded-lg border-brut bg-paper-raised p-5 shadow-brutal-sm">
-        <label className="flex items-center gap-3 border-b border-ink/10 pb-3">
+        {/* Di atas daftar: dengan seratus baris lebih, kendali halaman di kaki
+            daftar berarti menggulir jauh hanya untuk pindah halaman. */}
+        <Pagination
+          page={data?.page ?? page}
+          perPage={data?.perPage ?? perPage}
+          total={data?.total ?? 0}
+          totalPages={data?.totalPages ?? 1}
+          onPageChange={setPage}
+          onPerPageChange={value => changeFilter(() => setPerPage(value))}
+        />
+
+        <label className="mt-4 flex items-center gap-3 border-y border-ink/10 py-3">
           <input
             type="checkbox"
             checked={allOnPagePicked}
@@ -322,6 +440,16 @@ export default function AccountManager() {
                   </p>
                 </div>
 
+                {account.role === 'PARTICIPANT' && (
+                  <span
+                    className={`shrink-0 rounded-sm border-brut-sm px-2 py-1 font-mono text-[10px] font-bold uppercase ${
+                      account.groupName ? 'bg-paper text-ink/70' : 'bg-paper text-ink/35'
+                    }`}
+                  >
+                    {account.groupName ?? 'tanpa kelompok'}
+                  </span>
+                )}
+
                 <span
                   className={`shrink-0 rounded-full border-brut-sm px-3 py-1 font-mono text-[10px] font-bold uppercase ${ROLE_BADGE[account.role]}`}
                 >
@@ -332,27 +460,14 @@ export default function AccountManager() {
                   <Button size="sm" variant="ghost" onClick={() => openEdit(account)}>
                     Sunting
                   </Button>
-                  {isSuperAdmin && (
-                    <Button size="sm" variant="ghost" onClick={() => setPendingDelete(account)}>
-                      Hapus
-                    </Button>
-                  )}
+                  <Button size="sm" variant="ghost" onClick={() => setPendingDelete(account)}>
+                    Hapus
+                  </Button>
                 </div>
               </li>
             ))}
           </ul>
         )}
-
-        <div className="mt-4">
-          <Pagination
-            page={data?.page ?? page}
-            perPage={data?.perPage ?? perPage}
-            total={data?.total ?? 0}
-            totalPages={data?.totalPages ?? 1}
-            onPageChange={setPage}
-            onPerPageChange={value => changeFilter(() => setPerPage(value))}
-          />
-        </div>
       </section>
 
       <ConfirmModal
@@ -374,6 +489,66 @@ export default function AccountManager() {
           })
         }
         onCancel={() => setPendingDelete(null)}
+      />
+
+      <ConfirmModal
+        open={pendingBulk === 'DELETE_ACCOUNTS'}
+        title={`Hapus ${picked.length} akun?`}
+        description="Akun yang sudah mengirim bukti misi, memberi poin, atau tercatat di pos akan dilewati beserta alasannya."
+        confirmLabel="Ya, hapus"
+        confirmVariant="danger"
+        loading={deleteAccounts.isPending}
+        onConfirm={() =>
+          deleteAccounts.mutate(picked, {
+            onSuccess: res => reportBulk(res.message, res.data.skipped),
+            onError: () => setPendingBulk(null),
+          })
+        }
+        onCancel={() => setPendingBulk(null)}
+      />
+
+      <ConfirmModal
+        open={pendingBulk === 'DELETE_GROUPS'}
+        title={`Bubarkan ${pickedGroupIds.length} kelompok?`}
+        description="Anggotanya tidak dihapus — mereka kembali menjadi peserta tanpa kelompok. Kelompok yang sudah bertanding dilewati supaya papan skornya tetap utuh."
+        confirmLabel="Ya, bubarkan"
+        confirmVariant="danger"
+        loading={deleteGroups.isPending}
+        onConfirm={() =>
+          deleteGroups.mutate(pickedGroupIds, {
+            onSuccess: res => reportBulk(res.message, res.data.skipped),
+            onError: () => setPendingBulk(null),
+          })
+        }
+        onCancel={() => setPendingBulk(null)}
+      />
+
+      <ConfirmModal
+        open={pendingBulk === 'NEW_GROUP'}
+        title="Kelompok baru"
+        description={
+          <>
+            <p>{picked.length} akun terpilih akan langsung menjadi anggotanya.</p>
+            <Input
+              className="mt-3"
+              value={newGroupName}
+              onChange={e => setNewGroupName(e.target.value)}
+              placeholder="Nama kelompok"
+            />
+          </>
+        }
+        confirmLabel="Buat Kelompok"
+        loading={createGroup.isPending}
+        onConfirm={() =>
+          createGroup.mutate(
+            { name: newGroupName.trim(), memberIds: picked },
+            {
+              onSuccess: res => reportBulk(res.message),
+              onError: () => setPendingBulk(null),
+            },
+          )
+        }
+        onCancel={() => setPendingBulk(null)}
       />
 
       <ConfirmModal

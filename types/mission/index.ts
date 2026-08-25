@@ -124,7 +124,6 @@ export interface MissionCheckIn {
   groupId: string
   checkedInBy: string
   checkedOutBy: string | null
-  queueNumber: string | null
   checkedInAt: string
   checkedOutAt: string | null
 }

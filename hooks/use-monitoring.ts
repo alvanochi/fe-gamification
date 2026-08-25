@@ -1,7 +1,8 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { http } from '@/libs/api'
 import { endpoints } from '@/libs/endpoint'
 import { IApiEnvelope } from '@/types/auth'
+import { DEFAULT_PER_PAGE } from '@/hooks/use-pagination'
 
 export interface GroupProgress {
   id: string
@@ -30,7 +31,7 @@ export interface MonitoringData extends Paged {
   totalMissions: number
   totalParticipants: number
   checkedIn: number
-  /** Peserta hadir yang belum kebagian kelompok — calon Generate Kelompok. */
+  /** Peserta hadir yang belum kebagian kelompok. */
   waitingForGroup: number
   groups: GroupProgress[]
 }
@@ -57,14 +58,13 @@ export interface ActivityRow {
 export interface CheckInRow {
   id: string
   missionTitle: string
-  queueNumber: string | null
   checkedInAt: string
   checkedOutAt: string | null
   checkedInByName: string
   checkedOutByName: string | null
 }
 
-export const useMonitoringQuery = (page = 1, perPage = 25) => {
+export const useMonitoringQuery = (page = 1, perPage = DEFAULT_PER_PAGE) => {
   return useQuery({
     queryKey: ['monitoring', page, perPage],
     queryFn: async () =>
@@ -97,7 +97,7 @@ export interface MissionProgress {
   }>
 }
 
-export const useMissionMonitoringQuery = (page = 1, perPage = 25) => {
+export const useMissionMonitoringQuery = (page = 1, perPage = DEFAULT_PER_PAGE) => {
   return useQuery({
     queryKey: ['monitoring-missions', page, perPage],
     queryFn: async () =>
@@ -121,18 +121,5 @@ export const useGroupDetailQuery = (groupId: string | null) => {
       ).data,
     enabled: !!groupId,
     refetchInterval: 10_000,
-  })
-}
-
-export const useGenerateGroupsMutation = () => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: () =>
-      http.post<IApiEnvelope<{ assigned: number; created: number }>>(endpoints.admin.generateGroups),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['monitoring'] })
-      queryClient.invalidateQueries({ queryKey: ['admin-groups'] })
-    },
   })
 }

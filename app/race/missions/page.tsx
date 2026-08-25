@@ -4,22 +4,29 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
+import Input from '@/components/elements/Input'
 import MissionCard from '@/components/organisms/race/MissionCard'
 import Pagination from '@/components/fragments/Pagination'
 import AnnouncementPopup from '@/components/fragments/AnnouncementPopup'
 import ValidationToast from '@/components/fragments/ValidationToast'
-import BoardingPassPanel from '@/components/organisms/race/BoardingPassPanel'
+import QrPosPanel from '@/components/organisms/race/QrPosPanel'
 import { useProfileQuery } from '@/hooks/use-profile'
 import { useMissionsQuery, useMyCheckInsQuery } from '@/hooks/use-missions'
 import { useMyGroupSubmissionsQuery } from '@/hooks/use-submissions'
 import { useMyAssignmentsQuery } from '@/hooks/use-barter'
 import { useDebounce } from '@/hooks/use-debounce'
+import { usePagination } from '@/hooks/use-pagination'
 import { useSettingsQuery } from '@/hooks/use-settings'
 import { useRealtime } from '@/hooks/use-realtime'
-import { MISSION_CATEGORY_LABEL, MISSION_TYPE_LABEL } from '@/utils/mission/type-meta'
+import {
+  MISSION_CATEGORY_LABEL,
+  MISSION_TYPE_COLOR_VAR,
+  MISSION_TYPE_LABEL,
+} from '@/utils/mission/type-meta'
 import {
   SECTION_META,
   SECTION_ORDER,
+  groupByMissionType,
   sectionOf,
   sortBySection,
   statusOf,
@@ -47,16 +54,7 @@ export default function RaceMissionsPage() {
 
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<StatusFilter>('SEMUA')
-  const [page, setPage] = useState(1)
-  const [perPage, setPerPage] = useState(10)
   const debouncedSearch = useDebounce(search, 300)
-
-  // Mengubah saringan berarti daftar yang lain sama sekali — mulai lagi dari
-  // halaman pertama, bukan bertahan di nomor halaman lama.
-  const changeFilter = (apply: () => void) => {
-    apply()
-    setPage(1)
-  }
 
   const profile = profileQuery.data
   const hasNoGroup = !profileQuery.isLoading && !profile?.groupId
@@ -92,11 +90,14 @@ export default function RaceMissionsPage() {
     return sortBySection(filtered, submissions)
   }, [missions, submissions, status, debouncedSearch])
 
-  const totalPages = Math.max(1, Math.ceil(visibleMissions.length / perPage))
-  // Hasil pencarian bisa menyusut sementara pembaca masih di halaman jauh;
-  // dijepit saat render supaya layarnya tidak pernah kosong.
-  const safePage = Math.min(page, totalPages)
-  const pageItems = visibleMissions.slice((safePage - 1) * perPage, safePage * perPage)
+  const pagination = usePagination(visibleMissions)
+
+  // Mengubah saringan berarti daftar yang lain sama sekali — mulai lagi dari
+  // halaman pertama, bukan bertahan di nomor halaman lama.
+  const changeFilter = (apply: () => void) => {
+    apply()
+    pagination.resetPage()
+  }
 
   const initialLoading =
     profileQuery.isLoading || missionsQuery.isLoading || submissionsQuery.isLoading
@@ -150,7 +151,7 @@ export default function RaceMissionsPage() {
       {/* QR peserta dipakai petugas pos sepanjang perlombaan, jadi ia harus
           terjangkau dari layar misi — bukan hanya dari rangkaian checkpoint
           yang sudah ditinggalkan. */}
-      <BoardingPassPanel />
+      <QrPosPanel />
 
       <div className="mx-auto max-w-5xl">
         <Link href="/race" className="font-mono text-xs uppercase tracking-widest text-secondary">
@@ -193,12 +194,11 @@ export default function RaceMissionsPage() {
             {/* Menempel di atas saat menggulir — dengan puluhan misi, kolom cari
                 yang ikut hilang ke atas membuat pencarian jadi merepotkan. */}
             <div className="sticky top-0 z-30 -mx-4 mt-6 border-b-brut bg-paper px-4 py-4 sm:-mx-8 sm:px-8">
-              <input
+              <Input
                 type="search"
                 value={search}
                 onChange={e => changeFilter(() => setSearch(e.target.value))}
                 placeholder="Cari misi, lokasi, atau kategori…"
-                className="w-full rounded-md border-brut bg-paper-raised px-4 py-3 font-medium text-ink shadow-brutal-sm focus:outline-none"
               />
 
               <div className="mt-3 flex flex-wrap gap-2">
@@ -230,18 +230,21 @@ export default function RaceMissionsPage() {
                     halaman di kaki daftar berarti menggulir jauh hanya untuk
                     pindah halaman. */}
                 <Pagination
-                  page={safePage}
-                  perPage={perPage}
-                  total={visibleMissions.length}
-                  totalPages={totalPages}
-                  onPageChange={setPage}
-                  onPerPageChange={value => changeFilter(() => setPerPage(value))}
+                  page={pagination.page}
+                  perPage={pagination.perPage}
+                  total={pagination.total}
+                  totalPages={pagination.totalPages}
+                  onPageChange={pagination.setPage}
+                  onPerPageChange={value => changeFilter(() => pagination.setPerPage(value))}
                 />
+
                 {SECTION_ORDER.map(key => {
                   // Tiap halaman menampilkan bagian yang kebetulan jatuh di
                   // dalamnya; daftar sudah diurutkan mengikuti urutan bagian,
                   // jadi satu bagian jarang terpotong dua halaman.
-                  const inSection = pageItems.filter(m => sectionOf(m, submissions) === key)
+                  const inSection = pagination.pageItems.filter(
+                    m => sectionOf(m, submissions) === key,
+                  )
                   if (inSection.length === 0) return null
 
                   const meta = SECTION_META[key]
@@ -253,21 +256,39 @@ export default function RaceMissionsPage() {
                       </div>
                       <p className="mt-0.5 text-sm text-ink/55">{meta.hint}</p>
 
-                      <ul className="mt-3 grid items-start gap-4 lg:grid-cols-2">
-                        {inSection.map(mission => (
-                          <MissionCard
-                            key={mission.id}
-                            mission={mission}
-                            submissions={submissions}
-                            checkIn={checkIns.find(c => c.missionId === mission.id) ?? null}
-                            assignment={assignments.find(a => a.missionId === mission.id) ?? null}
-                          />
-                        ))}
-                      </ul>
+                      {/* Lapis kedua: di dalam satu bagian, misi dikelompokkan
+                          lagi per jenis soalnya. Bagian "Bisa Dikerjakan
+                          Sendiri" bisa berisi tantangan, barter, dan kuis
+                          sekaligus — tiga cara kerja yang sama sekali berbeda,
+                          dan mencampurnya membuat tim membaca ulang tiap kartu
+                          untuk tahu mana yang sedang mereka hadapi. */}
+                      {groupByMissionType(inSection, mission => mission.type).map(group => (
+                        <div key={group.type} className="mt-4">
+                          <span
+                            className="inline-block rounded-full border-brut-sm px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-widest text-white"
+                            style={{ backgroundColor: MISSION_TYPE_COLOR_VAR[group.type] }}
+                          >
+                            {MISSION_TYPE_LABEL[group.type]} · {group.items.length}
+                          </span>
+
+                          <ul className="mt-3 grid items-start gap-4 lg:grid-cols-2">
+                            {group.items.map(mission => (
+                              <MissionCard
+                                key={mission.id}
+                                mission={mission}
+                                submissions={submissions}
+                                checkIn={checkIns.find(c => c.missionId === mission.id) ?? null}
+                                assignment={
+                                  assignments.find(a => a.missionId === mission.id) ?? null
+                                }
+                              />
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
                     </section>
                   )
                 })}
-
               </div>
             )}
           </>

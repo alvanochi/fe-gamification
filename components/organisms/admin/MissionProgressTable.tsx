@@ -6,9 +6,8 @@ import CardSkeleton from '@/components/skeleton/CardSkeleton'
 import Pagination from '@/components/fragments/Pagination'
 import { useMissionMonitoringQuery, type MissionProgress } from '@/hooks/use-monitoring'
 import { useDebounce } from '@/hooks/use-debounce'
-
-const waktu = (iso: string) =>
-  new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+import { DEFAULT_PER_PAGE } from '@/hooks/use-pagination'
+import { formatTime as waktu } from '@/utils/format/formatDate'
 
 const STATUS_STYLE = {
   APPROVED: 'bg-success/15 text-success',
@@ -22,7 +21,7 @@ const STATUS_STYLE = {
  */
 export default function MissionProgressTable() {
   const [page, setPage] = useState(1)
-  const [perPage, setPerPage] = useState(25)
+  const [perPage, setPerPage] = useState(DEFAULT_PER_PAGE)
   const { data, isLoading } = useMissionMonitoringQuery(page, perPage)
   const [search, setSearch] = useState('')
   const [open, setOpen] = useState<string | null>(null)
@@ -44,6 +43,17 @@ export default function MissionProgressTable() {
         value={search}
         onChange={e => setSearch(e.target.value)}
         placeholder="Cari misi…"
+      />
+
+      {/* Di atas daftar, sama seperti papan kelompok — kendali halaman selalu
+          berada di tempat yang sama di seluruh panel. */}
+      <Pagination
+        page={data?.page ?? page}
+        perPage={data?.perPage ?? perPage}
+        total={data?.totalMissions ?? 0}
+        totalPages={data?.totalPages ?? 1}
+        onPageChange={setPage}
+        onPerPageChange={setPerPage}
       />
 
       {missions.length === 0 ? (
@@ -117,15 +127,6 @@ export default function MissionProgressTable() {
           })}
         </ul>
       )}
-
-      <Pagination
-        page={data?.page ?? page}
-        perPage={data?.perPage ?? perPage}
-        total={data?.totalMissions ?? 0}
-        totalPages={data?.totalPages ?? 1}
-        onPageChange={setPage}
-        onPerPageChange={setPerPage}
-      />
 
       <p className="text-xs text-ink/50">
         Ketuk misi untuk melihat kelompok mana saja yang sudah mengerjakannya. &quot;Belum&quot;

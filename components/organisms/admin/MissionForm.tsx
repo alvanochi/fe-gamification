@@ -101,7 +101,6 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
             pointMin: '',
             pointMax: '',
             requiresCheckIn: false,
-            equipment: '',
             scoringMode: 'FLAT',
             pointPerUnit: '',
             maxUnits: '',
@@ -304,16 +303,10 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
           </div>
         </div>
 
-        <div>
-          <Label>Peralatan yang Disiapkan Panitia</Label>
-          <TextArea
-            placeholder={'1. BUSUR 4 BUAH\n2. ANAK PANAH 20 BUAH'}
-            {...register('equipment')}
-          />
-          <p className="mt-1 text-xs text-ink/50">
-            Daftar alat di pos. Ditampilkan ke peserta dan petugas pos.
-          </p>
-        </div>
+        {/* Daftar peralatan pos dilepas dari form ini: yang menyiapkan alat
+            adalah panitia di lapangan, dan menampilkannya di kartu misi hanya
+            menambah baris yang tidak dipakai peserta untuk mengambil
+            keputusan. Kolomnya masih ada di basis data untuk data lama. */}
 
         {/* Cara penilaian: menutup gaya penilaian MR6 yang beragam. */}
         <div>

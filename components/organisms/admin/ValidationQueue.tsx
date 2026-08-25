@@ -3,10 +3,15 @@
 import { useState } from 'react'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
 import Button from '@/components/elements/Button'
+import Input from '@/components/elements/Input'
 import ErrorMessage from '@/components/elements/ErrorMessage'
+import ConfirmModal from '@/components/fragments/ConfirmModal'
+import Pagination from '@/components/fragments/Pagination'
 import { usePendingSubmissionsQuery, useValidateSubmissionMutation } from '@/hooks/use-submissions'
+import { usePagination } from '@/hooks/use-pagination'
 import { AppError } from '@/libs/api'
 import { PendingSubmission } from '@/types/mission'
+import { groupByMissionType } from '@/utils/mission/grouping'
 import {
   MISSION_TYPE_COLOR_VAR,
   MISSION_TYPE_LABEL,
@@ -61,6 +66,7 @@ function QueueCard({ submission }: { submission: PendingSubmission }) {
   const [units, setUnits] = useState('')
   const [timeSeconds, setTimeSeconds] = useState('')
   const [rejectReason, setRejectReason] = useState('')
+  const [isRejecting, setIsRejecting] = useState(false)
 
   const parsedPoint = Number(awardedPoint)
   const pointValid = hasRange
@@ -128,13 +134,13 @@ function QueueCard({ submission }: { submission: PendingSubmission }) {
           <label className="font-mono text-[11px] font-bold uppercase tracking-widest text-ink/45">
             Nilai ({submission.pointMin} - {submission.pointMax} poin)
           </label>
-          <input
+          <Input
+            className="mt-1"
             type="number"
             min={submission.pointMin!}
             max={submission.pointMax!}
             value={awardedPoint}
             onChange={e => setAwardedPoint(e.target.value)}
-            className="mt-1 w-full rounded-md border-brut bg-paper px-4 py-3 font-medium text-ink shadow-brutal-sm focus:outline-none"
           />
         </div>
       )}
@@ -144,13 +150,13 @@ function QueueCard({ submission }: { submission: PendingSubmission }) {
           <label className="font-mono text-[11px] font-bold uppercase tracking-widest text-ink/45">
             Jumlah hasil ({submission.pointPerUnit} poin per hasil)
           </label>
-          <input
+          <Input
+            className="mt-1"
             type="number"
             min={0}
             value={units}
             onChange={e => setUnits(e.target.value)}
             placeholder="Misal: 2"
-            className="mt-1 w-full rounded-md border-brut bg-paper px-4 py-3 font-medium text-ink shadow-brutal-sm focus:outline-none"
           />
         </div>
       )}
@@ -160,13 +166,13 @@ function QueueCard({ submission }: { submission: PendingSubmission }) {
           <label className="font-mono text-[11px] font-bold uppercase tracking-widest text-ink/45">
             Waktu tempuh, detik (acuan {submission.timeTargetSeconds})
           </label>
-          <input
+          <Input
+            className="mt-1"
             type="number"
             min={1}
             value={timeSeconds}
             onChange={e => setTimeSeconds(e.target.value)}
             placeholder="Misal: 240"
-            className="mt-1 w-full rounded-md border-brut bg-paper px-4 py-3 font-medium text-ink shadow-brutal-sm focus:outline-none"
           />
         </div>
       )}
@@ -175,15 +181,6 @@ function QueueCard({ submission }: { submission: PendingSubmission }) {
         <p className="mt-2 text-xs font-bold text-ink/60">Perkiraan poin: {previewPoint}</p>
       )}
 
-      <div className="mt-4">
-        <input
-          value={rejectReason}
-          onChange={e => setRejectReason(e.target.value)}
-          placeholder="Alasan penolakan (opsional)"
-          className="w-full rounded-md border-brut-sm bg-paper px-3 py-2 text-sm font-medium text-ink focus:outline-none"
-        />
-      </div>
-
       <div className="mt-4 flex gap-3">
         <Button
           variant="danger"
@@ -191,13 +188,7 @@ function QueueCard({ submission }: { submission: PendingSubmission }) {
           className="flex-1"
           loading={actingOn === 'REJECTED'}
           disabled={isPending}
-          onClick={() =>
-            validate({
-              submissionId: submission.id,
-              status: 'REJECTED',
-              rejectReason: rejectReason.trim() || undefined,
-            })
-          }
+          onClick={() => setIsRejecting(true)}
         >
           Tolak
         </Button>
@@ -229,12 +220,57 @@ function QueueCard({ submission }: { submission: PendingSubmission }) {
         </p>
       )}
       <ErrorMessage message={apiError?.message} className="mt-2" />
+
+      {/* Penolakan dikonfirmasi, dan alasannya diketik di dialog yang sama.
+          Sebelumnya kolom alasan berdiri di kartu — mudah terlewat — dan satu
+          ketukan langsung menolak bukti tanpa penjelasan apa pun untuk tim
+          yang menerimanya. */}
+      <ConfirmModal
+        open={isRejecting}
+        title={`Tolak bukti ${submission.groupName}?`}
+        description={
+          <>
+            <p>
+              Misi <strong>{submission.missionTitle}</strong> akan terbuka lagi untuk kelompok ini,
+              dan alasan di bawah tampil di layar mereka.
+            </p>
+            <Input
+              className="mt-3"
+              value={rejectReason}
+              onChange={e => setRejectReason(e.target.value)}
+              placeholder="Alasan penolakan (mis. foto tidak terlihat jelas)"
+            />
+          </>
+        }
+        confirmLabel="Ya, Tolak"
+        confirmVariant="danger"
+        loading={actingOn === 'REJECTED'}
+        onConfirm={() =>
+          validate(
+            {
+              submissionId: submission.id,
+              status: 'REJECTED',
+              rejectReason: rejectReason.trim() || undefined,
+            },
+            { onSettled: () => setIsRejecting(false) },
+          )
+        }
+        onCancel={() => setIsRejecting(false)}
+      />
     </li>
   )
 }
 
+/**
+ * Antrean validasi, dikelompokkan per jenis misi dan berhalaman.
+ *
+ * Menilai tantangan foto, rantai barter, dan kuis menuntut cara membaca yang
+ * berbeda; daftar campur memaksa panitia berganti-ganti kacamata tiap kartu.
+ * Dikelompokkan begini, mereka bisa menyelesaikan satu jenis dulu sampai habis.
+ */
 export default function ValidationQueue() {
   const { data: submissions, isLoading, error } = usePendingSubmissionsQuery()
+  const pagination = usePagination(submissions ?? [])
 
   if (isLoading) {
     return (
@@ -262,10 +298,35 @@ export default function ValidationQueue() {
   }
 
   return (
-    <ul className="space-y-4">
-      {submissions.map(submission => (
-        <QueueCard key={submission.id} submission={submission} />
+    <div className="space-y-6">
+      <Pagination
+        page={pagination.page}
+        perPage={pagination.perPage}
+        total={pagination.total}
+        totalPages={pagination.totalPages}
+        onPageChange={pagination.setPage}
+        onPerPageChange={pagination.setPerPage}
+      />
+
+      {groupByMissionType(pagination.pageItems, item => item.missionType).map(group => (
+        <section key={group.type}>
+          <div className="flex flex-wrap items-baseline gap-x-3">
+            <h2
+              className="font-display text-xl"
+              style={{ color: MISSION_TYPE_COLOR_VAR[group.type] }}
+            >
+              {MISSION_TYPE_LABEL[group.type]}
+            </h2>
+            <span className="font-mono text-xs text-ink/40">{group.items.length} menunggu</span>
+          </div>
+
+          <ul className="mt-3 space-y-4">
+            {group.items.map(submission => (
+              <QueueCard key={submission.id} submission={submission} />
+            ))}
+          </ul>
+        </section>
       ))}
-    </ul>
+    </div>
   )
 }

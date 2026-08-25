@@ -19,6 +19,15 @@ export const formatDateTime = (dateString: string): string => {
   })
 }
 
+/**
+ * Jam saja (HH.MM) — satu-satunya bagian yang berguna di layar panitia selama
+ * acara berlangsung, karena semuanya terjadi pada hari yang sama.
+ */
+export const formatTime = (dateString: string | null | undefined) =>
+  dateString
+    ? new Date(dateString).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+    : '—'
+
 export const formatDateYMD = (dateString: string) => {
   const date = new Date(dateString)
 
