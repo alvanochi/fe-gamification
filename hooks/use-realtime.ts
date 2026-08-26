@@ -37,6 +37,9 @@ const getSocket = () => {
   socket = io(origin, {
     transports: ['websocket', 'polling'],
     withCredentials: true,
+    extraHeaders: {
+      'ngrok-skip-browser-warning': 'true'
+    }
   })
   return socket
 }
@@ -76,7 +79,7 @@ export const useRealtime = (groupId?: string | null) => {
             ? `+${payload.point} poin`
             : undefined
           : payload.rejectReason ??
-            'Panitia tidak menyertakan catatan. Perbaiki lalu kirim ulang.',
+          'Panitia tidak menyertakan catatan. Perbaiki lalu kirim ulang.',
         // Penolakan diberi waktu lebih lama: ada alasan yang perlu dibaca.
         duration: approved ? 6000 : 12000,
       })
