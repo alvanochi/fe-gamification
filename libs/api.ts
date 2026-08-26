@@ -19,11 +19,7 @@ export class AppError extends Error {
   }
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL
-
-if (!API_URL) {
-  throw new Error('NEXT_PUBLIC_API_URL is not defined')
-}
+const API_URL = process.env.NEXT_PUBLIC_API_URL || '/api'
 
 const getToken = () => {
   if (typeof window === 'undefined') return null
@@ -42,12 +38,21 @@ export const apiClient = axios.create({
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
-    'ngrok-skip-browser-warning': 'true'
+    'ngrok-skip-browser-warning': 'true',
   },
 })
 
 apiClient.interceptors.request.use(config => {
   config.headers['ngrok-skip-browser-warning'] = 'true'
+
+  const fullUrl = `${config.baseURL || ''}${config.url || ''}`
+  if (fullUrl.includes('ngrok')) {
+    config.params = {
+      'ngrok-skip-browser-warning': 'true',
+      ...config.params,
+    }
+  }
+
   const token = getToken()
 
   if (token) {

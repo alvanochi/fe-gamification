@@ -30,16 +30,19 @@ let socket: Socket | null = null
 const getSocket = () => {
   if (socket) return socket
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? ''
-  // NEXT_PUBLIC_API_URL menunjuk ke /api; socket.io menempel di akar domain.
-  const origin = apiUrl.replace(/\/api\/?$/, '')
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || ''
+  let origin = apiUrl.replace(/\/api\/?$/, '')
+
+  if (!origin || origin.startsWith('/')) {
+    origin = typeof window !== 'undefined' ? window.location.origin : ''
+  }
 
   socket = io(origin, {
     transports: ['websocket', 'polling'],
     withCredentials: true,
     extraHeaders: {
-      'ngrok-skip-browser-warning': 'true'
-    }
+      'ngrok-skip-browser-warning': 'true',
+    },
   })
   return socket
 }

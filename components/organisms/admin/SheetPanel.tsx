@@ -9,11 +9,18 @@ import { AppError } from '@/libs/api'
 
 /** Unduhan menembak API langsung, membawa token supaya lolos penjaga rute. */
 const downloadSheet = async (path: string, filename: string) => {
-  const base = process.env.NEXT_PUBLIC_API_URL ?? ''
+  const base = process.env.NEXT_PUBLIC_API_URL || '/api'
   const token = localStorage.getItem('accessToken')
 
+  const headers: Record<string, string> = {
+    'ngrok-skip-browser-warning': 'true',
+  }
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  }
+
   const res = await fetch(`${base}${path}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    headers,
   })
   if (!res.ok) throw new Error('Gagal mengunduh berkas')
 
