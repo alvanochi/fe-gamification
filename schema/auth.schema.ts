@@ -5,14 +5,6 @@ const phoneNumberSchema = z
   .trim()
   .regex(/^(?:\+62|08)[0-9]{8,13}$/, 'Format nomor telepon tidak valid (contoh: 08xxxxxxxxxx)')
 
-export const loginSchema = z.object({
-  email: z.string().trim().email('Format email tidak valid'),
-  phoneNumber: phoneNumberSchema,
-})
-
-export type LoginFormValues = z.infer<typeof loginSchema>
-export type LoginPayload = LoginFormValues
-
 export const registerSchema = z.object({
   fullname: z.string({ error: 'Nama lengkap wajib diisi' }).trim().min(1),
   email: z.string({ error: 'Email wajib diisi' }).trim().email('Format email tidak valid'),

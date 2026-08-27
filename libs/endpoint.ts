@@ -3,6 +3,7 @@ export const endpoints = {
     login: '/authentications',
     loginQr: '/authentications/qr',
     loginParticipant: '/authentications/participant',
+    loginPanitia: '/authentications/panitia',
     refresh: '/authentications',
     logout: '/authentications',
   },

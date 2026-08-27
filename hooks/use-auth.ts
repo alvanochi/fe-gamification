@@ -1,43 +1,12 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
-import { userService } from '@/services/user.service'
 import { authService } from '@/services/auth.service'
 
-export const useLoginMutation = () => {
-  const router = useRouter()
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: authService.login,
-    onSuccess: async response => {
-      const { accessToken, refreshToken } = response.data
-
-      localStorage.setItem('accessToken', accessToken)
-      localStorage.setItem('refreshToken', refreshToken)
-
-      // Also set a cookie so Next.js middleware can read it for route protection
-      document.cookie = `access_token=${accessToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`
-
-      // The QueryClient is a single shared instance for the whole tab — without
-      // clearing it, switching accounts in the same browser tab would show the
-      // PREVIOUS user's cached profile/group data until a background refetch
-      // happens to overwrite it (a real cross-account data leak, not just a
-      // cosmetic flicker).
-      queryClient.clear()
-
-      // Halaman masuk ini sekarang khusus panitia — peserta masuk lewat kolom
-      // nama & nomor telepon di beranda. Mengantar mereka ke /race berarti
-      // mendaratkan panitia di layar peserta yang tidak berlaku bagi mereka,
-      // lalu memaksa mencari sendiri tautan ke panelnya.
-      const profile = (await userService.getProfile()).data
-      const isPanitia = profile.role === 'ADMIN' || profile.role === 'SUPER_ADMIN'
-      router.replace(isPanitia ? '/admin/monitoring' : '/race')
-    },
-    onError: (error: Error) => {
-      console.error(error)
-    },
-  })
-}
+/**
+ * Masuk lewat nama & nomor telepon ditangani NameLoginForm secara langsung —
+ * peserta di kaki beranda, panitia di /auth/login. Tidak ada lagi jalur masuk
+ * lewat email di sisi peramban.
+ */
 
 export const useLogoutMutation = () => {
   const router = useRouter()

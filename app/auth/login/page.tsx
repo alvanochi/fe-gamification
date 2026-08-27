@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import AuthCard from '@/components/fragments/AuthCard'
-import LoginForm from '@/components/organisms/LoginForm'
+import NameLoginForm from '@/components/organisms/NameLoginForm'
 
 export const metadata: Metadata = {
   title: 'Masuk Admin — Millionaire Race',
@@ -9,14 +9,19 @@ export const metadata: Metadata = {
 /**
  * Layar masuk panitia.
  *
- * Peserta tidak melewati halaman ini — mereka masuk lewat kolom nama & nomor
- * telepon di beranda. Karena itu tidak ada lagi tautan pendaftaran mandiri
- * maupun keterangan boarding pass di sini.
+ * Sama seperti peserta, panitia pun tidak menghafal email yang dibuatkan
+ * untuknya — jadi jalan masuknya juga lewat nama sendiri, dibuktikan dengan
+ * nomor telepon. Daftar namanya hanya berisi akun panitia; peserta tidak akan
+ * pernah muncul di sini, dan server menolak perannya walau permintaannya
+ * disusun sendiri.
  */
 export default function LoginPage() {
   return (
-    <AuthCard title="MASUK ADMIN">
-      <LoginForm />
+    <AuthCard
+      title="MASUK ADMIN"
+      subtitle="Cari namamu, lalu masukkan nomor telepon yang terdaftar sebagai panitia."
+    >
+      <NameLoginForm scope="PANITIA" emptyLabel="nama Anda" />
     </AuthCard>
   )
 }
