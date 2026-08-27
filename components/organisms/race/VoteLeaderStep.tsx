@@ -27,7 +27,7 @@ export default function VoteLeaderStep({ group, myId }: VoteLeaderStepProps) {
   const candidates = group.members.filter(
     m => m.id !== myId && (!isRunoff || runoff!.includes(m.id)),
   )
-  const myName = group.members.find(m => m.id === myId)?.fullname ?? 'Kamu'
+  const me = group.members.find(m => m.id === myId)
 
   const handleVote = (nomineeId: string) => {
     setNotice(null)
@@ -65,12 +65,19 @@ export default function VoteLeaderStep({ group, myId }: VoteLeaderStepProps) {
       {/* Namamu sendiri tidak ikut jadi kandidat — kamu tidak bisa memilih
           dirimu sendiri. Ditampilkan di sini supaya tetap jelas kamu masuk
           kelompok ini, sama seperti di checkpoint lain. */}
-      <p className="mb-4 flex items-center justify-between gap-3 rounded-md border-brut bg-primary/15 px-4 py-2">
-        <span className="truncate font-bold text-ink">{myName}</span>
+      <div className="mb-4 flex items-center justify-between gap-3 rounded-md border-brut bg-primary/15 px-4 py-2">
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-bold text-ink">{me?.fullname ?? 'Kamu'}</span>
+          {me?.phoneNumber && (
+            <span className="block truncate font-mono text-[11px] text-ink/55">
+              {me.phoneNumber}
+            </span>
+          )}
+        </span>
         <span className="shrink-0 rounded-sm border-brut-sm bg-primary px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-widest text-primary-ink">
           Kamu
         </span>
-      </p>
+      </div>
 
       {isRunoff && candidates.length === 0 && (
         <p className="mb-4 rounded-md border-brut bg-warning/15 px-4 py-3 text-sm text-ink/70">
@@ -91,8 +98,20 @@ export default function VoteLeaderStep({ group, myId }: VoteLeaderStepProps) {
                 className={`flex w-full items-center justify-between rounded-md border-brut px-4 py-3 brutal-press-sm
                   ${isSelected ? 'bg-primary text-primary-ink' : 'bg-paper text-ink'}`}
               >
-                <span className="font-bold">{member.fullname}</span>
-                {isSelected && <span className="text-xs font-bold uppercase">Pilihanmu</span>}
+                <span className="min-w-0 text-left">
+                  <span className="block truncate font-bold">{member.fullname}</span>
+                  {/* Nomor telepon ikut di tiap nama, sama seperti daftar
+                      anggota di checkpoint lain — kelompok ini baru saling
+                      kenal beberapa menit yang lalu. */}
+                  {member.phoneNumber && (
+                    <span className="block truncate font-mono text-[11px] opacity-60">
+                      {member.phoneNumber}
+                    </span>
+                  )}
+                </span>
+                {isSelected && (
+                  <span className="shrink-0 text-xs font-bold uppercase">Pilihanmu</span>
+                )}
               </button>
             </li>
           )

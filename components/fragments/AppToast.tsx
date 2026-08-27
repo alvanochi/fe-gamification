@@ -1,12 +1,20 @@
 'use client'
 
 import { useEffect } from 'react'
+import Button from '@/components/elements/Button'
 import { useLatestToast, clearToast } from '@/hooks/use-toast-feed'
 
 const TONE_CLASS = {
   success: '!border-success bg-success/15',
   danger: '!border-danger bg-danger/15',
   info: '!border-secondary bg-secondary/15',
+} as const
+
+/** Versi tengah layar memakai latar pekat, bukan tembus pandang. */
+const MODAL_TONE_CLASS = {
+  success: '!border-success',
+  danger: '!border-danger',
+  info: '!border-secondary',
 } as const
 
 /**
@@ -27,6 +35,40 @@ export default function AppToast() {
   }, [toast])
 
   if (!toast) return null
+
+  if (toast.display === 'modal') {
+    return (
+      <div
+        role="status"
+        aria-live="assertive"
+        className="fixed inset-0 z-[85] flex items-center justify-center p-4"
+      >
+        <button
+          type="button"
+          aria-label="Tutup"
+          onClick={clearToast}
+          className="absolute inset-0 cursor-default bg-ink/70"
+        />
+
+        <div
+          className={`relative w-full max-w-sm rounded-lg border-brut-lg bg-paper-raised p-6 text-center shadow-brutal-lg ${
+            MODAL_TONE_CLASS[toast.tone]
+          }`}
+        >
+          <span className="block text-5xl">{toast.icon}</span>
+          <p className="mt-3 font-display text-2xl text-ink">{toast.title}</p>
+          {toast.subject && (
+            <p className="mt-1 font-bold text-ink/75">{toast.subject}</p>
+          )}
+          {toast.detail && <p className="mt-2 text-sm text-ink/60">{toast.detail}</p>}
+
+          <Button size="lg" className="mt-5 w-full" onClick={clearToast}>
+            Oke
+          </Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div

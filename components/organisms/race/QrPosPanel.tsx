@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import ParticipantQrCard from '@/components/organisms/race/ParticipantQrCard'
 import { useHasSession, useProfileQuery } from '@/hooks/use-profile'
+import { useLatestToast } from '@/hooks/use-toast-feed'
 
 /**
  * QR pos mengambang, tersedia di seluruh checkpoint /race.
@@ -14,6 +15,21 @@ import { useHasSession, useProfileQuery } from '@/hooks/use-profile'
 export default function QrPosPanel() {
   const [isOpen, setIsOpen] = useState(false)
   const { data: profile } = useProfileQuery({ enabled: useHasSession() })
+
+  // Kabar pemindaian pos datang sebagai kabar layar penuh. Kartu QR ditutup
+  // begitu kabar itu tiba: kodenya sudah selesai dipakai, dan membiarkannya
+  // menutupi layar berarti peserta harus menutupnya sendiri untuk membaca
+  // hasil pemindaiannya.
+  //
+  // Disesuaikan saat render, bukan lewat effect: kartunya harus sudah tertutup
+  // pada gambar yang sama dengan munculnya kabar itu — bukan sekejap sesudahnya.
+  const toast = useLatestToast()
+  const [lastToast, setLastToast] = useState(toast)
+
+  if (toast !== lastToast) {
+    setLastToast(toast)
+    if (toast?.display === 'modal') setIsOpen(false)
+  }
 
   // Panitia tidak ikut di-check-in lewat QR peserta.
   if (!profile?.qrToken || profile.role !== 'PARTICIPANT') return null

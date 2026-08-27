@@ -7,12 +7,16 @@ import type { SkippedRow } from '@/hooks/use-admin-groups'
 
 export type AccountRole = 'PARTICIPANT' | 'ADMIN' | 'SUPER_ADMIN'
 
+/** 'L' atau 'P'. Panitia memakainya untuk menyusun kelompok & sebagian misi. */
+export type AccountGender = 'L' | 'P'
+
 export interface Account {
   id: string
   fullname: string
   email: string | null
   phoneNumber: string | null
   businessName: string | null
+  gender: AccountGender | null
   role: AccountRole
   checkInAt: string | null
   groupId: string | null
@@ -107,6 +111,7 @@ export interface AccountPayload {
   phoneNumber?: string
   email?: string | null
   businessName?: string | null
+  gender?: AccountGender | null
   role?: AccountRole
 }
 

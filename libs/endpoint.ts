@@ -9,6 +9,7 @@ export const endpoints = {
   users: {
     register: '/users',
     me: '/users/me/profile',
+    socialProfile: '/users/me/social-profile',
     getById: (id: string) => `/users/${id}`,
     checkInByQr: '/users/check-in/qr',
     search: '/users/search',

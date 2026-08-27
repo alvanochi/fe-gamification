@@ -42,6 +42,13 @@ export default function ParticipantQrCard({ className = '' }: { className?: stri
         QR POS · Tunjukkan ke Panitia saat check-in dan check-out POS
       </p>
       <canvas ref={canvasRef} className="mx-auto mt-3 rounded-sm" />
+
+      {/* Identitas pemegang kartu: petugas pos mencocokkannya dengan daftar
+          peserta bila QR-nya gagal terbaca. */}
+      <p className="mt-2 font-bold text-ink">{profile?.fullname}</p>
+      {profile?.phoneNumber && (
+        <p className="font-mono text-xs text-ink/50">{profile.phoneNumber}</p>
+      )}
       <p className="mt-3 text-xs text-ink/55">
         {lastScan
           ? `Sudah ${lastScan.action === 'CHECK_IN' ? 'check-in' : 'check-out'} dari pos ${lastScan.postName}`

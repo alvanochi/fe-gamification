@@ -20,14 +20,20 @@ export const missionCategoryOptions = [
   { value: 'TERSTRUKTUR', label: 'Terstruktur (ada pos & petugas)' },
 ] as const
 
+/**
+ * Pilihan yang ditawarkan saat membuat misi.
+ *
+ * GPS dan Peta dilepas dari daftar: titik GPS sudah punya tempatnya sendiri di
+ * konfigurasi geofence misi Soal Lokasi, dan peta hanyalah gambar — keduanya
+ * hanya menduplikasi hal yang sama di dua tempat. Nilainya tetap dikenali
+ * skema di bawah supaya misi lama yang memakainya tidak rusak.
+ */
 export const clueTypeOptions = [
   { value: 'NONE', label: 'Tanpa petunjuk' },
   { value: 'TEKS', label: 'Petunjuk teks' },
   { value: 'MORSE', label: 'Sandi morse' },
   { value: 'SANDI_ANGKA', label: 'Sandi angka' },
-  { value: 'GPS', label: 'Titik GPS' },
-  { value: 'FOTO', label: 'Foto lokasi (URL gambar)' },
-  { value: 'MAP', label: 'Peta (URL gambar)' },
+  { value: 'FOTO', label: 'Foto lokasi' },
 ] as const
 
 export const proofTypeOptions = [

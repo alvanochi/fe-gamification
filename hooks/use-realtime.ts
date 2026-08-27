@@ -103,6 +103,10 @@ export const useRealtime = (groupId?: string | null) => {
         title: arriving ? 'Berhasil Check-in' : 'Berhasil Check-out',
         subject: `Pos ${payload.postName}`,
         detail: `Dipindai dari QR ${payload.participantName}. Berlaku untuk seluruh kelompok.`,
+        // Di tengah layar: kartu QR baru saja ditutup di depan mata peserta,
+        // dan kabar sekecil toast di sudut layar mudah terlewat begitu saja.
+        display: 'modal',
+        duration: 8000,
       })
     }
 

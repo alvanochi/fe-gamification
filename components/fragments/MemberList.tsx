@@ -7,6 +7,10 @@ import { GroupMember } from '@/types/group'
  * hal pertama yang dilakukan peserta di setiap checkpoint — dan yang paling
  * sering membuat mereka ragu apakah dirinya benar-benar sudah masuk kelompok
  * itu. Urutan dan lencana "Kamu" menjawabnya sebelum ditanyakan.
+ *
+ * Nomor telepon seluruh anggota ikut tampil: kelompok disusun panitia dari
+ * orang yang belum tentu saling kenal, jadi tanpa nomor itu satu-satunya cara
+ * berkumpul adalah berteriak memanggil nama di keramaian.
  */
 export default function MemberList({
   members,
@@ -32,7 +36,22 @@ export default function MemberList({
             member.id === myId ? 'bg-primary/15' : 'bg-paper'
           }`}
         >
-          <span className="truncate font-bold text-ink">{member.fullname}</span>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate font-bold text-ink">{member.fullname}</span>
+            {/* Nomor telepon tiap anggota. Kelompok dibentuk panitia dari orang
+                yang belum tentu saling kenal, dan yang pertama mereka butuhkan
+                adalah cara menghubungi anggota yang belum sampai — nomornya
+                bisa diketuk langsung untuk menelepon. */}
+            {member.phoneNumber && (
+              <a
+                href={`tel:${member.phoneNumber}`}
+                onClick={e => e.stopPropagation()}
+                className="block truncate font-mono text-[11px] text-ink/55 underline decoration-ink/20 underline-offset-2"
+              >
+                {member.phoneNumber}
+              </a>
+            )}
+          </span>
 
           <span className="flex shrink-0 gap-2">
             {member.id === leaderId && (

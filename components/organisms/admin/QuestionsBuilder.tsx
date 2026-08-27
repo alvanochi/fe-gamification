@@ -1,14 +1,12 @@
 'use client'
 
-import { useState } from 'react'
 import Button from '@/components/elements/Button'
 import Input from '@/components/elements/Input'
 import Label from '@/components/elements/Label'
 import Select from '@/components/elements/Select'
 import TextArea from '@/components/elements/TextArea'
-import { submissionService } from '@/services/submission.service'
+import ImageUploadField from '@/components/fragments/ImageUploadField'
 import { MissionQuestionPayload, QuestionType } from '@/types/mission'
-import { IMAGE_ACCEPT } from '@/utils/mission/type-meta'
 
 export interface DraftOption {
   optionText: string
@@ -72,8 +70,6 @@ export default function QuestionsBuilder({
   questions: DraftQuestion[]
   onChange: (questions: DraftQuestion[]) => void
 }) {
-  const [uploadingIndex, setUploadingIndex] = useState<number | null>(null)
-
   const patch = (index: number, changes: Partial<DraftQuestion>) =>
     onChange(questions.map((q, i) => (i === index ? { ...q, ...changes } : q)))
 
@@ -95,15 +91,6 @@ export default function QuestionsBuilder({
           : q,
       ),
     )
-
-  const handlePickImage = async (index: number, file: File) => {
-    setUploadingIndex(index)
-    try {
-      patch(index, { imageUrl: await submissionService.uploadEvidence(file) })
-    } finally {
-      setUploadingIndex(null)
-    }
-  }
 
   return (
     <div className="space-y-5">
@@ -158,19 +145,11 @@ export default function QuestionsBuilder({
 
           <div>
             <Label>Gambar Pendukung (opsional)</Label>
-            <input
-              type="file"
-              accept={IMAGE_ACCEPT}
-              className="w-full text-xs text-ink/70"
-              onChange={e => {
-                const file = e.target.files?.[0]
-                if (file) handlePickImage(index, file)
-              }}
+            <ImageUploadField
+              value={question.imageUrl}
+              onChange={imageUrl => patch(index, { imageUrl })}
+              label="Ketuk untuk pilih gambar soal"
             />
-            {uploadingIndex === index && <p className="mt-1 text-xs text-ink/50">Mengunggah gambar…</p>}
-            {question.imageUrl && uploadingIndex !== index && (
-              <p className="mt-1 text-xs font-bold text-success">Gambar tersimpan</p>
-            )}
           </div>
 
           {question.type === 'PILIHAN_GANDA' ? (

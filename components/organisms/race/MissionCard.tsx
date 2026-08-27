@@ -28,6 +28,13 @@ import {
   isFileProof,
 } from '@/utils/mission/type-meta'
 
+/** Lencana ringkas di kepala kartu — terbaca tanpa membuka isinya. */
+const STATUS_CHIP: Record<BoardMission['groupStatus'], { label: string; className: string }> = {
+  BELUM: { label: 'Belum dikerjakan', className: 'font-bold text-ink/55' },
+  MENUNGGU: { label: 'Menunggu validasi', className: 'font-bold text-warning' },
+  SELESAI: { label: 'Selesai', className: 'font-bold text-success' },
+}
+
 function StatusBanner({
   status,
   rejectReason,
@@ -127,6 +134,7 @@ export default function MissionCard({
   const latest = getLatestSubmissionForMission(submissions, mission.id)
   const canSubmit = !latest || latest.status === 'REJECTED'
 
+  const [isOpen, setIsOpen] = useState(false)
   const [evidenceFile, setEvidenceFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [answerText, setAnswerText] = useState('')
@@ -221,17 +229,49 @@ export default function MissionCard({
         </p>
       )}
 
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-3">
-          <h4 className="font-display text-xl leading-tight text-ink">{mission.title}</h4>
-          <span className="shrink-0 rounded-full border-brut-sm bg-primary px-3 py-1 font-display text-sm text-primary-ink">
+      {/* Kepala kartu selalu terlihat; isinya dibuka saat diketuk. Dengan lima
+          puluh misi lebih, kartu yang seluruhnya terbuka membuat daftar ini
+          sepanjang beberapa layar hanya untuk dilewati. */}
+      <button
+        type="button"
+        onClick={() => !mission.locked && setIsOpen(open => !open)}
+        aria-expanded={mission.locked ? undefined : isOpen}
+        aria-disabled={mission.locked}
+        className={`flex w-full items-start gap-3 px-5 py-4 text-left ${
+          mission.locked ? 'cursor-default' : 'brutal-press-sm'
+        }`}
+      >
+        <span className="min-w-0 flex-1">
+          <span className="block font-display text-xl leading-tight text-ink">{mission.title}</span>
+          <span className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[10px] uppercase tracking-widest text-ink/45">
+            <span className={STATUS_CHIP[mission.groupStatus].className}>
+              {STATUS_CHIP[mission.groupStatus].label}
+            </span>
+            {mission.locationName && <span>· {mission.locationName}</span>}
+          </span>
+        </span>
+
+        <span className="flex shrink-0 items-center gap-2">
+          <span className="rounded-full border-brut-sm bg-primary px-3 py-1 font-display text-sm text-primary-ink">
             {formatMissionPoints(mission)}
           </span>
-        </div>
+          <span aria-hidden className="font-mono text-sm text-ink/40">
+            {mission.locked ? '🔒' : isOpen ? '▲' : '▼'}
+          </span>
+        </span>
+      </button>
 
+      {mission.locked && (
+        <p className="border-t border-ink/10 px-5 pb-4 text-xs text-ink/50">
+          Rinciannya dibuka panitia saat perlombaan dimulai.
+        </p>
+      )}
+
+      {!mission.locked && isOpen && (
+      <div className="border-t border-ink/10 px-5 pb-5 pt-4">
         {/* FR-11: penanda misi yang didukung sponsor. */}
         {sponsor && (
-          <div className="mt-3 flex items-center gap-2 rounded-md border-brut-sm border-secondary bg-secondary/10 px-3 py-2">
+          <div className="mb-3 flex items-center gap-2 rounded-md border-brut-sm border-secondary bg-secondary/10 px-3 py-2">
             <span className="flex h-6 w-auto min-w-10 max-w-[64px] items-center justify-center rounded-sm bg-white px-1">
               <SponsorLogo src={sponsor.logoUrl} name={sponsor.name} className="max-h-5 max-w-full" />
             </span>
@@ -241,7 +281,7 @@ export default function MissionCard({
           </div>
         )}
 
-        <p className="mt-2 text-sm leading-relaxed text-ink/70">{mission.description}</p>
+        <p className="text-sm leading-relaxed text-ink/70">{mission.description}</p>
 
         <MissionMeta mission={mission} />
         <ClueBox mission={mission} />
@@ -359,6 +399,7 @@ export default function MissionCard({
           <BarterChain missionId={mission.id} assignment={assignment} />
         )}
       </div>
+      )}
     </li>
   )
 }

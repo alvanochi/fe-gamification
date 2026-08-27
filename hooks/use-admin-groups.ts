@@ -8,6 +8,10 @@ export interface AdminGroup {
   name: string
   score: number
   categoryId: string | null
+  memberCount: number
+  /** Komposisi L/P — dipakai panitia saat menyeimbangkan kelompok. */
+  maleCount: number
+  femaleCount: number
 }
 
 /** Baris yang dilewati beserta alasannya — dipakai hapus akun & bubar kelompok. */

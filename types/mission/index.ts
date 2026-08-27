@@ -64,6 +64,8 @@ export type MissionBoardStatus = 'BELUM' | 'MENUNGGU' | 'SELESAI'
 
 export interface BoardMission extends Mission {
   groupStatus: MissionBoardStatus
+  /** Panitia belum membuka misi: judulnya tampil, isinya belum bisa dibuka. */
+  locked: boolean
   /** Sesinya hampir tutup, atau misi ini menahan misi lain. */
   urgent: boolean
   /** Sisa menit sampai sesi misi tutup; null bila misinya tanpa sesi. */
@@ -78,6 +80,8 @@ export interface MissionBoard {
   perPage: number
   total: number
   totalPages: number
+  /** false berarti panitia belum menekan "Munculkan Misi". */
+  missionsReleased: boolean
   counts: Record<'SEMUA' | MissionBoardStatus, number>
   typeCounts: Record<MissionType, number>
   urgentCount: number
@@ -140,6 +144,10 @@ export interface BarterStep {
   partnerName: string | null
   videoUrl: string
   isValid: boolean
+  /** Tiap pertukaran divalidasi panitia satu per satu. */
+  status: SubmissionStatus
+  awardedPoint: number | null
+  rejectReason: string | null
   createdAt: string
   updatedAt: string
 }

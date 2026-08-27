@@ -69,6 +69,20 @@ function MissionRow({
 
       <p className="mt-2 text-sm text-ink/70">{mission.description}</p>
 
+      {/* Petunjuk bergambar tampil sebagai gambar. Sebelumnya hanya ada tulisan
+          "petunjuk: Foto lokasi" — panitia tidak punya cara memastikan gambar
+          yang benar-benar tersimpan tanpa membuka URL-nya satu per satu. */}
+      {(mission.clueType === 'FOTO' || mission.clueType === 'MAP') && mission.clue && (
+        <a href={mission.clue} target="_blank" rel="noopener noreferrer" className="mt-3 block">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={mission.clue}
+            alt={`Petunjuk ${mission.title}`}
+            className="h-32 w-full rounded-md border-brut-sm bg-paper object-contain p-1"
+          />
+        </a>
+      )}
+
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs text-ink/50">
         <span>{MISSION_CATEGORY_LABEL[mission.category]}</span>
         <span>{mission.participantCount} peserta/pengerjaan</span>

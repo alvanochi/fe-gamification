@@ -10,6 +10,13 @@ export interface ToastMessage {
   /** Baris tebal di bawah judul — biasanya nama misi atau nama pos. */
   subject?: string
   detail?: string
+  /**
+   * `toast` menempel di sudut layar; `modal` berdiri di tengah layar dengan
+   * latar penuh. Yang kedua dipakai untuk kabar yang tidak boleh terlewat —
+   * pemindaian di pos terjadi saat ponsel masih di tangan petugas, dan peserta
+   * baru melihat layarnya beberapa detik kemudian.
+   */
+  display?: 'toast' | 'modal'
   /** Milidetik sebelum menutup sendiri. */
   duration?: number
 }

@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
 import NoGroupStep from '@/components/organisms/race/NoGroupStep'
+import SocialProfileStep from '@/components/organisms/race/SocialProfileStep'
 import GroupSelfieStep from '@/components/organisms/race/GroupSelfieStep'
 import VoteLeaderStep from '@/components/organisms/race/VoteLeaderStep'
 import NameGroupStep from '@/components/organisms/race/NameGroupStep'
@@ -71,6 +72,18 @@ export default function RacePage() {
   }
 
   if (!profile) return null
+
+  // Checkpoint 0 — mendahului segalanya, termasuk pembentukan kelompok.
+  // Ditanyakan selagi peserta masih duduk menunggu; begitu perlombaan berjalan
+  // tidak ada lagi yang mau berhenti untuk mengetik nama akunnya.
+  if (profile.role === 'PARTICIPANT' && !profile.socialProfileAt) {
+    return (
+      <>
+        {chrome}
+        <SocialProfileStep profile={profile} />
+      </>
+    )
+  }
 
   // Tidak ada lagi gerbang kehadiran di sini. Kehadiran ditandai saat peserta
   // masuk dengan nama & nomor teleponnya, jadi menahan mereka lagi untuk

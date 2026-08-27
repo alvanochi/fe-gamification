@@ -52,6 +52,12 @@ export default function BarterChain({
   const itemFrom = lastStep?.itemTo ?? 'Modal awal dari panitia'
   const nextStepNo = (lastStep?.stepNo ?? 0) + 1
 
+  // Alur MR6: tukar → kirim bukti → tunggu validasi → disetujui → tukar lagi.
+  // Server memang menolak langkah baru selagi yang sebelumnya menunggu, tetapi
+  // form yang tetap terbuka membuat kelompok mengisi seluruhnya — termasuk
+  // memotret ulang barangnya — sebelum tahu kiriman itu akan ditolak.
+  const awaitingReview = lastStep?.status === 'PENDING'
+
   if (!assignment) {
     return (
       <div className="mt-4 space-y-3">
@@ -84,7 +90,9 @@ export default function BarterChain({
             >
               <p className="font-mono text-[10px] uppercase tracking-widest text-ink/45">
                 Langkah {step.stepNo}
-                {!step.isValid && ' · dibatalkan panitia'}
+                {step.status === 'PENDING' && ' · menunggu validasi'}
+                {step.status === 'REJECTED' && ' · ditolak panitia'}
+                {step.status === 'APPROVED' && !step.isValid && ' · dibatalkan panitia'}
               </p>
               <p className="mt-1 font-bold text-ink">
                 {step.itemFrom} → {step.itemTo}
@@ -97,7 +105,17 @@ export default function BarterChain({
         </ol>
       )}
 
-      {isLocked ? (
+      {awaitingReview && !isLocked ? (
+        <div className="rounded-md border-brut !border-warning bg-warning/10 px-4 py-3">
+          <p className="text-sm font-bold text-warning">
+            Pertukaran ke-{lastStep?.stepNo} sedang ditinjau panitia
+          </p>
+          <p className="mt-1 text-xs text-ink/60">
+            Pertukaran berikutnya terbuka begitu yang ini disetujui. Halaman ini berubah sendiri —
+            tidak perlu dimuat ulang.
+          </p>
+        </div>
+      ) : isLocked ? (
         <p
           className={`rounded-md border-brut bg-paper px-4 py-3 text-sm font-bold ${
             assignment.status === 'ACCEPTED' ? '!border-success text-success' : 'text-ink/60'

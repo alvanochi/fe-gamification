@@ -9,6 +9,17 @@ export interface Profile {
   id: string
   email: string
   fullname: string
+  /** Nomor yang dipakai peserta untuk masuk — sekaligus penanda identitasnya. */
+  phoneNumber: string | null
+  gender: 'L' | 'P' | null
+  /** Checkpoint 0 — profil usaha & akun media sosial. */
+  businessName: string | null
+  youtubeAccount: string | null
+  instagramAccount: string | null
+  tiktokAccount: string | null
+  /** Terisi begitu checkpoint 0 dilewati, entah diisi atau di-skip. */
+  socialProfileAt: string | null
+  socialProfileSkipped: boolean
   role: 'PARTICIPANT' | 'ADMIN' | 'SUPER_ADMIN'
   groupId: string | null
   /** Token QR pos milik sendiri; hanya dikembalikan lewat profil. */
@@ -47,6 +58,8 @@ export interface YelYelState {
 export interface GroupMember {
   id: string
   fullname: string
+  /** Anggota satu kelompok saling menghubungi lewat nomor ini di lapangan. */
+  phoneNumber: string | null
   role: string
 }
 

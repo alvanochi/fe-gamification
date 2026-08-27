@@ -16,7 +16,6 @@ import { useMyGroupSubmissionsQuery } from '@/hooks/use-submissions'
 import { useMyAssignmentsQuery } from '@/hooks/use-barter'
 import { useDebounce } from '@/hooks/use-debounce'
 import { DEFAULT_PER_PAGE } from '@/hooks/use-pagination'
-import { useSettingsQuery } from '@/hooks/use-settings'
 import { useRealtime } from '@/hooks/use-realtime'
 import { MISSION_TYPE_COLOR_VAR, MISSION_TYPE_LABEL } from '@/utils/mission/type-meta'
 import { MISSION_TYPE_ORDER, STATUS_META, STATUS_ORDER, groupByMissionType } from '@/utils/mission/grouping'
@@ -68,7 +67,6 @@ export default function RaceMissionsPage() {
   const submissionsQuery = useMyGroupSubmissionsQuery()
   const checkInsQuery = useMyCheckInsQuery()
   const assignmentsQuery = useMyAssignmentsQuery()
-  const settingsQuery = useSettingsQuery()
   useRealtime(profileQuery.data?.groupId ?? null)
 
   const [search, setSearch] = useState('')
@@ -108,28 +106,6 @@ export default function RaceMissionsPage() {
 
   const initialLoading = profileQuery.isLoading || (!board && boardQuery.isLoading)
 
-  // Panitia mengumpulkan peserta untuk briefing lebih dulu; daftar misi baru
-  // muncul setelah tombol "Munculkan Misi" ditekan.
-  if (!initialLoading && settingsQuery.data && !settingsQuery.data.missionsReleased) {
-    return (
-      <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-paper px-4 text-center">
-        <AnnouncementPopup />
-        <p className="font-mono text-xs uppercase tracking-[0.3em] text-secondary">
-          Menunggu Aba-aba
-        </p>
-        <h1 className="mt-2 font-display text-3xl text-ink sm:text-4xl">MISI BELUM DIBUKA</h1>
-        <p className="mt-3 max-w-sm text-sm text-ink/60">
-          Panitia masih memberi pengarahan. Daftar misi akan muncul sendiri di layar ini begitu
-          permainan resmi dimulai.
-        </p>
-        <span className="mt-6 h-4 w-4 animate-spin rounded-full border-2 border-ink/40 border-t-transparent" />
-        <Link href="/race" className="mt-8 font-mono text-xs uppercase tracking-widest text-secondary">
-          ← Kembali
-        </Link>
-      </div>
-    )
-  }
-
   if (initialLoading || hasNoGroup || !board) {
     return (
       <div className="flex min-h-[100dvh] items-center justify-center bg-paper px-4">
@@ -164,6 +140,22 @@ export default function RaceMissionsPage() {
           ← Kembali
         </Link>
         <h1 className="mt-2 font-display text-3xl text-ink sm:text-4xl">Misi Saya</h1>
+
+        {/* Sebelum aba-aba: daftarnya tetap terbaca, isinya belum bisa dibuka.
+            Menyembunyikan seluruh halaman selama briefing membuat layar ini
+            terasa rusak, dan tim tidak punya gambaran apa yang akan dihadapi. */}
+        {!board.missionsReleased && (
+          <div className="mt-4 flex items-start gap-3 rounded-md border-brut !border-warning bg-warning/10 px-4 py-3">
+            <span aria-hidden className="text-xl">🔒</span>
+            <div>
+              <p className="font-bold text-ink">Misi belum dibuka panitia</p>
+              <p className="mt-0.5 text-sm text-ink/60">
+                Judulnya sudah bisa kamu lihat. Rinciannya terbuka sendiri di layar ini begitu
+                panitia memberi aba-aba — tidak perlu memuat ulang.
+              </p>
+            </div>
+          </div>
+        )}
 
         {totalMissions === 0 && !isFiltering ? (
           <p className="mt-8 rounded-md border-brut bg-paper-raised p-6 text-center text-sm text-ink/60">
@@ -207,7 +199,15 @@ export default function RaceMissionsPage() {
                 placeholder="Cari misi, lokasi, atau jenisnya…"
               />
 
-              <div className="flex flex-wrap gap-2">
+              {/* Dua saringan yang berbeda pertanyaannya: "sudah kukerjakan
+                  belum?" dan "misi jenis apa?". Dulu keduanya berupa deretan
+                  pil serupa yang berdempetan, sehingga terbaca sebagai satu
+                  daftar pilihan yang saling meniadakan. Sekarang masing-masing
+                  punya baris berlabel sendiri. */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="w-16 shrink-0 font-mono text-[10px] uppercase tracking-widest text-ink/45">
+                  Status
+                </span>
                 {STATUS_FILTERS.map(filter => (
                   <FilterChip
                     key={filter.value}
@@ -217,18 +217,19 @@ export default function RaceMissionsPage() {
                     onClick={() => changeFilter(() => setStatus(filter.value))}
                   />
                 ))}
-              </div>
-
-              {/* Baris kedua: jenis misi, dan misi yang sesinya hampir tutup.
-                  Keduanya menyaring seluruh misi, bukan halaman ini saja. */}
-              <div className="flex flex-wrap gap-2">
                 <FilterChip
                   active={urgentOnly}
-                  label={`⏳ Mendesak`}
+                  label="⏳ Mendesak"
                   count={board.urgentCount}
                   color="var(--color-danger)"
                   onClick={() => changeFilter(() => setUrgentOnly(v => !v))}
                 />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 border-t border-ink/10 pt-3">
+                <span className="w-16 shrink-0 font-mono text-[10px] uppercase tracking-widest text-ink/45">
+                  Jenis
+                </span>
                 <FilterChip
                   active={type === 'SEMUA'}
                   label="Semua jenis"

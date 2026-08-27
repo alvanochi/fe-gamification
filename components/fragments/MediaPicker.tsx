@@ -57,6 +57,10 @@ export default function MediaPicker({
   const [isStarting, setIsStarting] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Kamera mana yang sedang menyala. Bukti misi hampir selalu butuh kamera
+  // belakang, tetapi foto tim justru butuh yang depan — dan menutup lalu
+  // membuka lagi hanya untuk berpindah sisi adalah langkah yang tidak perlu.
+  const [facingNow, setFacingNow] = useState<'user' | 'environment'>(facing)
 
   const stopStream = useCallback(() => {
     if (recorderRef.current?.state === 'recording') recorderRef.current.stop()
@@ -75,15 +79,20 @@ export default function MediaPicker({
     setIsCameraOpen(false)
   }
 
-  const openCamera = async () => {
+  const openCamera = async (side: 'user' | 'environment' = facingNow) => {
     setError(null)
     setIsStarting(true)
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: facing },
+        video: { facingMode: side },
         audio: allowVideo,
       })
+      // Aliran lama dihentikan setelah yang baru berhasil dibuka — kalau
+      // dihentikan lebih dulu, kamera yang diminta bisa saja ditolak dan
+      // peserta tertinggal dengan layar hitam.
+      streamRef.current?.getTracks().forEach(track => track.stop())
       streamRef.current = stream
+      setFacingNow(side)
       setIsCameraOpen(true)
       // Elemen <video> baru ada setelah render berikutnya.
       requestAnimationFrame(() => {
@@ -99,6 +108,9 @@ export default function MediaPicker({
       setIsStarting(false)
     }
   }
+
+  /** Balik depan/belakang tanpa menutup kamera. Tidak dilakukan saat merekam. */
+  const flipCamera = () => openCamera(facingNow === 'user' ? 'environment' : 'user')
 
   const takePhoto = () => {
     const video = videoRef.current
@@ -159,7 +171,7 @@ export default function MediaPicker({
 
       <button
         type="button"
-        onClick={openCamera}
+        onClick={() => openCamera()}
         className="flex aspect-video w-full items-center justify-center overflow-hidden rounded-md border-brut bg-paper"
       >
         {previewUrl ? (
@@ -175,7 +187,7 @@ export default function MediaPicker({
       </button>
 
       <div className="mt-2 grid grid-cols-2 gap-2">
-        <Button size="sm" variant="secondary" loading={isStarting} onClick={openCamera}>
+        <Button size="sm" variant="secondary" loading={isStarting} onClick={() => openCamera()}>
           Buka Kamera
         </Button>
         <Button size="sm" variant="ghost" onClick={() => fileInputRef.current?.click()}>
@@ -194,7 +206,22 @@ export default function MediaPicker({
             className="max-h-[70vh] w-full max-w-xl rounded-md border-brut object-contain"
           />
 
-          <div className="mt-4 flex w-full max-w-xl gap-2">
+          <div className="mt-3 flex w-full max-w-xl items-center justify-between gap-2">
+            <span className="font-mono text-[11px] uppercase tracking-widest text-paper/70">
+              Kamera {facingNow === 'user' ? 'depan' : 'belakang'}
+            </span>
+            <Button
+              size="sm"
+              variant="ghost"
+              loading={isStarting}
+              disabled={isRecording}
+              onClick={flipCamera}
+            >
+              ⟲ Balik Kamera
+            </Button>
+          </div>
+
+          <div className="mt-3 flex w-full max-w-xl gap-2">
             <Button variant="ghost" size="sm" className="flex-1" onClick={closeCamera}>
               Batal
             </Button>

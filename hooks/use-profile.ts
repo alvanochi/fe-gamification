@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { userService } from '@/services/user.service'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { userService, type SocialProfilePayload } from '@/services/user.service'
 
 export const useProfileQuery = (options?: { enabled?: boolean; refetchInterval?: number }) => {
   return useQuery({
@@ -8,6 +8,21 @@ export const useProfileQuery = (options?: { enabled?: boolean; refetchInterval?:
     queryFn: async () => (await userService.getProfile()).data,
     enabled: options?.enabled ?? true,
     refetchInterval: options?.refetchInterval,
+  })
+}
+
+/**
+ * Checkpoint 0 — simpan profil usaha & akun media sosial, atau lewati.
+ *
+ * Profil disegarkan setelahnya karena penanda `socialProfileAt`-lah yang
+ * menentukan checkpoint ini masih ditampilkan atau tidak.
+ */
+export const useSaveSocialProfileMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: SocialProfilePayload) => userService.saveSocialProfile(payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['profile'] }),
   })
 }
 

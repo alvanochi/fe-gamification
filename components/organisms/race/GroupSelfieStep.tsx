@@ -45,12 +45,7 @@ export default function GroupSelfieStep({ group, myId }: { group: Group; myId: s
       {/* Lencana kategori kelompok disembunyikan bersama fitur kategori —
           lihat catatan di /admin/categories. */}
 
-      <MemberList
-        members={group.members}
-        myId={myId}
-        leaderId={group.leaderId}
-        className="mt-4"
-      />
+      <MemberList members={group.members} myId={myId} leaderId={group.leaderId} className="mt-4" />
 
       {alreadyUploaded ? (
         <div className="mt-6 rounded-md border-brut !border-success bg-paper px-4 py-4 text-center">

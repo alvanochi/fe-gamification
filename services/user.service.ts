@@ -11,9 +11,25 @@ export interface QrCheckInResult {
   alreadyCheckedIn: boolean
 }
 
+/** Checkpoint 0 — dikirim saat peserta mengisi, maupun saat memilih melewati. */
+export interface SocialProfilePayload {
+  businessName?: string
+  youtubeAccount?: string
+  instagramAccount?: string
+  tiktokAccount?: string
+  skipped?: boolean
+}
+
 export const userService = {
   getProfile() {
     return http.get<IApiEnvelope<Profile>>(endpoints.users.me)
+  },
+
+  saveSocialProfile(payload: SocialProfilePayload) {
+    return http.put<IApiEnvelope<{ id: string }>, SocialProfilePayload>(
+      endpoints.users.socialProfile,
+      payload,
+    )
   },
 
   checkInByQr(qrToken: string) {

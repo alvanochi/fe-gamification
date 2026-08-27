@@ -82,7 +82,8 @@ export default function SheetPanel() {
       <h2 className="font-display text-xl text-ink">Lembar Kerja</h2>
       <p className="mt-1 text-sm text-ink/60">
         Satu lembar untuk peserta sekaligus kelompoknya. Kolom:{' '}
-        <strong>Nama, Nomor Telepon, Email, Nama Usaha, Kelompok</strong>. Baris yang diberi nama
+        <strong>Nama, Nomor Telepon, Email, Jenis Kelamin (L/P), Nama Usaha, Kelompok</strong>.
+        Baris yang diberi nama
         kelompok sama menjadi satu kelompok — kelompoknya dibuatkan bila belum ada. Peserta
         dicocokkan lewat nomor telepon, jadi mengunggah ulang berkas yang sama memperbarui datanya,
         bukan menggandakannya.

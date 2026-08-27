@@ -12,6 +12,8 @@ import TextArea from '@/components/elements/TextArea'
 import Select from '@/components/elements/Select'
 import ErrorMessage from '@/components/elements/ErrorMessage'
 import ConfirmModal from '@/components/fragments/ConfirmModal'
+import ImageUploadField from '@/components/fragments/ImageUploadField'
+import SearchSelect from '@/components/fragments/SearchSelect'
 import QuestionsBuilder, {
   emptyQuestion,
   questionsValid,
@@ -37,6 +39,7 @@ import { useCreateMissionMutation } from '@/hooks/use-missions'
 import { useSponsorsQuery } from '@/hooks/use-sponsors'
 import { AppError } from '@/libs/api'
 import { Mission } from '@/types/mission'
+import { MISSION_TYPE_LABEL } from '@/utils/mission/type-meta'
 
 export default function MissionForm({ existingMissions }: { existingMissions: Mission[] }) {
   const router = useRouter()
@@ -73,6 +76,8 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
 
   const type = watch('type')
   const clueType = watch('clueType')
+  const clue = watch('clue')
+  const prerequisiteId = watch('prerequisiteId')
   const scoringMode = watch('scoringMode')
   const geoLat = watch('geoLat')
   const geoLng = watch('geoLng')
@@ -219,16 +224,27 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
         </p>
       </div>
 
+      {/* Daftar misi acara ini sudah lewat lima puluh judul; memilihnya dari
+          <select> berarti membaca semuanya untuk menemukan satu. */}
       <div>
         <Label>Misi Prasyarat (opsional)</Label>
-        <Select {...register('prerequisiteId')} defaultValue="">
-          <option value="">Tidak ada</option>
-          {existingMissions.map(m => (
-            <option key={m.id} value={m.id}>
-              {m.title}
-            </option>
-          ))}
-        </Select>
+        <input type="hidden" {...register('prerequisiteId')} />
+        <SearchSelect
+          options={existingMissions.map(m => ({
+            value: m.id,
+            label: m.title,
+            hint: MISSION_TYPE_LABEL[m.type],
+          }))}
+          value={prerequisiteId || undefined}
+          onChange={next =>
+            setValue('prerequisiteId', next ?? '', { shouldValidate: true, shouldDirty: true })
+          }
+          placeholder="Cari judul misi…"
+          emptyLabel="Tidak ada"
+        />
+        <p className="mt-1 text-xs text-ink/50">
+          Misi ini baru terbuka setelah misi prasyaratnya disetujui panitia.
+        </p>
       </div>
 
       <label className="flex items-center gap-2 text-sm font-bold text-ink">
@@ -236,9 +252,9 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
         Wajib diselesaikan dulu sebelum misi lain terbuka (gatekeeper)
       </label>
 
-      {/* Field yang mengikuti struktur MR6_TataCaraSimulasi GAME.xlsx */}
+      {/* Rincian pelaksanaan di lapangan: lokasi, sesi, bukti, dan penilaian. */}
       <div className="space-y-5 rounded-md border-brut-sm bg-paper p-4">
-        <p className="font-mono text-xs uppercase tracking-widest text-ink/45">Detail Simulasi (MR6)</p>
+        <p className="font-mono text-xs uppercase tracking-widest text-ink/45">Detail Simulasi</p>
 
         <div className="grid gap-5 sm:grid-cols-2">
           <div>
@@ -293,17 +309,31 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
         {clueType !== 'NONE' && (
           <div>
             <Label required>Isi Petunjuk</Label>
-            <TextArea
-              placeholder={
-                clueType === 'MORSE'
-                  ? '-... .- - .. -.- / . .-.. --- -.'
-                  : clueType === 'FOTO' || clueType === 'MAP'
-                    ? 'URL gambar petunjuk'
+
+            {/* Petunjuk bergambar diunggah, bukan ditempel sebagai URL —
+                panitia tidak punya tempat menaruh gambarnya lebih dulu. */}
+            {clueType === 'FOTO' || clueType === 'MAP' ? (
+              <>
+                <input type="hidden" {...register('clue')} />
+                <ImageUploadField
+                  value={clue || undefined}
+                  onChange={url =>
+                    setValue('clue', url ?? '', { shouldValidate: true, shouldDirty: true })
+                  }
+                  label="Ketuk untuk pilih gambar petunjuk"
+                />
+              </>
+            ) : (
+              <TextArea
+                placeholder={
+                  clueType === 'MORSE'
+                    ? '-... .- - .. -.- / . .-.. --- -.'
                     : 'Tulis petunjuknya di sini'
-              }
-              error={!!errors.clue}
-              {...register('clue')}
-            />
+                }
+                error={!!errors.clue}
+                {...register('clue')}
+              />
+            )}
             <ErrorMessage message={errors.clue?.message} />
           </div>
         )}
