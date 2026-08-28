@@ -16,6 +16,8 @@ interface MediaPickerProps {
   previewIsVideo?: boolean
   /** Kamera depan untuk selfie, belakang untuk bukti di lapangan. */
   facing?: 'user' | 'environment'
+  /** Galeri boleh memilih beberapa berkas sekaligus; onPick dipanggil per berkas. */
+  multiple?: boolean
   label?: string
 }
 
@@ -45,6 +47,7 @@ export default function MediaPicker({
   allowVideo = false,
   previewIsVideo = false,
   facing = 'environment',
+  multiple = false,
   label = 'Ketuk untuk membuka kamera',
 }: MediaPickerProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -159,10 +162,13 @@ export default function MediaPicker({
         ref={fileInputRef}
         type="file"
         accept={accept}
+        multiple={multiple}
         className="hidden"
         onChange={e => {
-          const file = e.target.files?.[0]
-          if (file) onPick(file)
+          // Memilih lima foto sekaligus dari galeri jauh lebih cepat daripada
+          // membuka pemilihnya lima kali; pemanggilnya tetap menerima satu
+          // berkas per panggilan supaya penggunanya tidak perlu berubah.
+          Array.from(e.target.files ?? []).forEach(onPick)
           // Memilih berkas yang sama dua kali berturut-turut tidak memicu
           // onChange kalau nilainya tidak dikosongkan.
           e.target.value = ''

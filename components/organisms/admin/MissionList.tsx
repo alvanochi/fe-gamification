@@ -18,6 +18,7 @@ import { AppError } from '@/libs/api'
 import QuestionEditor from '@/components/organisms/admin/QuestionEditor'
 import { Mission, MissionType } from '@/types/mission'
 import { MISSION_TYPE_ORDER, groupByMissionType } from '@/utils/mission/grouping'
+import { formatDateTime } from '@/utils/format/formatDate'
 import {
   MISSION_TYPE_LABEL as TYPE_LABEL,
   MISSION_TYPE_COLOR_VAR as TYPE_COLOR_VAR,
@@ -102,7 +103,7 @@ function MissionRow({
           </span>
         )}
         {prerequisite && <span>setelah: {prerequisite.title}</span>}
-        {mission.openAt && <span>buka: {new Date(mission.openAt).toLocaleString('id-ID')}</span>}
+        {mission.openAt && <span>buka: {formatDateTime(mission.openAt)} WIB</span>}
       </div>
 
       {/* Poin disunting di tempat. Sebelumnya lewat prompt() bawaan peramban:

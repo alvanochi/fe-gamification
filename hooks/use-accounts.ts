@@ -20,8 +20,9 @@ export interface Account {
   gender: AccountGender | null
   role: AccountRole
   /** Pos yang dijaga — hanya berarti bagi penjaga pos. */
-  assignedMissionId: string | null
-  assignedMissionTitle: string | null
+  /** Pos-pos yang dijaga. Kosong untuk akun selain POST_GUARD. */
+  assignedMissionIds: string[]
+  assignedMissionTitles: string[]
   checkInAt: string | null
   groupId: string | null
   /** null bila peserta belum masuk kelompok mana pun. */
@@ -117,7 +118,7 @@ export interface AccountPayload {
   businessName?: string | null
   gender?: AccountGender | null
   role?: AccountRole
-  assignedMissionId?: string | null
+  assignedMissionIds?: string[]
 }
 
 export const useCreateAccountMutation = () => {

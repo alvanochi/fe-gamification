@@ -62,6 +62,7 @@ export const missionService = {
         search: params.search || undefined,
         status: params.status && params.status !== 'SEMUA' ? params.status : undefined,
         type: params.type && params.type !== 'SEMUA' ? params.type : undefined,
+        category: params.category && params.category !== 'SEMUA' ? params.category : undefined,
         urgent: params.urgent ? 1 : undefined,
         page: params.page,
         perPage: params.perPage,

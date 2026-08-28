@@ -57,7 +57,7 @@ export default function YelYelStep({
     setUploading(true)
     try {
       const mediaUrl = await submissionService.uploadEvidence(file)
-      await submitMission.mutateAsync({ missionId: yelYel.missionId, mediaUrl })
+      await submitMission.mutateAsync({ missionId: yelYel.missionId, mediaUrls: [mediaUrl] })
       await queryClient.invalidateQueries({ queryKey: ['group', group.id] })
     } catch (e) {
       setUploadError((e as AppError).message || 'Gagal mengirim video. Coba lagi.')

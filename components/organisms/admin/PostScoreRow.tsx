@@ -9,9 +9,9 @@ import ErrorMessage from '@/components/elements/ErrorMessage'
 import { useSubmitFieldResultMutation } from '@/hooks/use-field-results'
 import type { PostQueue, PostQueueRow } from '@/hooks/use-post-queue'
 import { AppError } from '@/libs/api'
+import { formatTime } from '@/utils/format/formatDate'
 
-const jam = (iso: string) =>
-  new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+const jam = (iso: string) => formatTime(iso)
 
 /**
  * Satu kelompok di pos, beserta form penilaiannya.

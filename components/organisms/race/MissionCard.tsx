@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Button from '@/components/elements/Button'
 import Input from '@/components/elements/Input'
 import ErrorMessage from '@/components/elements/ErrorMessage'
-import MediaPicker from '@/components/fragments/MediaPicker'
+import EvidencePicker from '@/components/fragments/EvidencePicker'
 import MissionPostQr from '@/components/organisms/race/MissionPostQr'
 import SponsorLogo from '@/components/fragments/SponsorLogo'
 import { useSubmitMissionWithEvidenceMutation } from '@/hooks/use-submissions'
@@ -20,13 +20,11 @@ import {
   MISSION_CATEGORY_LABEL,
   MISSION_TYPE_COLOR_VAR,
   MISSION_TYPE_LABEL,
-  PROOF_ACCEPT,
   PROOF_TYPE_LABEL,
-  allowsPhotoProof,
-  allowsVideoProof,
   formatMissionPoints,
   describeScoring,
   isFileProof,
+  isOfficerScored,
 } from '@/utils/mission/type-meta'
 
 /** Lencana ringkas di kepala kartu — terbaca tanpa membuka isinya. */
@@ -98,24 +96,45 @@ function MissionMeta({ mission }: { mission: Mission }) {
   )
 }
 
-/** Kolom "PETUNJUK" MR6 — morse, sandi angka, GPS, foto, atau peta. */
+/**
+ * Kolom "PETUNJUK" MR6 — morse, sandi angka, teks, dan/atau foto.
+ *
+ * Teks dan foto tampil berdampingan, bukan bergantian: misi seperti "foto di
+ * titik berikut ini" memberi kalimat perintahnya lalu lima foto papan nama
+ * yang harus dicari. Menampilkan salah satunya saja menghilangkan separuh
+ * petunjuknya.
+ */
 function ClueBox({ mission }: { mission: Mission }) {
-  if (mission.clueType === 'NONE' || !mission.clue) return null
-
-  const isImage = mission.clueType === 'FOTO' || mission.clueType === 'MAP'
+  const images = mission.clueImages ?? []
+  if (mission.clueType === 'NONE' || (!mission.clue && !images.length)) return null
 
   return (
     <div className="mt-3 rounded-md border-brut border-dashed bg-paper px-4 py-3">
       <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-ink/45">
         Petunjuk · {CLUE_TYPE_LABEL[mission.clueType]}
       </p>
-      {isImage ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={mission.clue} alt="Petunjuk lokasi" className="mt-2 w-full rounded border-brut-sm" />
-      ) : (
+
+      {mission.clue && (
         <p className="mt-1 break-words font-mono text-sm font-bold tracking-wide text-ink">
           {mission.clue}
         </p>
+      )}
+
+      {images.length > 0 && (
+        <ul className="mt-2 grid grid-cols-2 gap-2">
+          {images.map((src, index) => (
+            <li key={src}>
+              <a href={src} target="_blank" rel="noopener noreferrer">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={src}
+                  alt={`Petunjuk ${index + 1}`}
+                  className="aspect-square w-full rounded border-brut-sm object-cover"
+                />
+              </a>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   )
@@ -136,8 +155,7 @@ export default function MissionCard({
   const canSubmit = !latest || latest.status === 'REJECTED'
 
   const [isOpen, setIsOpen] = useState(false)
-  const [evidenceFile, setEvidenceFile] = useState<File | null>(null)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [evidenceFiles, setEvidenceFiles] = useState<File[]>([])
   const [answerText, setAnswerText] = useState('')
   const geolocation = useGeolocation()
 
@@ -148,20 +166,18 @@ export default function MissionCard({
   const apiError = error as AppError | null
 
   const needsFile = isFileProof(mission.proofType)
+  // Misi yang dinilai petugas di pos tidak menunggu kiriman apa pun dari
+  // peserta — petugasnya yang mencatat hasilnya setelah memindai QR.
+  const officerScored = isOfficerScored(mission.proofType)
   // Misi terstruktur wajib check-in dulu — tombol kirim baru terbuka setelahnya.
   const blockedByCheckIn = mission.requiresCheckIn && !checkIn
-
-  const handlePickEvidence = (file: File) => {
-    setEvidenceFile(file)
-    setPreviewUrl(URL.createObjectURL(file))
-  }
 
   const handleSubmitTantangan = () => {
     submitMission({
       missionId: mission.id,
-      file: evidenceFile,
-      // Untuk bukti non-file (link sosmed, input hasil, laporan petugas)
-      // isian teks inilah yang menjadi buktinya.
+      files: evidenceFiles,
+      // Untuk bukti non-file (link sosmed, input hasil) isian teks inilah yang
+      // menjadi buktinya.
       answerText: answerText.trim() || undefined,
     })
   }
@@ -170,7 +186,7 @@ export default function MissionCard({
     if (!geolocation.coords) return
     submitMission({
       missionId: mission.id,
-      file: evidenceFile,
+      files: evidenceFiles,
       answerText,
       geoLat: geolocation.coords.lat,
       geoLng: geolocation.coords.lng,
@@ -178,16 +194,20 @@ export default function MissionCard({
   }
 
   const evidencePicker = needsFile ? (
-    <MediaPicker
-      onPick={handlePickEvidence}
-      previewUrl={previewUrl}
-      previewIsVideo={!!evidenceFile?.type.startsWith('video/')}
-      accept={PROOF_ACCEPT[mission.proofType]}
-      allowPhoto={allowsPhotoProof(mission.proofType)}
-      allowVideo={allowsVideoProof(mission.proofType)}
-      label={`Ketuk untuk membuka kamera — bukti ${PROOF_TYPE_LABEL[mission.proofType].toLowerCase()}`}
+    <EvidencePicker
+      proofType={mission.proofType}
+      files={evidenceFiles}
+      onChange={setEvidenceFiles}
     />
   ) : null
+
+  /** Misi ini tidak akan pernah bisa dikirim peserta; hanya perlu dijelaskan. */
+  const officerNotice = (
+    <p className="mt-4 rounded-md border-brut !border-secondary bg-secondary/10 px-4 py-3 text-sm font-bold text-secondary">
+      Misi ini dinilai langsung oleh petugas pos — kamu tidak perlu mengirim apa pun. Datangi
+      posnya, tunjukkan QR untuk check-in, lalu mainkan. Nilainya dicatat petugas begitu selesai.
+    </p>
+  )
 
   const textAnswerInput = (
     <Input
@@ -312,7 +332,9 @@ export default function MissionCard({
           </div>
         )}
 
-        {canSubmit && mission.type === 'TANTANGAN' && (
+        {canSubmit && mission.type === 'TANTANGAN' && officerScored && officerNotice}
+
+        {canSubmit && mission.type === 'TANTANGAN' && !officerScored && (
           <div className="mt-4 space-y-3">
             {evidencePicker}
             {!needsFile && textAnswerInput}
@@ -320,7 +342,7 @@ export default function MissionCard({
               size="sm"
               className="w-full"
               loading={isPending}
-              disabled={blockedByCheckIn || (needsFile ? !evidenceFile : !answerText.trim())}
+              disabled={blockedByCheckIn || (needsFile ? !evidenceFiles.length : !answerText.trim())}
               onClick={handleSubmitTantangan}
             >
               Kirim Bukti
@@ -332,7 +354,9 @@ export default function MissionCard({
           </div>
         )}
 
-        {canSubmit && mission.type === 'SOAL_LOKASI' && (
+        {canSubmit && mission.type === 'SOAL_LOKASI' && officerScored && officerNotice}
+
+        {canSubmit && mission.type === 'SOAL_LOKASI' && !officerScored && (
           <div className="mt-4 space-y-3">
             {evidencePicker}
             {/* Isian teks hanya diminta bila misinya memang tidak meminta berkas.
@@ -359,7 +383,7 @@ export default function MissionCard({
               disabled={
                 blockedByCheckIn ||
                 !geolocation.coords ||
-                (needsFile ? !evidenceFile : !answerText.trim())
+                (needsFile ? !evidenceFiles.length : !answerText.trim())
               }
               onClick={handleSubmitSoalLokasi}
             >

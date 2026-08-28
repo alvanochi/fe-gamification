@@ -16,6 +16,7 @@ import {
   type AdminSettings,
 } from '@/hooks/use-settings'
 import { AppError } from '@/libs/api'
+import { formatTime } from '@/utils/format/formatDate'
 
 /** Kolom angka yang bisa diatur panitia, beserta penjelasannya. */
 const NUMBER_FIELDS: Array<{ key: keyof AdminSettings; label: string; hint: string }> = [
@@ -54,8 +55,7 @@ const NUMBER_FIELDS: Array<{ key: keyof AdminSettings; label: string; hint: stri
   },
 ]
 
-const jam = (iso: string | null) =>
-  iso ? new Date(iso).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) : ''
+const jam = (iso: string | null) => (iso ? formatTime(iso) : '')
 
 /**
  * Isi panel. Dipisah dari pembungkusnya supaya nilai awal formulir bisa

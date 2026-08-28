@@ -12,7 +12,7 @@ import TextArea from '@/components/elements/TextArea'
 import Select from '@/components/elements/Select'
 import ErrorMessage from '@/components/elements/ErrorMessage'
 import ConfirmModal from '@/components/fragments/ConfirmModal'
-import ImageUploadField from '@/components/fragments/ImageUploadField'
+import ImageListField from '@/components/fragments/ImageListField'
 import SearchSelect from '@/components/fragments/SearchSelect'
 import QuestionsBuilder, {
   emptyQuestion,
@@ -67,6 +67,7 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
       participantCount: 1,
       category: 'MANDIRI',
       clueType: 'NONE',
+      clueImages: [],
       proofType: 'FOTO',
       requiresCheckIn: false,
       isYelYel: false,
@@ -76,7 +77,7 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
 
   const type = watch('type')
   const clueType = watch('clueType')
-  const clue = watch('clue')
+  const clueImages = watch('clueImages')
   const prerequisiteId = watch('prerequisiteId')
   const scoringMode = watch('scoringMode')
   const geoLat = watch('geoLat')
@@ -120,6 +121,7 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
             category: 'MANDIRI',
             clueType: 'NONE',
             clue: '',
+            clueImages: [],
             locationName: '',
             sessionStart: '',
             sessionEnd: '',
@@ -307,23 +309,9 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
         </div>
 
         {clueType !== 'NONE' && (
-          <div>
-            <Label required>Isi Petunjuk</Label>
-
-            {/* Petunjuk bergambar diunggah, bukan ditempel sebagai URL —
-                panitia tidak punya tempat menaruh gambarnya lebih dulu. */}
-            {clueType === 'FOTO' || clueType === 'MAP' ? (
-              <>
-                <input type="hidden" {...register('clue')} />
-                <ImageUploadField
-                  value={clue || undefined}
-                  onChange={url =>
-                    setValue('clue', url ?? '', { shouldValidate: true, shouldDirty: true })
-                  }
-                  label="Ketuk untuk pilih gambar petunjuk"
-                />
-              </>
-            ) : (
+          <div className="space-y-4">
+            <div>
+              <Label>Isi Petunjuk</Label>
               <TextArea
                 placeholder={
                   clueType === 'MORSE'
@@ -333,7 +321,26 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
                 error={!!errors.clue}
                 {...register('clue')}
               />
-            )}
+            </div>
+
+            {/* Teks dan foto berdampingan, bukan bergantian. Misi seperti
+                "FOTO DI TITIK BERIKUT INI" memberi kalimat perintahnya lalu
+                lima foto papan nama; sebelumnya panitia harus memilih salah
+                satu bentuk saja dan separuh petunjuknya hilang.
+
+                Gambarnya diunggah di sini, bukan ditempel sebagai URL —
+                panitia tidak punya tempat menaruh gambarnya lebih dulu. */}
+            <div>
+              <Label>Foto Petunjuk (opsional)</Label>
+              <ImageListField
+                value={clueImages ?? []}
+                onChange={urls =>
+                  setValue('clueImages', urls, { shouldValidate: true, shouldDirty: true })
+                }
+                label="Ketuk untuk pilih foto petunjuk"
+              />
+            </div>
+
             <ErrorMessage message={errors.clue?.message} />
           </div>
         )}

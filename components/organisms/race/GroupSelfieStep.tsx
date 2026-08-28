@@ -90,7 +90,7 @@ export default function GroupSelfieStep({ group, myId }: { group: Group; myId: s
             Kirim Selfie Kelompok
           </Button>
 
-          <p className="text-xs text-ink/50">
+          <p className="text-xs text-ink/50 font-semibold">
             Cukup satu orang yang mengunggah — anggota lain akan melihat namanya di sini.
           </p>
           <ErrorMessage message={apiError?.message} />

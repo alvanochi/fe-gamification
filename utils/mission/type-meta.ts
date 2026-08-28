@@ -62,6 +62,17 @@ export const PROOF_ACCEPT: Record<ProofType, string> = {
 export const isFileProof = (proofType: ProofType) =>
   proofType === 'FOTO' || proofType === 'VIDEO' || proofType === 'FOTO_VIDEO' || proofType === 'INPUT_HASIL'
 
+/**
+ * Misi yang hasilnya dicatat petugas pos, bukan dikirim peserta.
+ *
+ * Peserta di misi seperti ini tidak punya apa pun untuk diunggah maupun
+ * diketik: mereka datang, bermain, dan petugasnya yang memasukkan nilainya.
+ * Menampilkan kolom "Jawabanmu" di sana hanya membuat peserta menebak-nebak
+ * apa yang harus diisi — lalu mengarang jawaban yang tidak pernah dibaca
+ * siapa pun.
+ */
+export const isOfficerScored = (proofType: ProofType) => proofType === 'LAPORAN_PETUGAS'
+
 export const allowsPhotoProof = (proofType: ProofType) => proofType !== 'VIDEO'
 export const allowsVideoProof = (proofType: ProofType) =>
   proofType === 'VIDEO' || proofType === 'FOTO_VIDEO'

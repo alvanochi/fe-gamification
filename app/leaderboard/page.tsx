@@ -7,6 +7,7 @@ import CardSkeleton from '@/components/skeleton/CardSkeleton'
 import { useLeaderboardQuery } from '@/hooks/use-leaderboard'
 import { useHasSession, useProfileQuery } from '@/hooks/use-profile'
 import { useRealtime } from '@/hooks/use-realtime'
+import { formatTime } from '@/utils/format/formatDate'
 
 export default function LeaderboardPage() {
   const router = useRouter()
@@ -47,7 +48,7 @@ export default function LeaderboardPage() {
           Poin masuk otomatis setiap panitia menyetujui bukti misi, dan papan ini langsung ikut
           berubah saat itu juga.
           {dataUpdatedAt > 0 && (
-            <> Terakhir diperbarui {new Date(dataUpdatedAt).toLocaleTimeString('id-ID')}.</>
+            <> Terakhir diperbarui {formatTime(new Date(dataUpdatedAt).toISOString())} WIB.</>
           )}
         </p>
 

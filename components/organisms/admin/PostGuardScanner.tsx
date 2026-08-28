@@ -77,13 +77,19 @@ export default function PostGuardScanner() {
   const posts = (missions ?? []).filter(m => m.requiresCheckIn)
 
   /**
-   * Penjaga pos tidak memilih posnya sendiri — Super Admin yang menugaskannya.
-   * Menyisakan pilihan pos di layar mereka berarti satu ketukan salah bisa
-   * mencatat kelompok di meja yang tidak pernah mereka datangi.
+   * Penjaga pos tidak memilih dari seluruh daftar pos — hanya dari pos yang
+   * ditugaskan kepadanya. Satu petugas bisa memegang beberapa pos sekaligus
+   * (di lembar panitia ditulis dengan me-merge sel PETUGAS ke beberapa baris),
+   * jadi pilihannya tetap ada, hanya saja dipersempit ke posnya sendiri.
    */
   const isPostGuard = profile?.role === 'POST_GUARD'
-  const lockedMissionId = isPostGuard ? (profile?.assignedMissionId ?? '') : ''
-  const activeMissionId = lockedMissionId || missionId
+  const myPostIds = profile?.assignedMissionIds ?? []
+  const myPosts = isPostGuard ? posts.filter(p => myPostIds.includes(p.id)) : posts
+
+  // Petugas dengan satu pos tidak perlu memilih apa pun; yang memegang beberapa
+  // pos memilih sendiri mana yang sedang dijaganya.
+  const activeMissionId =
+    isPostGuard && myPosts.length === 1 ? myPosts[0].id : missionId
   const queue = usePostQueueQuery(activeMissionId)
 
   useEffect(() => {
@@ -222,39 +228,37 @@ export default function PostGuardScanner() {
   }
 
   const selectedPost = posts.find(p => p.id === activeMissionId)
+  const unassigned = isPostGuard && myPosts.length === 0
 
   return (
     <div className="space-y-5">
       <div className="rounded-lg border-brut bg-paper-raised p-5 shadow-brutal-sm">
-        {isPostGuard ? (
+        {isPostGuard && myPosts.length === 1 ? (
           <>
             <Label>Pos yang kamu jaga</Label>
             <p className="mt-2 rounded-md border-brut bg-primary/15 px-4 py-3 font-display text-lg text-ink">
-              {selectedPost?.title ?? 'Belum ditugaskan'}
+              {selectedPost?.title}
               {selectedPost?.locationName && (
                 <span className="ml-2 font-mono text-xs uppercase tracking-widest text-ink/50">
                   {selectedPost.locationName}
                 </span>
               )}
             </p>
-            {!lockedMissionId && (
-              <p className="mt-2 text-xs font-bold text-danger">
-                Super Admin belum menugaskanmu ke pos mana pun. Hubungi penanggung jawab acara —
-                tanpa itu, pemindaian tidak bisa dicatat.
-              </p>
-            )}
           </>
         ) : (
           <>
-            <Label htmlFor="pos">Pos yang kamu jaga</Label>
+            <Label htmlFor="pos">
+              {isPostGuard ? `Pos yang kamu jaga (${myPosts.length})` : 'Pos yang kamu jaga'}
+            </Label>
             <Select
               id="pos"
               value={missionId}
               onChange={e => setMissionId(e.target.value)}
               className="mt-2"
+              disabled={unassigned}
             >
               <option value="">— Pilih pos —</option>
-              {posts.map(p => (
+              {myPosts.map(p => (
                 <option key={p.id} value={p.id}>
                   {p.title}
                   {p.locationName ? ` · ${p.locationName}` : ''}
@@ -262,7 +266,14 @@ export default function PostGuardScanner() {
               ))}
             </Select>
 
-            {posts.length === 0 && (
+            {unassigned && (
+              <p className="mt-2 text-xs font-bold text-danger">
+                Super Admin belum menugaskanmu ke pos mana pun. Hubungi penanggung jawab acara —
+                tanpa itu, pemindaian tidak bisa dicatat.
+              </p>
+            )}
+
+            {!isPostGuard && posts.length === 0 && (
               <p className="mt-2 text-xs text-ink/55">
                 Belum ada misi yang ditandai wajib lapor pos. Super Admin bisa mengaturnya di Kelola
                 Misi.

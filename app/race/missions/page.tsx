@@ -18,12 +18,30 @@ import { useMyAssignmentsQuery } from '@/hooks/use-barter'
 import { useDebounce } from '@/hooks/use-debounce'
 import { DEFAULT_PER_PAGE } from '@/hooks/use-pagination'
 import { useRealtime } from '@/hooks/use-realtime'
-import { MISSION_TYPE_COLOR_VAR, MISSION_TYPE_LABEL } from '@/utils/mission/type-meta'
+import {
+  MISSION_CATEGORY_LABEL,
+  MISSION_TYPE_COLOR_VAR,
+  MISSION_TYPE_LABEL,
+} from '@/utils/mission/type-meta'
 import { MISSION_TYPE_ORDER, STATUS_META, STATUS_ORDER, groupByMissionType } from '@/utils/mission/grouping'
-import type { MissionBoardStatus, MissionType } from '@/types/mission'
+import type { MissionBoardStatus, MissionCategory, MissionType } from '@/types/mission'
 
 type StatusFilter = 'SEMUA' | MissionBoardStatus
 type TypeFilter = 'SEMUA' | MissionType
+type CategoryFilter = 'SEMUA' | MissionCategory
+
+/**
+ * Terstruktur vs Mandiri adalah pembagian yang paling menentukan langkah
+ * berikutnya: yang terstruktur harus didatangi pada jam sesinya dan ada
+ * petugas yang menunggu, yang mandiri bisa dikerjakan kapan saja di jalan.
+ * Karena itu ia berdiri sebagai pil sendiri, bukan sekadar pilihan di dalam
+ * dropdown jenis misi.
+ */
+const CATEGORY_FILTERS: Array<{ value: CategoryFilter; label: string }> = [
+  { value: 'SEMUA', label: 'Semua' },
+  { value: 'TERSTRUKTUR', label: MISSION_CATEGORY_LABEL.TERSTRUKTUR },
+  { value: 'MANDIRI', label: MISSION_CATEGORY_LABEL.MANDIRI },
+]
 
 const STATUS_FILTERS: Array<{ value: StatusFilter; label: string; short: string }> = [
   { value: 'SEMUA', label: 'Semua', short: 'Semua' },
@@ -43,6 +61,7 @@ export default function RaceMissionsPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<StatusFilter>('SEMUA')
   const [type, setType] = useState<TypeFilter>('SEMUA')
+  const [category, setCategory] = useState<CategoryFilter>('SEMUA')
   const [urgentOnly, setUrgentOnly] = useState(false)
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(DEFAULT_PER_PAGE)
@@ -55,6 +74,7 @@ export default function RaceMissionsPage() {
     search: debouncedSearch.trim(),
     status,
     type,
+    category,
     urgent: urgentOnly,
     page,
     perPage,
@@ -95,7 +115,11 @@ export default function RaceMissionsPage() {
     : 0
 
   const isFiltering =
-    !!debouncedSearch.trim() || status !== 'SEMUA' || type !== 'SEMUA' || urgentOnly
+    !!debouncedSearch.trim() ||
+    status !== 'SEMUA' ||
+    type !== 'SEMUA' ||
+    category !== 'SEMUA' ||
+    urgentOnly
 
   return (
     <div className="min-h-[100dvh] bg-paper px-4 py-10 sm:px-8">
@@ -199,6 +223,30 @@ export default function RaceMissionsPage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
+                <div className="flex overflow-hidden rounded-md border-brut">
+                  {CATEGORY_FILTERS.map(filter => {
+                    const active = category === filter.value
+                    const count =
+                      filter.value === 'SEMUA'
+                        ? board.counts.SEMUA
+                        : board.categoryCounts[filter.value]
+
+                    return (
+                      <button
+                        key={filter.value}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => changeFilter(() => setCategory(filter.value))}
+                        className={`px-3 py-3 font-mono text-[11px] font-bold uppercase tracking-wide brutal-press-sm ${
+                          active ? 'bg-ink text-paper' : 'bg-paper-raised text-ink/70'
+                        }`}
+                      >
+                        {filter.label} ({count ?? 0})
+                      </button>
+                    )
+                  })}
+                </div>
+
                 {/* Jenis misi lewat dropdown: di layar ponsel, lima pil
                     berjejer memakan dua baris penuh dan menggeser daftarnya
                     turun setiap kali halaman dibuka. */}
@@ -236,6 +284,7 @@ export default function RaceMissionsPage() {
                         setSearch('')
                         setStatus('SEMUA')
                         setType('SEMUA')
+                        setCategory('SEMUA')
                         setUrgentOnly(false)
                       })
                     }
@@ -253,6 +302,7 @@ export default function RaceMissionsPage() {
                   Menampilkan <strong className="text-ink">{board.total} misi</strong>
                   {status !== 'SEMUA' && ` · ${STATUS_META[status].title.toLowerCase()}`}
                   {type !== 'SEMUA' && ` · ${MISSION_TYPE_LABEL[type]}`}
+                  {category !== 'SEMUA' && ` · ${MISSION_CATEGORY_LABEL[category]}`}
                   {urgentOnly && ` · mendesak (sesi tutup ≤ ${board.urgentWindowMinutes} menit)`}
                   {debouncedSearch.trim() && ` · pencarian “${debouncedSearch.trim()}”`}
                 </p>

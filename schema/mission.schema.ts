@@ -84,6 +84,9 @@ export const createMissionSchema = z
     category: z.enum(['TERSTRUKTUR', 'MANDIRI']),
     clueType: z.enum(['NONE', 'TEKS', 'MORSE', 'SANDI_ANGKA', 'GPS', 'FOTO', 'MAP']),
     clue: z.string().trim().optional(),
+    // Foto pendamping petunjuk. Berdampingan dengan `clue`, bukan
+    // menggantikannya: misi "foto di titik berikut ini" butuh keduanya.
+    clueImages: z.array(z.string().url()).max(10).default([]),
     locationName: z.string().trim().optional(),
     sessionStart: optionalHhmm,
     sessionEnd: optionalHhmm,
@@ -134,8 +137,8 @@ export const createMissionSchema = z
     message: 'Isi jam mulai dan jam selesai sesi bersamaan',
     path: ['sessionEnd'],
   })
-  .refine(data => data.clueType === 'NONE' || !!data.clue, {
-    message: 'Isi petunjuknya, atau pilih "Tanpa petunjuk"',
+  .refine(data => data.clueType === 'NONE' || !!data.clue || data.clueImages.length > 0, {
+    message: 'Isi petunjuknya (teks atau foto), atau pilih "Tanpa petunjuk"',
     path: ['clue'],
   })
 

@@ -38,6 +38,8 @@ export interface Mission {
   category: MissionCategory
   clueType: ClueType
   clue: string | null
+  /** Foto pendamping petunjuk — boleh berdampingan dengan `clue`. */
+  clueImages: string[]
   locationName: string | null
   /** "HH:MM" waktu lokal acara. */
   sessionStart: string | null
@@ -84,6 +86,7 @@ export interface MissionBoard {
   missionsReleased: boolean
   counts: Record<'SEMUA' | MissionBoardStatus, number>
   typeCounts: Record<MissionType, number>
+  categoryCounts: Record<MissionCategory, number>
   urgentCount: number
   urgentWindowMinutes: number
   items: BoardMission[]
@@ -93,6 +96,7 @@ export interface MissionBoardParams {
   search?: string
   status?: 'SEMUA' | MissionBoardStatus
   type?: 'SEMUA' | MissionType
+  category?: 'SEMUA' | MissionCategory
   urgent?: boolean
   page?: number
   perPage?: number
@@ -179,7 +183,8 @@ export interface Submission {
   groupId: string
   submittedBy: string
   status: SubmissionStatus
-  mediaUrl: string | null
+  /** Bukti berkas — selalu daftar, boleh kosong. */
+  mediaUrls: string[]
   answerText: string | null
   selectedOptionId: string | null
   awardedPoint: number | null
@@ -193,7 +198,7 @@ export interface Submission {
 export interface PendingSubmission {
   id: string
   status: SubmissionStatus
-  mediaUrl: string | null
+  mediaUrls: string[]
   answerText: string | null
   createdAt: string
   missionId: string
@@ -240,7 +245,7 @@ export interface QuizReview {
 
 export interface SubmitMissionPayload {
   missionId: string
-  mediaUrl?: string
+  mediaUrls?: string[]
   answerText?: string
   geoLat?: string
   geoLng?: string
@@ -291,6 +296,7 @@ export interface CreateMissionPayload {
   category: MissionCategory
   clueType: ClueType
   clue?: string
+  clueImages?: string[]
   locationName?: string
   sessionStart?: string
   sessionEnd?: string

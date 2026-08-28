@@ -62,7 +62,7 @@ const EMPTY_FORM = {
   email: '',
   businessName: '',
   gender: '',
-  assignedMissionId: '',
+  assignedMissionIds: [] as string[],
 }
 
 /** Tindakan massal yang perlu dikonfirmasi lebih dulu. */
@@ -141,7 +141,7 @@ export default function AccountsPanel() {
       email: account.email ?? '',
       businessName: account.businessName ?? '',
       gender: account.gender ?? '',
-      assignedMissionId: account.assignedMissionId ?? '',
+      assignedMissionIds: account.assignedMissionIds ?? [],
     })
     setShowForm(true)
   }
@@ -168,7 +168,7 @@ export default function AccountsPanel() {
       email: form.email.trim() || null,
       businessName: form.businessName.trim() || null,
       gender: (form.gender || null) as AccountGender | null,
-      assignedMissionId: form.assignedMissionId || null,
+      assignedMissionIds: form.assignedMissionIds,
     }
 
     if (editing) {
@@ -297,23 +297,49 @@ export default function AccountsPanel() {
             </div>
             {editing?.role === 'POST_GUARD' && (
               <div className="sm:col-span-2">
-                <Label required>Pos yang dijaga</Label>
-                <Select
-                  className="mt-2"
-                  value={form.assignedMissionId}
-                  onChange={e => setForm({ ...form, assignedMissionId: e.target.value })}
+                <Label required>Pos yang dijaga ({form.assignedMissionIds.length})</Label>
+                {/* Daftar centang, bukan satu pilihan: seorang petugas kerap
+                    memegang beberapa pos berdekatan sekaligus. Sebelumnya
+                    penugasan kedua diam-diam menggantikan yang pertama. */}
+                <ul
+                  data-lenis-prevent
+                  className="mt-2 max-h-56 space-y-1 overflow-y-auto rounded-md border-brut bg-paper p-2"
                 >
-                  <option value="">— Belum ditugaskan —</option>
-                  {posts.map(post => (
-                    <option key={post.id} value={post.id}>
-                      {post.title}
-                      {post.locationName ? ` · ${post.locationName}` : ''}
-                    </option>
-                  ))}
-                </Select>
+                  {posts.map(post => {
+                    const checked = form.assignedMissionIds.includes(post.id)
+
+                    return (
+                      <li key={post.id}>
+                        <label className="flex cursor-pointer items-start gap-2 rounded-sm px-2 py-1.5 hover:bg-paper-raised">
+                          <input
+                            type="checkbox"
+                            className="mt-1"
+                            checked={checked}
+                            onChange={() =>
+                              setForm({
+                                ...form,
+                                assignedMissionIds: checked
+                                  ? form.assignedMissionIds.filter(id => id !== post.id)
+                                  : [...form.assignedMissionIds, post.id],
+                              })
+                            }
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-bold text-ink">{post.title}</span>
+                            {post.locationName && (
+                              <span className="block font-mono text-[10px] uppercase tracking-widest text-ink/45">
+                                {post.locationName}
+                              </span>
+                            )}
+                          </span>
+                        </label>
+                      </li>
+                    )
+                  })}
+                </ul>
                 <p className="mt-1 text-xs text-ink/50">
                   Hanya misi bercentang &quot;Wajib check-in&quot; yang bisa dijaga. Penjaga pos hanya
-                  bisa memindai QR pos ini, dan tidak melihat bagian panel yang lain.
+                  bisa memindai QR pos-pos ini, dan tidak melihat bagian panel yang lain.
                 </p>
               </div>
             )}
@@ -418,11 +444,20 @@ export default function AccountsPanel() {
 
                 {account.role === 'POST_GUARD' && (
                   <span
+                    title={account.assignedMissionTitles?.join(', ')}
                     className={`shrink-0 rounded-sm border-brut-sm px-2 py-1 font-mono text-[10px] font-bold uppercase ${
-                      account.assignedMissionTitle ? 'bg-paper text-ink/70' : 'bg-danger/20 text-danger'
+                      account.assignedMissionTitles?.length
+                        ? 'bg-paper text-ink/70'
+                        : 'bg-danger/20 text-danger'
                     }`}
                   >
-                    {account.assignedMissionTitle ?? 'pos belum diatur'}
+                    {/* Satu pos disebut namanya; lebih dari itu hanya jumlahnya,
+                        karena delapan judul misi tidak muat di satu baris. */}
+                    {!account.assignedMissionTitles?.length
+                      ? 'pos belum diatur'
+                      : account.assignedMissionTitles.length === 1
+                        ? account.assignedMissionTitles[0]
+                        : `${account.assignedMissionTitles.length} pos`}
                   </span>
                 )}
 

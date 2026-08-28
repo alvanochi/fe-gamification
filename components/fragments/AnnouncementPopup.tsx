@@ -3,6 +3,7 @@
 import { useState, useSyncExternalStore } from 'react'
 import Button from '@/components/elements/Button'
 import { useSettingsQuery } from '@/hooks/use-settings'
+import { formatTime } from '@/utils/format/formatDate'
 
 const SEEN_KEY = 'announcement-seen-at'
 
@@ -48,7 +49,7 @@ export default function AnnouncementPopup({ enabled = true }: { enabled?: boolea
         </p>
         <p className="mt-3 whitespace-pre-line font-display text-xl text-ink">{message}</p>
         <p className="mt-2 text-xs text-ink/45">
-          {new Date(announcedAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+          {formatTime(announcedAt)} WIB
         </p>
         <Button size="lg" className="mt-5 w-full" onClick={close}>
           YA, SAYA SIAP!

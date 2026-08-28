@@ -30,7 +30,9 @@ export interface Profile {
   socialProfileSkipped: boolean
   role: UserRole
   /** Pos yang dijaga — hanya terisi untuk penjaga pos. */
-  assignedMissionId: string | null
+  /** Pos-pos yang dijaga akun ini. Kosong untuk selain POST_GUARD. */
+  assignedMissionIds: string[]
+  assignedMissionTitles: string[]
   groupId: string | null
   /** Token QR pos milik sendiri; hanya dikembalikan lewat profil. */
   qrToken: string | null

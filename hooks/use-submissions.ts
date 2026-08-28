@@ -72,17 +72,26 @@ export const useValidateSubmissionMutation = () => {
 }
 
 /**
- * Kirim bukti misi: unggah file ke R2 lebih dulu (bila ada), lalu simpan
- * submission dengan mediaUrl hasil unggahan. Sebelumnya file yang dipilih
- * peserta tidak pernah ikut terkirim sama sekali.
+ * Kirim bukti misi: unggah berkasnya lebih dulu, lalu simpan submission dengan
+ * URL hasil unggahannya.
+ *
+ * Berkasnya diunggah berbarengan, bukan satu per satu — misi yang meminta lima
+ * foto akan terasa seperti menunggu lima kali lipat kalau dijalankan berurutan,
+ * dan peserta menunggu itu sambil berdiri di lapangan.
  */
 export const useSubmitMissionWithEvidenceMutation = () => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async ({ file, ...payload }: SubmitMissionPayload & { file?: File | null }) => {
-      const mediaUrl = file ? await submissionService.uploadEvidence(file) : payload.mediaUrl
-      return submissionService.submit({ ...payload, mediaUrl })
+    mutationFn: async ({ files, ...payload }: SubmitMissionPayload & { files?: File[] }) => {
+      const uploaded = files?.length
+        ? await Promise.all(files.map(file => submissionService.uploadEvidence(file)))
+        : []
+
+      return submissionService.submit({
+        ...payload,
+        mediaUrls: uploaded.length ? uploaded : payload.mediaUrls,
+      })
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-group-submissions'] })

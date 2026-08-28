@@ -23,34 +23,50 @@ import {
   PROOF_TYPE_LABEL,
 } from '@/utils/mission/type-meta'
 
-/** Bukti video perlu <video>; <img> hanya menampilkan kotak rusak. */
+/**
+ * Semua bukti yang dikirim kelompok, bukan yang pertama saja.
+ *
+ * Misi yang meminta foto di beberapa titik menghasilkan beberapa berkas
+ * sekaligus. Panitia yang hanya melihat satu di antaranya akan menolak bukti
+ * yang sebenarnya lengkap — jadi seluruhnya ditampilkan, bernomor sesuai
+ * urutan kirim.
+ */
 function EvidencePreview({ submission }: { submission: PendingSubmission }) {
-  if (!submission.mediaUrl) return null
+  const urls = submission.mediaUrls ?? []
+  if (!urls.length) return null
 
-  const isVideo =
-    submission.proofType === 'VIDEO' ||
-    /\.(mp4|mov|webm|m4v)(\?|$)/i.test(submission.mediaUrl)
-
-  if (isVideo) {
-    return (
-      <video
-        src={submission.mediaUrl}
-        controls
-        playsInline
-        className="mt-3 aspect-video w-full rounded-md border-brut bg-black object-contain"
-      />
-    )
-  }
+  const isVideo = (url: string) =>
+    submission.proofType === 'VIDEO' || /\.(mp4|mov|webm|m4v)(\?|$)/i.test(url)
 
   return (
-    <a href={submission.mediaUrl} target="_blank" rel="noopener noreferrer">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={submission.mediaUrl}
-        alt="Bukti submission"
-        className="mt-3 aspect-video w-full rounded-md border-brut object-cover"
-      />
-    </a>
+    <ul className={`mt-3 grid gap-2 ${urls.length > 1 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+      {urls.map((url, index) => (
+        <li key={url} className="relative">
+          {isVideo(url) ? (
+            <video
+              src={url}
+              controls
+              playsInline
+              className="aspect-video w-full rounded-md border-brut bg-black object-contain"
+            />
+          ) : (
+            <a href={url} target="_blank" rel="noopener noreferrer">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={url}
+                alt={`Bukti ${index + 1}`}
+                className="aspect-video w-full rounded-md border-brut object-cover"
+              />
+            </a>
+          )}
+          {urls.length > 1 && (
+            <span className="absolute left-1.5 top-1.5 rounded-sm bg-ink/70 px-1.5 font-mono text-[10px] font-bold text-paper">
+              {index + 1}/{urls.length}
+            </span>
+          )}
+        </li>
+      ))}
+    </ul>
   )
 }
 
