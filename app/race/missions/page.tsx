@@ -4,12 +4,13 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
+import Button from '@/components/elements/Button'
 import Input from '@/components/elements/Input'
+import Select from '@/components/elements/Select'
 import MissionCard from '@/components/organisms/race/MissionCard'
 import Pagination from '@/components/fragments/Pagination'
 import AnnouncementPopup from '@/components/fragments/AnnouncementPopup'
 import AppToast from '@/components/fragments/AppToast'
-import QrPosPanel from '@/components/organisms/race/QrPosPanel'
 import { useProfileQuery } from '@/hooks/use-profile'
 import { useMissionBoardQuery, useMyCheckInsQuery } from '@/hooks/use-missions'
 import { useMyGroupSubmissionsQuery } from '@/hooks/use-submissions'
@@ -24,42 +25,12 @@ import type { MissionBoardStatus, MissionType } from '@/types/mission'
 type StatusFilter = 'SEMUA' | MissionBoardStatus
 type TypeFilter = 'SEMUA' | MissionType
 
-const STATUS_FILTERS: Array<{ value: StatusFilter; label: string }> = [
-  { value: 'SEMUA', label: 'Semua' },
-  { value: 'BELUM', label: STATUS_META.BELUM.title },
-  { value: 'MENUNGGU', label: STATUS_META.MENUNGGU.title },
-  { value: 'SELESAI', label: STATUS_META.SELESAI.title },
+const STATUS_FILTERS: Array<{ value: StatusFilter; label: string; short: string }> = [
+  { value: 'SEMUA', label: 'Semua', short: 'Semua' },
+  { value: 'BELUM', label: STATUS_META.BELUM.title, short: 'Belum' },
+  { value: 'MENUNGGU', label: STATUS_META.MENUNGGU.title, short: 'Menunggu' },
+  { value: 'SELESAI', label: STATUS_META.SELESAI.title, short: 'Selesai' },
 ]
-
-/** Tombol saringan berbentuk pil, dipakai baris status maupun baris jenis misi. */
-function FilterChip({
-  active,
-  label,
-  count,
-  color,
-  onClick,
-}: {
-  active: boolean
-  label: string
-  count?: number
-  color?: string
-  onClick: () => void
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      style={active && color ? { backgroundColor: color, color: '#fff' } : undefined}
-      className={`rounded-full border-brut-sm px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wide brutal-press-sm ${
-        active && !color ? 'bg-primary text-primary-ink' : active ? '' : 'bg-paper-raised text-ink/70'
-      }`}
-    >
-      {label}
-      {count !== undefined && ` (${count})`}
-    </button>
-  )
-}
 
 export default function RaceMissionsPage() {
   const router = useRouter()
@@ -130,10 +101,6 @@ export default function RaceMissionsPage() {
     <div className="min-h-[100dvh] bg-paper px-4 py-10 sm:px-8">
       <AnnouncementPopup />
       <AppToast />
-      {/* QR peserta dipakai petugas pos sepanjang perlombaan, jadi ia harus
-          terjangkau dari layar misi — bukan hanya dari rangkaian checkpoint
-          yang sudah ditinggalkan. */}
-      <QrPosPanel />
 
       <div className="mx-auto max-w-5xl">
         <Link href="/race" className="font-mono text-xs uppercase tracking-widest text-secondary">
@@ -196,61 +163,98 @@ export default function RaceMissionsPage() {
                 type="search"
                 value={search}
                 onChange={e => changeFilter(() => setSearch(e.target.value))}
-                placeholder="Cari misi, lokasi, atau jenisnya…"
+                placeholder="🔎  Cari misi, lokasi, atau jenisnya…"
               />
 
-              {/* Dua saringan yang berbeda pertanyaannya: "sudah kukerjakan
-                  belum?" dan "misi jenis apa?". Dulu keduanya berupa deretan
-                  pil serupa yang berdempetan, sehingga terbaca sebagai satu
-                  daftar pilihan yang saling meniadakan. Sekarang masing-masing
-                  punya baris berlabel sendiri. */}
+              {/* Status sebagai satu batang bersegmen: empat pilihan yang saling
+                  meniadakan, jadi bentuknya pun harus terbaca sebagai satu
+                  pilihan — bukan empat tombol yang bisa ditekan bersamaan. */}
+              <div
+                role="tablist"
+                aria-label="Saring menurut status"
+                className="flex overflow-hidden rounded-md border-brut bg-paper-raised"
+              >
+                {STATUS_FILTERS.map(filter => {
+                  const active = status === filter.value
+                  return (
+                    <button
+                      key={filter.value}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => changeFilter(() => setStatus(filter.value))}
+                      className={`flex-1 border-r border-ink/10 px-2 py-2 text-center last:border-r-0 brutal-press-sm ${
+                        active ? 'bg-primary text-primary-ink' : 'text-ink/60'
+                      }`}
+                    >
+                      <span className="block text-lg font-bold leading-none tabular-nums">
+                        {board.counts[filter.value]}
+                      </span>
+                      <span className="mt-0.5 block text-[11px] font-bold uppercase tracking-wide">
+                        {filter.short}
+                      </span>
+                    </button>
+                  )
+                })}
+              </div>
+
               <div className="flex flex-wrap items-center gap-2">
-                <span className="w-16 shrink-0 font-mono text-[10px] uppercase tracking-widest text-ink/45">
-                  Status
-                </span>
-                {STATUS_FILTERS.map(filter => (
-                  <FilterChip
-                    key={filter.value}
-                    active={status === filter.value}
-                    label={filter.label}
-                    count={board.counts[filter.value]}
-                    onClick={() => changeFilter(() => setStatus(filter.value))}
-                  />
-                ))}
-                <FilterChip
-                  active={urgentOnly}
-                  label="⏳ Mendesak"
-                  count={board.urgentCount}
-                  color="var(--color-danger)"
+                {/* Jenis misi lewat dropdown: di layar ponsel, lima pil
+                    berjejer memakan dua baris penuh dan menggeser daftarnya
+                    turun setiap kali halaman dibuka. */}
+                <Select
+                  className="w-auto flex-1 sm:flex-none"
+                  aria-label="Saring menurut jenis misi"
+                  value={type}
+                  onChange={e => changeFilter(() => setType(e.target.value as TypeFilter))}
+                >
+                  <option value="SEMUA">Semua jenis misi</option>
+                  {MISSION_TYPE_ORDER.map(missionType => (
+                    <option key={missionType} value={missionType}>
+                      {MISSION_TYPE_LABEL[missionType]} ({board.typeCounts[missionType] ?? 0})
+                    </option>
+                  ))}
+                </Select>
+
+                <button
+                  type="button"
+                  aria-pressed={urgentOnly}
                   onClick={() => changeFilter(() => setUrgentOnly(v => !v))}
-                />
+                  className={`rounded-md border-brut px-3 py-3 font-mono text-[11px] font-bold uppercase tracking-wide brutal-press-sm ${
+                    urgentOnly ? 'bg-danger text-white' : 'bg-paper-raised text-ink/70'
+                  }`}
+                >
+                  ⏳ Mendesak ({board.urgentCount})
+                </button>
+
+                {isFiltering && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() =>
+                      changeFilter(() => {
+                        setSearch('')
+                        setStatus('SEMUA')
+                        setType('SEMUA')
+                        setUrgentOnly(false)
+                      })
+                    }
+                  >
+                    Hapus saringan
+                  </Button>
+                )}
               </div>
 
-              <div className="flex flex-wrap items-center gap-2 border-t border-ink/10 pt-3">
-                <span className="w-16 shrink-0 font-mono text-[10px] uppercase tracking-widest text-ink/45">
-                  Jenis
-                </span>
-                <FilterChip
-                  active={type === 'SEMUA'}
-                  label="Semua jenis"
-                  onClick={() => changeFilter(() => setType('SEMUA'))}
-                />
-                {MISSION_TYPE_ORDER.map(missionType => (
-                  <FilterChip
-                    key={missionType}
-                    active={type === missionType}
-                    label={MISSION_TYPE_LABEL[missionType]}
-                    count={board.typeCounts[missionType] ?? 0}
-                    color={MISSION_TYPE_COLOR_VAR[missionType]}
-                    onClick={() => changeFilter(() => setType(missionType))}
-                  />
-                ))}
-              </div>
-
-              {urgentOnly && (
+              {/* Satu kalimat yang menyebut apa yang sedang dilihat. Tanpa ini,
+                  daftar yang tiba-tiba pendek terbaca sebagai misi yang hilang,
+                  bukan sebagai saringan yang masih menyala. */}
+              {isFiltering && (
                 <p className="text-xs text-ink/55">
-                  Menampilkan misi wajib dan misi yang sesinya tutup dalam{' '}
-                  {board.urgentWindowMinutes} menit ke depan.
+                  Menampilkan <strong className="text-ink">{board.total} misi</strong>
+                  {status !== 'SEMUA' && ` · ${STATUS_META[status].title.toLowerCase()}`}
+                  {type !== 'SEMUA' && ` · ${MISSION_TYPE_LABEL[type]}`}
+                  {urgentOnly && ` · mendesak (sesi tutup ≤ ${board.urgentWindowMinutes} menit)`}
+                  {debouncedSearch.trim() && ` · pencarian “${debouncedSearch.trim()}”`}
                 </p>
               )}
             </div>

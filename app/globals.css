@@ -57,8 +57,19 @@
   --color-danger: var(--danger);
   --color-warning: var(--warning);
 
+  /*
+   * Dua huruf saja di seluruh aplikasi: Archivo Black untuk judul, Geist untuk
+   * segalanya yang lain.
+   *
+   * `font-mono` sengaja diarahkan ke huruf yang sama. Label, eyebrow, dan
+   * lencana tetap memakai kelas itu — huruf kapital dan jarak antarhurufnya
+   * yang memberi kesan "label", bukan wajah hurufnya. Sebelumnya tiga wajah
+   * huruf bertemu di satu layar dan pilihan itu terbaca sebagai tidak
+   * disengaja. Untuk mengembalikan huruf monospace, cukup arahkan baris ini
+   * kembali ke var(--font-geist-mono) dan hidupkan lagi impornya di layout.
+   */
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: var(--font-geist-sans);
   --font-display: var(--font-archivo-black);
 
   /* Ticket-like radius scale — deliberately not pill-shaped SaaS rounding */

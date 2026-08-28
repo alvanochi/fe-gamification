@@ -101,8 +101,12 @@ export const useRealtime = (groupId?: string | null) => {
         tone: 'success',
         icon: arriving ? '📍' : '✅',
         title: arriving ? 'Berhasil Check-in' : 'Berhasil Check-out',
-        subject: `Pos ${payload.postName}`,
-        detail: `Dipindai dari QR ${payload.participantName}. Berlaku untuk seluruh kelompok.`,
+        subject: arriving
+          ? `${payload.participantName} sedang di pos ${payload.postName}`
+          : `${payload.participantName} selesai di pos ${payload.postName}`,
+        detail: arriving
+          ? 'Seluruh anggota kelompokmu ikut tercatat di pos ini. Kerjakan misinya, lalu minta petugas memindai lagi untuk check-out.'
+          : 'Pos ini ditutup untuk kelompokmu. Kalian bisa berpindah ke pos berikutnya.',
         // Di tengah layar: kartu QR baru saja ditutup di depan mata peserta,
         // dan kabar sekecil toast di sudut layar mudah terlewat begitu saja.
         display: 'modal',

@@ -5,6 +5,7 @@ import Button from '@/components/elements/Button'
 import Input from '@/components/elements/Input'
 import ErrorMessage from '@/components/elements/ErrorMessage'
 import MediaPicker from '@/components/fragments/MediaPicker'
+import MissionPostQr from '@/components/organisms/race/MissionPostQr'
 import SponsorLogo from '@/components/fragments/SponsorLogo'
 import { useSubmitMissionWithEvidenceMutation } from '@/hooks/use-submissions'
 import { useSponsorsQuery } from '@/hooks/use-sponsors'
@@ -287,37 +288,17 @@ export default function MissionCard({
         <ClueBox mission={mission} />
 
         {mission.requiresCheckIn && (
-          <div className="mt-4 space-y-2 rounded-md border-brut bg-paper px-4 py-3">
-            <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-ink/45">
-              Check-in pos
-            </p>
-
-            {/* Kedatangan dan kepergian di pos berpetugas dicatat lewat
-                pemindaian QR, bukan oleh peserta sendiri — server memang
-                menolaknya. Tombol check-in di sini karena itu tidak pernah
-                bisa berhasil; yang dibutuhkan peserta adalah tahu apa yang
-                harus dilakukannya. */}
-            {!checkIn && (
-              <p className="text-sm text-ink/70">
-                Datangi posnya, lalu tunjukkan <strong>QR POS</strong>-mu ke petugas untuk dicatat
-                datang.
+          <div className="mt-4 space-y-3">
+            {/* Kedatangan dan kepergian di pos dicatat petugas lewat pemindaian
+                QR ini, bukan oleh peserta sendiri. QR-nya memuat pos ini —
+                jadi tidak ada lagi kemungkinan tercatat di meja yang keliru. */}
+            {checkIn && !checkIn.checkedOutAt && (
+              <p className="rounded-md border-brut !border-warning bg-warning/15 px-4 py-3 text-sm font-bold text-warning">
+                ▶ Misi ini sedang dimainkan — kelompokmu tercatat berada di pos ini.
               </p>
             )}
 
-            {checkIn && !checkIn.checkedOutAt && (
-              <>
-                <p className="text-sm font-bold text-success">Sudah check-in di pos ini</p>
-                <p className="text-xs text-ink/55">
-                  {latest
-                    ? 'Tunjukkan QR POS-mu lagi ke petugas saat pergi, supaya pos bisa lanjut ke kelompok berikutnya.'
-                    : 'Kirim bukti misi ini dulu, baru minta petugas mencatat kepergianmu.'}
-                </p>
-              </>
-            )}
-
-            {checkIn?.checkedOutAt && (
-              <p className="text-sm font-bold text-ink/60">Sudah check-out dari pos ini.</p>
-            )}
+            <MissionPostQr missionId={mission.id} checkIn={checkIn} />
           </div>
         )}
 

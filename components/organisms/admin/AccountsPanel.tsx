@@ -32,18 +32,21 @@ import {
   type SkippedRow,
 } from '@/hooks/use-admin-groups'
 import { useDebounce } from '@/hooks/use-debounce'
+import { useMissionsQuery } from '@/hooks/use-missions'
 import { DEFAULT_PER_PAGE } from '@/hooks/use-pagination'
 import { AppError } from '@/libs/api'
 
 const ROLE_LABEL: Record<AccountRole, string> = {
   PARTICIPANT: 'Peserta',
   ADMIN: 'Panitia Lapangan',
+  POST_GUARD: 'Penjaga Pos',
   SUPER_ADMIN: 'Super Admin',
 }
 
 const ROLE_BADGE: Record<AccountRole, string> = {
   PARTICIPANT: 'bg-paper text-ink/60',
   ADMIN: 'bg-secondary text-secondary-ink',
+  POST_GUARD: 'bg-warning text-ink',
   SUPER_ADMIN: 'bg-primary text-primary-ink',
 }
 
@@ -53,7 +56,14 @@ const GENDER_BADGE: Record<AccountGender, string> = {
   P: 'bg-primary/25 text-ink',
 }
 
-const EMPTY_FORM = { fullname: '', phoneNumber: '', email: '', businessName: '', gender: '' }
+const EMPTY_FORM = {
+  fullname: '',
+  phoneNumber: '',
+  email: '',
+  businessName: '',
+  gender: '',
+  assignedMissionId: '',
+}
 
 /** Tindakan massal yang perlu dikonfirmasi lebih dulu. */
 type PendingBulk = 'DELETE_ACCOUNTS' | 'NEW_GROUP' | null
@@ -74,6 +84,9 @@ export default function AccountsPanel() {
 
   const { data, isLoading } = useAccountsQuery(debounced.trim(), roleFilter, page, perPage)
   const { data: groups } = useAdminGroupsQuery()
+  // Hanya pos berpetugas yang bisa ditugaskan ke penjaga pos.
+  const { data: missions } = useMissionsQuery()
+  const posts = (missions ?? []).filter(m => m.requiresCheckIn)
 
   const createAccount = useCreateAccountMutation()
   const updateAccount = useUpdateAccountMutation()
@@ -128,6 +141,7 @@ export default function AccountsPanel() {
       email: account.email ?? '',
       businessName: account.businessName ?? '',
       gender: account.gender ?? '',
+      assignedMissionId: account.assignedMissionId ?? '',
     })
     setShowForm(true)
   }
@@ -154,6 +168,7 @@ export default function AccountsPanel() {
       email: form.email.trim() || null,
       businessName: form.businessName.trim() || null,
       gender: (form.gender || null) as AccountGender | null,
+      assignedMissionId: form.assignedMissionId || null,
     }
 
     if (editing) {
@@ -199,6 +214,7 @@ export default function AccountsPanel() {
             <option value="">Semua peran ({counts?.all ?? 0})</option>
             <option value="PARTICIPANT">Peserta ({counts?.PARTICIPANT ?? 0})</option>
             <option value="ADMIN">Panitia ({counts?.ADMIN ?? 0})</option>
+            <option value="POST_GUARD">Penjaga Pos ({counts?.POST_GUARD ?? 0})</option>
             <option value="SUPER_ADMIN">Super Admin ({counts?.SUPER_ADMIN ?? 0})</option>
           </Select>
           <Button
@@ -279,6 +295,29 @@ export default function AccountsPanel() {
                 onChange={e => setForm({ ...form, email: e.target.value })}
               />
             </div>
+            {editing?.role === 'POST_GUARD' && (
+              <div className="sm:col-span-2">
+                <Label required>Pos yang dijaga</Label>
+                <Select
+                  className="mt-2"
+                  value={form.assignedMissionId}
+                  onChange={e => setForm({ ...form, assignedMissionId: e.target.value })}
+                >
+                  <option value="">— Belum ditugaskan —</option>
+                  {posts.map(post => (
+                    <option key={post.id} value={post.id}>
+                      {post.title}
+                      {post.locationName ? ` · ${post.locationName}` : ''}
+                    </option>
+                  ))}
+                </Select>
+                <p className="mt-1 text-xs text-ink/50">
+                  Hanya misi bercentang &quot;Wajib check-in&quot; yang bisa dijaga. Penjaga pos hanya
+                  bisa memindai QR pos ini, dan tidak melihat bagian panel yang lain.
+                </p>
+              </div>
+            )}
+
             <div className="sm:col-span-2">
               <Label>Nama usaha (opsional)</Label>
               <Input
@@ -377,6 +416,16 @@ export default function AccountsPanel() {
                   </span>
                 )}
 
+                {account.role === 'POST_GUARD' && (
+                  <span
+                    className={`shrink-0 rounded-sm border-brut-sm px-2 py-1 font-mono text-[10px] font-bold uppercase ${
+                      account.assignedMissionTitle ? 'bg-paper text-ink/70' : 'bg-danger/20 text-danger'
+                    }`}
+                  >
+                    {account.assignedMissionTitle ?? 'pos belum diatur'}
+                  </span>
+                )}
+
                 <span
                   className={`shrink-0 rounded-full border-brut-sm px-3 py-1 font-mono text-[10px] font-bold uppercase ${ROLE_BADGE[account.role]}`}
                 >
@@ -435,6 +484,7 @@ export default function AccountsPanel() {
                   <option value="">Ubah peran ke…</option>
                   <option value="PARTICIPANT">Peserta</option>
                   <option value="ADMIN">Panitia Lapangan</option>
+                  <option value="POST_GUARD">Penjaga Pos</option>
                   <option value="SUPER_ADMIN">Super Admin</option>
                 </Select>
                 <Button size="sm" variant="danger" onClick={() => setPendingBulk('DELETE_ACCOUNTS')}>

@@ -3,6 +3,7 @@ import { endpoints } from '@/libs/endpoint'
 import { IApiEnvelope } from '@/types/auth'
 import {
   PendingSubmission,
+  QuizReview,
   Submission,
   SubmitMissionPayload,
   ValidateSubmissionPayload,
@@ -58,6 +59,11 @@ export const submissionService = {
       endpoints.submissions.submit,
       payload,
     )
+  },
+
+  /** Jawaban kuis satu submission — hanya dibaca kartu validasi misi kuis. */
+  quizReview(submissionId: string) {
+    return http.get<IApiEnvelope<QuizReview>>(endpoints.submissions.quizReview(submissionId))
   },
 
   validate(submissionId: string, payload: ValidateSubmissionPayload) {

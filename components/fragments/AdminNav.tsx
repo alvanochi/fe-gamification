@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import LogoutButton from '@/components/fragments/LogoutButton'
 import { useProfileQuery } from '@/hooks/use-profile'
 import { usePendingCountsQuery } from '@/hooks/use-submissions'
+import type { UserRole } from '@/types/group'
 
 /**
  * `superOnly` menandai halaman yang mengubah konten permainan (BRD Bab 4).
@@ -15,31 +16,35 @@ import { usePendingCountsQuery } from '@/hooks/use-submissions'
  * Menu Kategori disembunyikan bersama seluruh fitur kategori kelompok —
  * masternya masih ada di /admin/categories bila suatu saat dinyalakan lagi.
  */
+const PANITIA: UserRole[] = ['ADMIN', 'SUPER_ADMIN']
+const SUPER: UserRole[] = ['SUPER_ADMIN']
+/** Layar pos milik penjaga pos; Super Admin ikut agar bisa menggantikan. */
+const POST: UserRole[] = ['POST_GUARD', 'SUPER_ADMIN']
+
 const LINKS: Array<{
   href: string
   label: string
-  superOnly?: boolean
+  roles: UserRole[]
   badge?: 'submissions' | 'barterSteps'
 }> = [
-  { href: '/admin/control', label: 'Kendali Acara' },
-  { href: '/admin/monitoring', label: 'Monitoring' },
-  { href: '/admin/validation', label: 'Validasi', badge: 'submissions' },
-  { href: '/admin/post', label: 'Pos' },
-  { href: '/admin/barter', label: 'Barter', badge: 'barterSteps' },
-  { href: '/admin/missions', label: 'Kelola Misi', superOnly: true },
-  // { href: '/admin/categories', label: 'Kategori', superOnly: true },
-  { href: '/admin/sponsors', label: 'Sponsor', superOnly: true },
+  { href: '/admin/control', label: 'Kendali Acara', roles: PANITIA },
+  { href: '/admin/monitoring', label: 'Monitoring', roles: PANITIA },
+  { href: '/admin/validation', label: 'Validasi', roles: PANITIA, badge: 'submissions' },
+  { href: '/admin/post', label: 'Pos', roles: POST },
+  { href: '/admin/barter', label: 'Barter', roles: PANITIA, badge: 'barterSteps' },
+  { href: '/admin/missions', label: 'Kelola Misi', roles: SUPER },
+  // { href: '/admin/categories', label: 'Kategori', roles: SUPER },
+  { href: '/admin/sponsors', label: 'Sponsor', roles: SUPER },
   // Master akun & kelompok memegang identitas seluruh peserta, jadi ia
   // sepenuhnya milik Super Admin — termasuk membacanya.
-  { href: '/admin/accounts', label: 'Akun & Kelompok', superOnly: true },
-  { href: '/leaderboard', label: 'Klasemen' },
+  { href: '/admin/accounts', label: 'Akun & Kelompok', roles: SUPER },
+  { href: '/leaderboard', label: 'Klasemen', roles: [...PANITIA, 'POST_GUARD'] },
 ]
 
 export default function AdminNav() {
   const pathname = usePathname()
   const { data: profile } = useProfileQuery()
-  const isSuperAdmin = profile?.role === 'SUPER_ADMIN'
-  const isPanitia = profile?.role === 'ADMIN' || isSuperAdmin
+  const role = profile?.role
 
   /**
    * Lencana angka: berapa bukti dan pertukaran yang menunggu diperiksa.
@@ -49,11 +54,13 @@ export default function AdminNav() {
    * memberi tanda apa pun, padahal kelompok yang mengirimnya sedang menunggu
    * di lapangan.
    */
-  const { data: counts } = usePendingCountsQuery(!!isPanitia)
+  // Penjaga pos tidak punya akses ke antrean validasi, jadi angkanya pun tidak
+  // perlu diambil dari server.
+  const { data: counts } = usePendingCountsQuery(role === 'ADMIN' || role === 'SUPER_ADMIN')
 
-  // Menu yang tidak bisa dibuka panitia lapangan disembunyikan, bukan
-  // ditampilkan lalu ditolak saat diklik.
-  const links = LINKS.filter(link => !link.superOnly || isSuperAdmin)
+  // Menu yang tidak bisa dibuka perannya disembunyikan, bukan ditampilkan lalu
+  // ditolak saat diklik.
+  const links = LINKS.filter(link => !!role && link.roles.includes(role))
 
   return (
     <nav className="flex flex-wrap gap-2">

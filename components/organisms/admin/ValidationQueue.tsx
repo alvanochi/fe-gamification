@@ -7,7 +7,12 @@ import Input from '@/components/elements/Input'
 import ErrorMessage from '@/components/elements/ErrorMessage'
 import ConfirmModal from '@/components/fragments/ConfirmModal'
 import Pagination from '@/components/fragments/Pagination'
-import { usePendingSubmissionsQuery, useValidateSubmissionMutation } from '@/hooks/use-submissions'
+import QuizReviewPanel from '@/components/organisms/admin/QuizReviewPanel'
+import {
+  usePendingSubmissionsQuery,
+  useQuizReviewQuery,
+  useValidateSubmissionMutation,
+} from '@/hooks/use-submissions'
 import { usePagination } from '@/hooks/use-pagination'
 import { AppError } from '@/libs/api'
 import { PendingSubmission } from '@/types/mission'
@@ -56,22 +61,47 @@ function QueueCard({ submission }: { submission: PendingSubmission }) {
 
   // Input yang diminta menyesuaikan cara penilaian misi.
   const mode = submission.scoringMode ?? (submission.pointMin != null ? 'RANGE' : 'FLAT')
-  const hasRange = mode === 'RANGE'
-  const isPerUnit = mode === 'PER_UNIT'
-  const isTimeBased = mode === 'TIME_BASED'
+  const isQuiz = submission.missionType === 'KUIS'
+  const hasRange = !isQuiz && mode === 'RANGE'
+  const isPerUnit = !isQuiz && mode === 'PER_UNIT'
+  const isTimeBased = !isQuiz && mode === 'TIME_BASED'
+
+  // Misi kuis sampai ke sini hanya bila ada isian singkat di dalamnya: pilihan
+  // gandanya sudah dinilai sistem, isiannya menunggu panitia. Nilai pilihan
+  // ganda dipakai sebagai angka awal supaya panitia tinggal menambahkan.
+  const quizReview = useQuizReviewQuery(submission.id, isQuiz)
 
   const [awardedPoint, setAwardedPoint] = useState<string>(
     hasRange ? String(submission.pointMin ?? '') : '',
   )
   const [units, setUnits] = useState('')
+  const [quizPoint, setQuizPoint] = useState('')
+  const [seededFrom, setSeededFrom] = useState<number | null>(null)
+
+  // Nilai usulan diisikan sekali saat jawabannya tiba — disesuaikan saat render,
+  // bukan lewat effect, supaya ketikan panitia tidak tertimpa saat query
+  // menyegarkan dirinya sendiri.
+  if (isQuiz && quizReview.data && seededFrom !== quizReview.data.autoPoint) {
+    setSeededFrom(quizReview.data.autoPoint)
+    if (quizPoint.trim() === '') setQuizPoint(String(quizReview.data.autoPoint))
+  }
   const [timeSeconds, setTimeSeconds] = useState('')
   const [rejectReason, setRejectReason] = useState('')
   // Dua keputusan yang sama-sama tidak bisa dibatalkan: poin yang sudah masuk
   // ikut mengubah klasemen, dan penolakan mengembalikan misinya ke peserta.
   const [pending, setPending] = useState<'APPROVE' | 'REJECT' | null>(null)
 
+  const parsedQuizPoint = Number(quizPoint)
+  const quizPointValid =
+    quizPoint.trim() !== '' &&
+    Number.isInteger(parsedQuizPoint) &&
+    parsedQuizPoint >= 0 &&
+    (!quizReview.data || parsedQuizPoint <= quizReview.data.maxPoint)
+
   const parsedPoint = Number(awardedPoint)
-  const pointValid = hasRange
+  const pointValid = isQuiz
+    ? quizPointValid
+    : hasRange
     ? awardedPoint.trim() !== '' &&
       Number.isInteger(parsedPoint) &&
       parsedPoint >= submission.pointMin! &&
@@ -130,6 +160,27 @@ function QueueCard({ submission }: { submission: PendingSubmission }) {
       )}
 
       <EvidencePreview submission={submission} />
+
+      {isQuiz && (
+        <>
+          <QuizReviewPanel submissionId={submission.id} />
+
+          <div className="mt-4">
+            <label className="font-mono text-[11px] font-bold uppercase tracking-widest text-ink/45">
+              Nilai akhir kuis{quizReview.data ? ` (0 - ${quizReview.data.maxPoint} poin)` : ''}
+            </label>
+            <Input
+              className="mt-1"
+              type="number"
+              min={0}
+              max={quizReview.data?.maxPoint}
+              value={quizPoint}
+              onChange={e => setQuizPoint(e.target.value)}
+              error={quizPoint.trim() !== '' && !quizPointValid}
+            />
+          </div>
+        </>
+      )}
 
       {hasRange && (
         <div className="mt-4">
@@ -206,11 +257,13 @@ function QueueCard({ submission }: { submission: PendingSubmission }) {
       </div>
       {!pointValid && (
         <p className="mt-2 text-xs font-bold text-danger">
-          {hasRange
-            ? `Isi nilai antara ${submission.pointMin} dan ${submission.pointMax} poin.`
-            : isPerUnit
-              ? 'Isi jumlah hasil yang dicapai peserta.'
-              : 'Isi waktu tempuh peserta dalam detik.'}
+          {isQuiz
+            ? `Isi nilai akhir antara 0 dan ${quizReview.data?.maxPoint ?? 0} poin.`
+            : hasRange
+              ? `Isi nilai antara ${submission.pointMin} dan ${submission.pointMax} poin.`
+              : isPerUnit
+                ? 'Isi jumlah hasil yang dicapai peserta.'
+                : 'Isi waktu tempuh peserta dalam detik.'}
         </p>
       )}
       <ErrorMessage message={apiError?.message} className="mt-2" />
@@ -226,11 +279,13 @@ function QueueCard({ submission }: { submission: PendingSubmission }) {
             </p>
             <p className="mt-2 font-bold text-ink">
               Poin yang diberikan:{' '}
-              {hasRange
-                ? parsedPoint
-                : previewPoint !== null
-                  ? previewPoint
-                  : submission.pointWeight}
+              {isQuiz
+                ? parsedQuizPoint
+                : hasRange
+                  ? parsedPoint
+                  : previewPoint !== null
+                    ? previewPoint
+                    : submission.pointWeight}
             </p>
           </>
         }
@@ -241,7 +296,7 @@ function QueueCard({ submission }: { submission: PendingSubmission }) {
             {
               submissionId: submission.id,
               status: 'APPROVED',
-              awardedPoint: hasRange ? parsedPoint : undefined,
+              awardedPoint: isQuiz ? parsedQuizPoint : hasRange ? parsedPoint : undefined,
               units: isPerUnit ? Number(units) : undefined,
               timeSeconds: isTimeBased ? Number(timeSeconds) : undefined,
             },

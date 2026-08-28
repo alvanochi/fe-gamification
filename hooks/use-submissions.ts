@@ -44,6 +44,20 @@ export const usePendingCountsQuery = (enabled = true) => {
   })
 }
 
+/**
+ * Jawaban kuis untuk kartu validasi.
+ *
+ * Diambil hanya saat kartunya memang misi kuis: menyeret seluruh jawaban tiap
+ * lima detik untuk semua kartu di antrean jelas terlalu mahal.
+ */
+export const useQuizReviewQuery = (submissionId: string, enabled = true) => {
+  return useQuery({
+    queryKey: ['quiz-review', submissionId],
+    queryFn: async () => (await submissionService.quizReview(submissionId)).data,
+    enabled,
+  })
+}
+
 export const useValidateSubmissionMutation = () => {
   const queryClient = useQueryClient()
 

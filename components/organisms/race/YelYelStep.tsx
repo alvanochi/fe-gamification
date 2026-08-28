@@ -68,7 +68,7 @@ export default function YelYelStep({
 
   return (
     <RaceShell
-      eyebrow="Checkpoint 5 · Yel-Yel"
+      eyebrow="Checkpoint 4 · Yel-Yel"
       title="YEL-YEL TIM"
       subtitle="Buat yel-yel kelompokmu, rekam bersama-sama, lalu unggah videonya."
     >

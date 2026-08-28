@@ -14,6 +14,7 @@ import {
   type LoginSuggestion,
 } from '@/services/participant-auth.service'
 import { AppError } from '@/libs/api'
+import { userService } from '@/services/user.service'
 
 interface NameLoginFormProps {
   /** Menentukan daftar nama yang boleh muncul, dan ke mana orangnya diantar. */
@@ -76,7 +77,11 @@ export default function NameLoginForm({ scope, emptyLabel = 'namamu' }: NameLogi
       // Cache dibersihkan supaya data akun sebelumnya tidak sempat terlihat
       // oleh akun berikutnya di tab yang sama.
       queryClient.clear()
-      router.replace(copy.landing)
+
+      // Penjaga pos hanya punya layar pos. Mendaratkannya di Monitoring berarti
+      // langsung menabrak layar "Akses Ditolak" tepat setelah berhasil masuk.
+      const role = scope === 'PANITIA' ? (await userService.getProfile()).data.role : null
+      router.replace(role === 'POST_GUARD' ? '/admin/post' : copy.landing)
     } catch (e) {
       setError((e as AppError).message || 'Gagal masuk. Coba lagi.')
       setBusy(false)

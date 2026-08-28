@@ -10,7 +10,6 @@ import VoteLeaderStep from '@/components/organisms/race/VoteLeaderStep'
 import NameGroupStep from '@/components/organisms/race/NameGroupStep'
 import YelYelStep from '@/components/organisms/race/YelYelStep'
 import GroupSuccessScreen from '@/components/organisms/race/GroupSuccessScreen'
-import QrPosPanel from '@/components/organisms/race/QrPosPanel'
 import LogoutButton from '@/components/fragments/LogoutButton'
 import AnnouncementPopup from '@/components/fragments/AnnouncementPopup'
 import AppToast from '@/components/fragments/AppToast'
@@ -50,8 +49,8 @@ export default function RacePage() {
     if (isPanitia) router.replace('/admin/monitoring')
   }, [isPanitia, router])
 
-  // Ditempelkan di setiap checkpoint, bukan hanya di layar sukses — peserta
-  // perlu menunjukkan QR-nya sejak pos pertama.
+  // Menempel di setiap checkpoint: pengumuman panitia dan kabar pemindaian pos
+  // harus sampai di layar mana pun peserta sedang berada.
   const chrome = (
     <>
       <AnnouncementPopup />
@@ -59,7 +58,6 @@ export default function RacePage() {
           sebagai kabar, bukan sebagai angka yang bergeser diam-diam. */}
       <AppToast />
       <LogoutButton floating />
-      <QrPosPanel />
     </>
   )
 

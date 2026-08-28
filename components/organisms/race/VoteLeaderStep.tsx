@@ -54,7 +54,7 @@ export default function VoteLeaderStep({ group, myId }: VoteLeaderStepProps) {
 
   return (
     <RaceShell
-      eyebrow={isRunoff ? 'Checkpoint 4 · Putaran Kedua' : 'Checkpoint 4 · Voting Ketua'}
+      eyebrow={isRunoff ? 'Checkpoint 2 · Putaran Kedua' : 'Checkpoint 2 · Voting Ketua'}
       title="PILIH KETUA TIM"
       subtitle={
         isRunoff
@@ -84,6 +84,11 @@ export default function VoteLeaderStep({ group, myId }: VoteLeaderStepProps) {
           Kamu salah satu calon di putaran ini, jadi tidak ikut memilih. Tunggu suara anggota lain.
         </p>
       )}
+
+      <p className="mb-3 rounded-md border-brut border-dashed bg-paper px-4 py-3 text-sm text-ink/80">
+        <strong className="text-ink">Klik salah satu nama di bawah untuk memilih ketua.</strong>{' '}
+        Pilihanmu dikonfirmasi dulu sebelum dikirim, dan tidak bisa diubah setelahnya.
+      </p>
 
       <ul className="space-y-3">
         {candidates.map(member => {

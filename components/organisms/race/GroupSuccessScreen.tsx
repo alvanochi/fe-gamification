@@ -13,7 +13,7 @@ export default function GroupSuccessScreen({ group, myId }: { group: Group; myId
 
   return (
     <RaceShell
-      eyebrow="Checkpoint 6 · Siap Berangkat"
+      eyebrow="Checkpoint 5 · Siap Berangkat"
       title={group.name}
       subtitle="Selamat, kelompok berhasil dibuat. Silakan lanjutkan ke misi-misi kamu."
     >

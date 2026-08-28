@@ -25,7 +25,7 @@ export default function NameGroupStep({ group, myId }: NameGroupStepProps) {
   if (!isLeader) {
     return (
       <RaceShell
-        eyebrow="Checkpoint 5 · Penamaan Tim"
+        eyebrow="Checkpoint 3 · Penamaan Tim"
         title="MENUNGGU KETUA"
         subtitle={`${leaderName} sedang memberi nama untuk kelompok kalian.`}
       >
@@ -38,7 +38,7 @@ export default function NameGroupStep({ group, myId }: NameGroupStepProps) {
 
   return (
     <RaceShell
-      eyebrow="Checkpoint 5 · Penamaan Tim (Ketua)"
+      eyebrow="Checkpoint 3 · Penamaan Tim (Ketua)"
       title="BERI NAMA TIMMU"
       subtitle="Nama tim harus unik — sistem akan menolak nama yang sudah dipakai kelompok lain."
     >

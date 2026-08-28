@@ -7,6 +7,7 @@ import Label from '@/components/elements/Label'
 import Select from '@/components/elements/Select'
 import ErrorMessage from '@/components/elements/ErrorMessage'
 import { useMissionsQuery } from '@/hooks/use-missions'
+import { useProfileQuery } from '@/hooks/use-profile'
 import { usePostScanMutation, type PostScanResult } from '@/hooks/use-post-scan'
 import { usePostQueueQuery } from '@/hooks/use-post-queue'
 import PostScoreRow from '@/components/organisms/admin/PostScoreRow'
@@ -69,15 +70,25 @@ export default function PostGuardScanner() {
   const [log, setLog] = useState<Array<{ at: string; text: string; ok: boolean }>>([])
 
   const { data: missions } = useMissionsQuery()
+  const { data: profile } = useProfileQuery()
   const scan = usePostScanMutation()
-  const queue = usePostQueueQuery(missionId)
 
   // Hanya pos berpetugas yang relevan di sini; misi mandiri tidak punya meja.
   const posts = (missions ?? []).filter(m => m.requiresCheckIn)
 
+  /**
+   * Penjaga pos tidak memilih posnya sendiri — Super Admin yang menugaskannya.
+   * Menyisakan pilihan pos di layar mereka berarti satu ketukan salah bisa
+   * mencatat kelompok di meja yang tidak pernah mereka datangi.
+   */
+  const isPostGuard = profile?.role === 'POST_GUARD'
+  const lockedMissionId = isPostGuard ? (profile?.assignedMissionId ?? '') : ''
+  const activeMissionId = lockedMissionId || missionId
+  const queue = usePostQueueQuery(activeMissionId)
+
   useEffect(() => {
-    configRef.current = { missionId, action }
-  }, [missionId, action])
+    configRef.current = { missionId: activeMissionId, action }
+  }, [activeMissionId, action])
 
   const stop = useCallback(() => {
     if (frameRef.current !== null) cancelAnimationFrame(frameRef.current)
@@ -210,32 +221,54 @@ export default function PostGuardScanner() {
     }
   }
 
-  const selectedPost = posts.find(p => p.id === missionId)
+  const selectedPost = posts.find(p => p.id === activeMissionId)
 
   return (
     <div className="space-y-5">
       <div className="rounded-lg border-brut bg-paper-raised p-5 shadow-brutal-sm">
-        <Label htmlFor="pos">Pos yang kamu jaga</Label>
-        <Select
-          id="pos"
-          value={missionId}
-          onChange={e => setMissionId(e.target.value)}
-          className="mt-2"
-        >
-          <option value="">— Pilih pos —</option>
-          {posts.map(p => (
-            <option key={p.id} value={p.id}>
-              {p.title}
-              {p.locationName ? ` · ${p.locationName}` : ''}
-            </option>
-          ))}
-        </Select>
+        {isPostGuard ? (
+          <>
+            <Label>Pos yang kamu jaga</Label>
+            <p className="mt-2 rounded-md border-brut bg-primary/15 px-4 py-3 font-display text-lg text-ink">
+              {selectedPost?.title ?? 'Belum ditugaskan'}
+              {selectedPost?.locationName && (
+                <span className="ml-2 font-mono text-xs uppercase tracking-widest text-ink/50">
+                  {selectedPost.locationName}
+                </span>
+              )}
+            </p>
+            {!lockedMissionId && (
+              <p className="mt-2 text-xs font-bold text-danger">
+                Super Admin belum menugaskanmu ke pos mana pun. Hubungi penanggung jawab acara —
+                tanpa itu, pemindaian tidak bisa dicatat.
+              </p>
+            )}
+          </>
+        ) : (
+          <>
+            <Label htmlFor="pos">Pos yang kamu jaga</Label>
+            <Select
+              id="pos"
+              value={missionId}
+              onChange={e => setMissionId(e.target.value)}
+              className="mt-2"
+            >
+              <option value="">— Pilih pos —</option>
+              {posts.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.title}
+                  {p.locationName ? ` · ${p.locationName}` : ''}
+                </option>
+              ))}
+            </Select>
 
-        {posts.length === 0 && (
-          <p className="mt-2 text-xs text-ink/55">
-            Belum ada misi yang ditandai wajib lapor pos. Super Admin bisa mengaturnya di Kelola
-            Misi.
-          </p>
+            {posts.length === 0 && (
+              <p className="mt-2 text-xs text-ink/55">
+                Belum ada misi yang ditandai wajib lapor pos. Super Admin bisa mengaturnya di Kelola
+                Misi.
+              </p>
+            )}
+          </>
         )}
 
         <div className="mt-4 flex gap-2">
@@ -266,8 +299,8 @@ export default function PostGuardScanner() {
           {selectedPost ? selectedPost.title : 'Pindai QR Peserta'}
         </h3>
         <p className="mt-1 text-sm text-ink/60">
-          {missionId
-            ? 'Arahkan kamera ke kartu QR peserta — kartu cetak dari panitia, atau QR di layar ponselnya. Cukup satu orang dari tiap kelompok; sisanya ikut tercatat.'
+          {activeMissionId
+            ? 'Arahkan kamera ke QR pos yang muncul di layar peserta saat misinya dibuka. Cukup satu orang dari tiap kelompok; sisanya ikut tercatat.'
             : 'Pilih pos terlebih dahulu, lalu mulai memindai.'}
         </p>
 
@@ -309,7 +342,7 @@ export default function PostGuardScanner() {
             <Button
               size="sm"
               className="w-full"
-              disabled={!missionId}
+              disabled={!activeMissionId}
               loading={state === 'starting'}
               onClick={start}
             >
@@ -321,7 +354,7 @@ export default function PostGuardScanner() {
         <ErrorMessage message={cameraError ?? undefined} className="mt-3" />
       </div>
 
-      {missionId && queue.data && (
+      {activeMissionId && queue.data && (
         <div className="rounded-lg border-brut bg-paper-raised p-5 shadow-brutal-sm">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h3 className="font-display text-xl text-ink">Di Pos Sekarang</h3>

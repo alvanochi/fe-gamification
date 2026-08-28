@@ -13,7 +13,7 @@ import { AppError } from '@/libs/api'
 import { Group } from '@/types/group'
 
 /**
- * Checkpoint 2 — kenali timmu, lalu unggah satu selfie bersama.
+ * Checkpoint 1 — kenali timmu, lalu unggah satu selfie bersama.
  *
  * Menggantikan langkah saling mencentang "sudah ketemu": foto bersama sudah
  * membuktikan mereka benar-benar berkumpul, dan jauh lebih cepat untuk
@@ -36,9 +36,9 @@ export default function GroupSelfieStep({ group, myId }: { group: Group; myId: s
 
   return (
     <RaceShell
-      eyebrow="Checkpoint 2 · Kenali Timmu"
+      eyebrow="Checkpoint 1 · Kenali Timmu"
       title="TIM KAMU"
-      subtitle="Berkumpullah dengan anggota di bawah ini, lalu unggah satu foto selfie bersama."
+      subtitle="Berkumpullah dengan anggota di bawah ini, lalu unggah SATU foto selfie yang memuat SELURUH anggota kelompok."
     >
       <FormationCountdown group={group} />
 
@@ -61,6 +61,17 @@ export default function GroupSelfieStep({ group, myId }: { group: Group; myId: s
           {/* Kameranya benar-benar terbuka di halaman ini — bukan dialog pilih
               berkas — dan galeri tetap tersedia untuk kelompok yang sudah
               memotret duluan dengan aplikasi kamera bawaan. */}
+          {/* Ditegaskan tepat di atas kameranya: foto yang kurang satu orang
+              baru ketahuan saat panitia menolaknya, dan kelompoknya sudah
+              terlanjur bubar ke misi berikutnya. */}
+          <div className="flex items-start gap-3 rounded-md border-brut !border-warning bg-warning/15 px-4 py-3">
+            <span aria-hidden className="text-xl">📸</span>
+            <p className="text-sm text-ink/80">
+              <strong className="text-ink">Foto selfie harus memuat seluruh anggota kelompok</strong>{' '}
+              yang tercantum di atas. Pastikan semuanya masuk frame sebelum memotret.
+            </p>
+          </div>
+
           <MediaPicker
             onPick={pick}
             previewUrl={previewUrl}

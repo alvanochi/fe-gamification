@@ -1,3 +1,11 @@
+/**
+ * Peran akun.
+ *
+ * POST_GUARD adalah panitia yang ditugaskan menjaga satu pos: memindai
+ * kedatangan, memberi nilai, memindai kepergian — tidak lebih.
+ */
+export type UserRole = 'PARTICIPANT' | 'ADMIN' | 'SUPER_ADMIN' | 'POST_GUARD'
+
 /** Lapor pos terakhir kelompok — ditampilkan di kartu QR peserta. */
 export interface LastPostScan {
   postName: string
@@ -20,7 +28,9 @@ export interface Profile {
   /** Terisi begitu checkpoint 0 dilewati, entah diisi atau di-skip. */
   socialProfileAt: string | null
   socialProfileSkipped: boolean
-  role: 'PARTICIPANT' | 'ADMIN' | 'SUPER_ADMIN'
+  role: UserRole
+  /** Pos yang dijaga — hanya terisi untuk penjaga pos. */
+  assignedMissionId: string | null
   groupId: string | null
   /** Token QR pos milik sendiri; hanya dikembalikan lewat profil. */
   qrToken: string | null

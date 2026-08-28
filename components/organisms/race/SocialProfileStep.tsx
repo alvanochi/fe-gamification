@@ -11,34 +11,32 @@ import { useSaveSocialProfileMutation } from '@/hooks/use-profile'
 import { AppError } from '@/libs/api'
 import { Profile } from '@/types/group'
 
-const FIELDS = [
-  {
-    key: 'businessName',
-    label: 'Nama usaha / UMKM',
-    placeholder: 'Misal: Batik Siti',
-    hint: 'Nama yang dipakai panitia saat menyebut usahamu.',
-  },
-  {
-    key: 'instagramAccount',
-    label: 'Akun Instagram',
-    placeholder: '@usahaku',
-    hint: null,
-  },
-  {
-    key: 'tiktokAccount',
-    label: 'Akun TikTok',
-    placeholder: '@usahaku',
-    hint: null,
-  },
-  {
-    key: 'youtubeAccount',
-    label: 'Akun YouTube',
-    placeholder: 'Nama channel atau tautannya',
-    hint: null,
-  },
+const PLATFORMS = [
+  { key: 'instagramAccount', label: 'Akun Instagram', placeholder: '@usahaku' },
+  { key: 'tiktokAccount', label: 'Akun TikTok', placeholder: '@usahaku' },
+  { key: 'youtubeAccount', label: 'Akun YouTube', placeholder: 'Nama channel atau tautannya' },
 ] as const
 
-type FieldKey = (typeof FIELDS)[number]['key']
+type PlatformKey = (typeof PLATFORMS)[number]['key']
+
+/**
+ * Satu platform bisa punya beberapa akun — usaha yang punya akun toko dan akun
+ * pemiliknya sendiri sama-sama dinilai. Disimpan sebagai satu kolom dipisah
+ * koma, dan dipecah kembali saat dibaca.
+ */
+const splitAccounts = (value: string | null) => {
+  const parts = (value ?? '')
+    .split(',')
+    .map(v => v.trim())
+    .filter(Boolean)
+  return parts.length ? parts : ['']
+}
+
+const joinAccounts = (values: string[]) =>
+  values
+    .map(v => v.trim())
+    .filter(Boolean)
+    .join(', ')
 
 /**
  * Checkpoint 0 — profil usaha & akun media sosial.
@@ -55,17 +53,38 @@ export default function SocialProfileStep({ profile }: { profile: Profile }) {
   const { mutate: save, isPending, error } = useSaveSocialProfileMutation()
   const apiError = error as AppError | null
 
-  const [form, setForm] = useState<Record<FieldKey, string>>({
-    businessName: profile.businessName ?? '',
-    instagramAccount: profile.instagramAccount ?? '',
-    tiktokAccount: profile.tiktokAccount ?? '',
-    youtubeAccount: profile.youtubeAccount ?? '',
+  const [businessName, setBusinessName] = useState(profile.businessName ?? '')
+  const [accounts, setAccounts] = useState<Record<PlatformKey, string[]>>({
+    instagramAccount: splitAccounts(profile.instagramAccount),
+    tiktokAccount: splitAccounts(profile.tiktokAccount),
+    youtubeAccount: splitAccounts(profile.youtubeAccount),
   })
   const [isSkipping, setIsSkipping] = useState(false)
 
-  const filledSocial = [form.instagramAccount, form.tiktokAccount, form.youtubeAccount].filter(v =>
-    v.trim(),
-  ).length
+  const patch = (key: PlatformKey, index: number, value: string) =>
+    setAccounts(prev => ({
+      ...prev,
+      [key]: prev[key].map((v, i) => (i === index ? value : v)),
+    }))
+
+  const addAccount = (key: PlatformKey) =>
+    setAccounts(prev => ({ ...prev, [key]: [...prev[key], ''] }))
+
+  const removeAccount = (key: PlatformKey, index: number) =>
+    setAccounts(prev => ({ ...prev, [key]: prev[key].filter((_, i) => i !== index) }))
+
+  const filledCount = PLATFORMS.reduce(
+    (sum, p) => sum + accounts[p.key].filter(v => v.trim()).length,
+    0,
+  )
+
+  const submit = () =>
+    save({
+      businessName: businessName.trim(),
+      instagramAccount: joinAccounts(accounts.instagramAccount),
+      tiktokAccount: joinAccounts(accounts.tiktokAccount),
+      youtubeAccount: joinAccounts(accounts.youtubeAccount),
+    })
 
   return (
     <RaceShell
@@ -73,19 +92,70 @@ export default function SocialProfileStep({ profile }: { profile: Profile }) {
       title="KENALKAN USAHAMU"
       subtitle="Sebagian misi dinilai dari unggahan di akunmu sendiri. Isi sekali di sini, dan panitia bisa menemukannya saat menilai."
     >
-      <div className="space-y-4">
-        {FIELDS.map(field => (
-          <div key={field.key}>
-            <Label htmlFor={field.key}>{field.label}</Label>
-            <Input
-              id={field.key}
-              className="mt-1"
-              value={form[field.key]}
-              onChange={e => setForm({ ...form, [field.key]: e.target.value })}
-              placeholder={field.placeholder}
-              autoComplete="off"
-            />
-            {field.hint && <p className="mt-1 text-xs text-ink/50">{field.hint}</p>}
+      <div className="space-y-5">
+        {/* Peringatan akun terkunci ditaruh di kepala, bukan di kaki: akun
+            privat adalah penyebab paling sering nilai media sosial hangus, dan
+            peserta perlu tahu itu sebelum mengetik nama akunnya. */}
+        <div className="flex items-start gap-3 rounded-md border-brut !border-warning bg-warning/15 px-4 py-3">
+          <span aria-hidden className="text-xl">🔓</span>
+          <div>
+            <p className="font-bold text-ink">Pastikan akun dalam kondisi tidak private</p>
+            <p className="mt-0.5 text-sm text-ink/70">
+              Panitia harus bisa membuka unggahanmu untuk menilainya. Akun yang terkunci tidak bisa
+              diperiksa, dan poin misi media sosialnya tidak dihitung.
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <Label htmlFor="businessName">Nama usaha / UMKM</Label>
+          <Input
+            id="businessName"
+            className="mt-1"
+            value={businessName}
+            onChange={e => setBusinessName(e.target.value)}
+            placeholder="Misal: Batik Siti"
+            autoComplete="off"
+          />
+          <p className="mt-1 text-xs text-ink/50">Nama yang dipakai panitia saat menyebut usahamu.</p>
+        </div>
+
+        {PLATFORMS.map(platform => (
+          <div key={platform.key}>
+            <Label>{platform.label}</Label>
+
+            <div className="mt-1 space-y-2">
+              {accounts[platform.key].map((value, index) => (
+                <div key={index} className="flex items-center gap-2">
+                  <Input
+                    value={value}
+                    onChange={e => patch(platform.key, index, e.target.value)}
+                    placeholder={platform.placeholder}
+                    autoComplete="off"
+                  />
+                  {accounts[platform.key].length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => removeAccount(platform.key, index)}
+                      className="shrink-0 px-2 font-bold text-danger"
+                      aria-label={`Hapus ${platform.label} ke-${index + 1}`}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="mt-2"
+              onClick={() => addAccount(platform.key)}
+            >
+              + Tambah akun {platform.label.replace('Akun ', '')}
+            </Button>
           </div>
         ))}
 
@@ -100,7 +170,7 @@ export default function SocialProfileStep({ profile }: { profile: Profile }) {
           size="lg"
           className="w-full"
           loading={isPending && !isSkipping}
-          onClick={() => save({ ...form })}
+          onClick={submit}
         >
           Simpan &amp; Lanjut
         </Button>
@@ -109,7 +179,7 @@ export default function SocialProfileStep({ profile }: { profile: Profile }) {
           Lewati dulu
         </Button>
 
-        {filledSocial === 0 && (
+        {filledCount === 0 && (
           <p className="text-center text-xs text-ink/45">
             Belum ada akun media sosial yang diisi.
           </p>

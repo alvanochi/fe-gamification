@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import AdminPageShell from '@/components/fragments/AdminPageShell'
 import MissionList from '@/components/organisms/admin/MissionList'
+import MissionSheetPanel from '@/components/organisms/admin/MissionSheetPanel'
 
 /**
  * Daftar misi berdiri sendiri, terpisah dari form pembuatannya.
@@ -26,6 +27,10 @@ export default function AdminMissionsPage() {
         >
           + Buat Misi Baru
         </Link>
+      </div>
+
+      <div className="mb-6">
+        <MissionSheetPanel />
       </div>
 
       <MissionList />

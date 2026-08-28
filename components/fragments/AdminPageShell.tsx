@@ -2,12 +2,15 @@
 
 import AdminGate from '@/components/fragments/AdminGate'
 import AdminNav from '@/components/fragments/AdminNav'
+import type { UserRole } from '@/types/group'
 
 interface AdminPageShellProps {
   title: string
   description?: React.ReactNode
   /** Halaman yang mengubah konten permainan (BRD Bab 4). */
   requireSuperAdmin?: boolean
+  /** Daftar peran yang boleh membuka halaman ini, bila bukan aturan bawaan. */
+  roles?: UserRole[]
   /** Lebar isi; menyesuaikan padatnya tabel di tiap halaman. */
   width?: 'md' | 'lg' | 'xl'
   children: React.ReactNode
@@ -30,11 +33,12 @@ export default function AdminPageShell({
   title,
   description,
   requireSuperAdmin = false,
+  roles,
   width = 'xl',
   children,
 }: AdminPageShellProps) {
   return (
-    <AdminGate requireSuperAdmin={requireSuperAdmin}>
+    <AdminGate requireSuperAdmin={requireSuperAdmin} roles={roles}>
       <div className="min-h-[100dvh] bg-paper px-4 py-10 sm:px-8">
         <div className={`mx-auto ${WIDTH_CLASS[width]}`}>
           <div className="flex flex-wrap items-center justify-between gap-3">

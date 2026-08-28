@@ -4,8 +4,9 @@ import { endpoints } from '@/libs/endpoint'
 import { IApiEnvelope } from '@/types/auth'
 import { DEFAULT_PER_PAGE } from '@/hooks/use-pagination'
 import type { SkippedRow } from '@/hooks/use-admin-groups'
+import type { UserRole as AccountRole } from '@/types/group'
 
-export type AccountRole = 'PARTICIPANT' | 'ADMIN' | 'SUPER_ADMIN'
+export type { UserRole as AccountRole } from '@/types/group'
 
 /** 'L' atau 'P'. Panitia memakainya untuk menyusun kelompok & sebagian misi. */
 export type AccountGender = 'L' | 'P'
@@ -18,6 +19,9 @@ export interface Account {
   businessName: string | null
   gender: AccountGender | null
   role: AccountRole
+  /** Pos yang dijaga — hanya berarti bagi penjaga pos. */
+  assignedMissionId: string | null
+  assignedMissionTitle: string | null
   checkInAt: string | null
   groupId: string | null
   /** null bila peserta belum masuk kelompok mana pun. */
@@ -113,6 +117,7 @@ export interface AccountPayload {
   businessName?: string | null
   gender?: AccountGender | null
   role?: AccountRole
+  assignedMissionId?: string | null
 }
 
 export const useCreateAccountMutation = () => {
@@ -169,41 +174,6 @@ export const useDeleteAccountsBulkMutation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-accounts'] })
       queryClient.invalidateQueries({ queryKey: ['admin-groups'] })
-    },
-  })
-}
-
-export interface SheetImportResult {
-  created: number
-  updated: number
-  skipped: Array<{ row: number; name: string; reason: string }>
-}
-
-/**
- * Unggah lembar kerja peserta — satu lembar untuk data peserta sekaligus
- * pembagian kelompoknya.
- *
- * Daftar peserta acara ini hidup di spreadsheet jauh sebelum sistemnya ada,
- * dan panitia menata pembagian kelompok jauh lebih cepat di sana. Kolom
- * Kelompok menempel pada baris pesertanya, jadi tidak ada dua berkas yang
- * harus dijaga agar tetap sepakat.
- */
-export const useSheetImportMutation = () => {
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async (file: File) => {
-      const form = new FormData()
-      form.append('file', file)
-      return http.post<IApiEnvelope<SheetImportResult>, FormData>(
-        endpoints.admin.sheetAccounts,
-        form,
-      )
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-accounts'] })
-      queryClient.invalidateQueries({ queryKey: ['admin-groups'] })
-      queryClient.invalidateQueries({ queryKey: ['monitoring'] })
     },
   })
 }

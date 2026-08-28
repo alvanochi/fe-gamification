@@ -215,6 +215,29 @@ export interface PendingSubmission {
   submittedByName: string
 }
 
+/** Satu jawaban kuis beserta soal & kuncinya, untuk layar validasi. */
+export interface QuizReviewAnswer {
+  questionId: string
+  orderNo: number
+  questionText: string
+  type: QuestionType
+  point: number
+  answerKey: string | null
+  answerText: string | null
+  selectedOptionId: string | null
+  selectedOptionText: string | null
+  isCorrect: boolean
+}
+
+export interface QuizReview {
+  answers: QuizReviewAnswer[]
+  /** Poin pilihan ganda yang sudah dihitung sistem. */
+  autoPoint: number
+  /** Poin yang masih tergantung di isian singkat. */
+  manualPoint: number
+  maxPoint: number
+}
+
 export interface SubmitMissionPayload {
   missionId: string
   mediaUrl?: string
