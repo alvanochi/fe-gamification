@@ -18,10 +18,13 @@ export interface LoginSuggestion {
 }
 
 export const participantAuthService = {
-  /** Cari nama. Terbuka tanpa sesi — yang mencari memang belum punya sesi. */
-  search(q: string, scope: LoginScope = 'PARTICIPANT') {
+  /**
+   * Seluruh nama yang boleh dipilih. Terbuka tanpa sesi — yang memilih memang
+   * belum punya sesi. Diambil sekali, lalu disaring di peramban.
+   */
+  candidates(scope: LoginScope = 'PARTICIPANT') {
     return http.get<IApiEnvelope<LoginSuggestion[]>>(endpoints.users.search, {
-      params: { q, scope },
+      params: { scope },
     })
   },
 

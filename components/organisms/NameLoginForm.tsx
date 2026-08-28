@@ -1,13 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import Button from '@/components/elements/Button'
 import Input from '@/components/elements/Input'
 import Label from '@/components/elements/Label'
 import ErrorMessage from '@/components/elements/ErrorMessage'
-import { useDebounce } from '@/hooks/use-debounce'
 import {
   participantAuthService,
   type LoginScope,
@@ -42,6 +41,13 @@ const COPY: Record<LoginScope, { notFound: string; landing: string }> = {
  * tidak ada yang hafal email yang dipakaikan untuknya, sementara nomor telepon
  * selalu ada di tangan. Yang membedakan hanya daftar nama yang boleh muncul,
  * dan itu ditentukan server, bukan di sini.
+ *
+ * Daftarnya diambil sekali saat layar terbuka, lalu disaring di peramban.
+ * Sebelumnya tiap ketikan memicu permintaan baru: di jaringan lapangan yang
+ * lambat, hasilnya datang setelah orangnya mengetik huruf berikutnya, sehingga
+ * daftarnya berkedip dan kadang menampilkan hasil kata kunci yang sudah lewat.
+ * Menyaring beberapa ratus nama di peramban tidak terasa sama sekali, dan
+ * bekerja walau sinyalnya putus setelah halaman termuat.
  */
 export default function NameLoginForm({ scope, emptyLabel = 'namamu' }: NameLoginFormProps) {
   const router = useRouter()
@@ -54,15 +60,33 @@ export default function NameLoginForm({ scope, emptyLabel = 'namamu' }: NameLogi
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  const debounced = useDebounce(query, 350)
-
-  const { data: matches, isFetching } = useQuery({
-    queryKey: ['login-search', scope, debounced],
-    // Server pun menolak kata kunci pendek; ini mencegah permintaan sia-sia
-    // sejak dari peramban.
-    enabled: debounced.trim().length >= 3 && !picked,
-    queryFn: async () => (await participantAuthService.search(debounced.trim(), scope)).data,
+  const {
+    data: candidates,
+    isLoading: isLoadingNames,
+    error: listError,
+  } = useQuery({
+    queryKey: ['login-candidates', scope],
+    queryFn: async () => (await participantAuthService.candidates(scope)).data,
+    // Daftar peserta tidak berubah selama acara berlangsung; mengambilnya ulang
+    // tiap kali layar ini dibuka hanya membuang kuota data peserta.
+    staleTime: 10 * 60_000,
   })
+
+  const keyword = query.trim().toLowerCase()
+
+  // Pencocokannya sengaja longgar: nama di lembar panitia kerap ditulis
+  // terbalik atau hanya sebagian, jadi tiap potongan kata kunci cukup ada di
+  // mana saja — "ahmad khairul" tetap menemukan "Khairul Ahmad".
+  const matches = useMemo(() => {
+    if (!candidates) return []
+    if (!keyword) return candidates
+
+    const parts = keyword.split(/\s+/)
+    return candidates.filter(c => {
+      const haystack = `${c.fullname} ${c.businessName ?? ''}`.toLowerCase()
+      return parts.every(part => haystack.includes(part))
+    })
+  }, [candidates, keyword])
 
   const submit = async () => {
     if (!picked || !phone.trim()) return
@@ -124,51 +148,64 @@ export default function NameLoginForm({ scope, emptyLabel = 'namamu' }: NameLogi
             className="mt-2"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Ketik minimal 3 huruf…"
+            placeholder={isLoadingNames ? 'Memuat daftar nama…' : 'Ketik namamu…'}
             autoComplete="off"
+            disabled={isLoadingNames || !!listError}
           />
 
-          {debounced.trim().length >= 3 && (
-            <div className="mt-2 overflow-hidden rounded-md border-brut bg-paper">
-              {isFetching ? (
-                <p className="px-4 py-3 text-sm text-ink/55">Mencari…</p>
-              ) : !matches?.length ? (
-                <p className="px-4 py-3 text-sm text-ink/55">{copy.notFound}</p>
-              ) : (
-                <>
-                  <p className="border-b border-ink/10 px-4 py-2 font-mono text-[10px] uppercase tracking-widest text-ink/45">
-                    {matches.length} nama cocok · ketuk {emptyLabel}
-                  </p>
-                  {/* `data-lenis-prevent` melepaskan daftar ini dari penggulir
-                      halus halaman; tanpa itu Lenis menelan gulirannya dan
-                      memindahkan seluruh halaman. */}
-                  <ul
-                    data-lenis-prevent
-                    className="max-h-72 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
-                  >
-                    {matches.map(m => (
-                      <li key={m.id}>
-                        <button
-                          type="button"
-                          onClick={() => setPicked(m)}
-                          className="block w-full border-b border-ink/10 px-4 py-3.5 text-left last:border-b-0 hover:bg-primary/10 active:bg-primary/20"
-                        >
-                          <span className="block truncate text-sm font-bold text-ink">
-                            {m.fullname}
+          <div className="mt-2 overflow-hidden rounded-md border-brut bg-paper">
+            {isLoadingNames ? (
+              <p className="px-4 py-3 text-sm text-ink/55">Memuat daftar nama…</p>
+            ) : listError ? (
+              <p className="px-4 py-3 text-sm font-bold text-danger">
+                Gagal memuat daftar nama. Periksa koneksi, lalu muat ulang halaman.
+              </p>
+            ) : !matches.length ? (
+              <p className="px-4 py-3 text-sm text-ink/55">{copy.notFound}</p>
+            ) : (
+              <>
+                <p className="border-b border-ink/10 px-4 py-2 font-mono text-[10px] uppercase tracking-widest text-ink/45">
+                  {keyword
+                    ? `${matches.length} nama cocok · ketuk ${emptyLabel}`
+                    : `${matches.length} nama · ketik untuk menyaring`}
+                </p>
+                {/* `data-lenis-prevent` melepaskan daftar ini dari penggulir
+                    halus halaman; tanpa itu Lenis menelan gulirannya dan
+                    memindahkan seluruh halaman. */}
+                <ul
+                  data-lenis-prevent
+                  className="max-h-72 overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
+                >
+                  {matches.slice(0, 100).map(m => (
+                    <li key={m.id}>
+                      <button
+                        type="button"
+                        onClick={() => setPicked(m)}
+                        className="block w-full border-b border-ink/10 px-4 py-3.5 text-left last:border-b-0 hover:bg-primary/10 active:bg-primary/20"
+                      >
+                        <span className="block truncate text-sm font-bold text-ink">
+                          {m.fullname}
+                        </span>
+                        {m.businessName && (
+                          <span className="block truncate text-xs text-ink/50">
+                            {m.businessName}
                           </span>
-                          {m.businessName && (
-                            <span className="block truncate text-xs text-ink/50">
-                              {m.businessName}
-                            </span>
-                          )}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              )}
-            </div>
-          )}
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+
+                {/* Ratusan baris sekaligus membuat gulirannya berat di ponsel
+                    kelas bawah; sisanya muncul begitu namanya diketik. */}
+                {matches.length > 100 && (
+                  <p className="border-t border-ink/10 px-4 py-2 text-xs text-ink/45">
+                    Menampilkan 100 nama pertama — ketik namamu untuk mempersempit.
+                  </p>
+                )}
+              </>
+            )}
+          </div>
         </>
       )}
 
