@@ -13,7 +13,7 @@ export default function AuthCard({ eyebrow, title, subtitle, children, footer }:
   return (
     <div className="flex min-h-[100dvh] flex-col items-center justify-center bg-paper px-4 py-12">
       <Link href="/" className="mb-6 font-display text-lg text-ink">
-        MILLIONAIRE&nbsp;RACE
+        MMBC&nbsp;RACE
       </Link>
 
       <div className="w-full max-w-lg rounded-lg border-brut-xl bg-paper-raised px-6 py-10 shadow-brutal-lg sm:px-10 ticket-notch-b">

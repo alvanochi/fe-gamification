@@ -116,7 +116,11 @@ export default function SheetExchangePanel({
 
       {result && result.skipped.length > 0 && (
         <div className="mt-4 rounded-md border-brut !border-warning bg-warning/10 p-4">
-          <p className="font-bold text-ink">{result.skipped.length} baris dilewati</p>
+          {/* Daftar ini memuat dua hal sekaligus: baris yang ditolak dan baris
+              yang tersimpan tapi masih menyisakan pekerjaan (misalnya petugas
+              yang belum punya akun). Karena itu judulnya "perlu diperiksa",
+              bukan "dilewati" — separuhnya sudah masuk. */}
+          <p className="font-bold text-ink">{result.skipped.length} baris perlu diperiksa</p>
           <ul className="mt-2 space-y-1 text-sm text-ink/70">
             {result.skipped.slice(0, 15).map(row => (
               <li key={`${row.row}-${row.name}`}>
