@@ -8,12 +8,15 @@ import ErrorMessage from '@/components/elements/ErrorMessage'
 import ConfirmModal from '@/components/fragments/ConfirmModal'
 import Pagination from '@/components/fragments/Pagination'
 import QuizReviewPanel from '@/components/organisms/admin/QuizReviewPanel'
+import ValidationFilterBar from '@/components/organisms/admin/ValidationFilterBar'
 import {
   usePendingSubmissionsQuery,
   useQuizReviewQuery,
   useValidateSubmissionMutation,
 } from '@/hooks/use-submissions'
 import { usePagination } from '@/hooks/use-pagination'
+import { useMissionsQuery } from '@/hooks/use-missions'
+import { usePersistedIds } from '@/hooks/use-persisted-ids'
 import { AppError } from '@/libs/api'
 import { PendingSubmission } from '@/types/mission'
 import { groupByMissionType } from '@/utils/mission/grouping'
@@ -371,7 +374,31 @@ function QueueCard({ submission }: { submission: PendingSubmission }) {
  */
 export default function ValidationQueue() {
   const { data: submissions, isLoading, error } = usePendingSubmissionsQuery()
-  const pagination = usePagination(submissions ?? [])
+  const { data: missions } = useMissionsQuery()
+  const { ids: mine, toggle, save } = usePersistedIds('validation-missions')
+
+  const all = submissions ?? []
+
+  // Dihitung atas seluruh antrean, bukan atas yang tersaring — angka di
+  // sebelah tiap misi harus tetap berarti "sebanyak ini yang menunggu di
+  // sana", termasuk untuk misi yang belum dipilih.
+  const pendingByMission = all.reduce<Record<string, number>>((acc, item) => {
+    acc[item.missionId] = (acc[item.missionId] ?? 0) + 1
+    return acc
+  }, {})
+
+  const visible = mine.length ? all.filter(item => mine.includes(item.missionId)) : all
+  const pagination = usePagination(visible)
+
+  const filterBar = (
+    <ValidationFilterBar
+      missions={missions ?? []}
+      pendingByMission={pendingByMission}
+      selectedIds={mine}
+      onToggle={toggle}
+      onReplace={save}
+    />
+  )
 
   if (isLoading) {
     return (
@@ -390,16 +417,37 @@ export default function ValidationQueue() {
     )
   }
 
-  if (!submissions || submissions.length === 0) {
+  if (all.length === 0) {
     return (
-      <p className="rounded-md border-brut bg-paper-raised p-6 text-center text-sm text-ink/60">
-        Tidak ada submission yang menunggu validasi saat ini.
-      </p>
+      <div className="space-y-6">
+        {filterBar}
+        <p className="rounded-md border-brut bg-paper-raised p-6 text-center text-sm text-ink/60">
+          Tidak ada submission yang menunggu validasi saat ini.
+        </p>
+      </div>
+    )
+  }
+
+  if (visible.length === 0) {
+    return (
+      <div className="space-y-6">
+        {filterBar}
+        {/* Menyebut jumlah yang menunggu di misi lain penting: tanpa itu
+            antrean yang kosong karena saringan terbaca seolah pekerjaan
+            seluruh panitia sudah selesai. */}
+        <p className="rounded-md border-brut bg-paper-raised p-6 text-center text-sm text-ink/60">
+          Tidak ada yang menunggu di misi yang kamu pegang. Masih ada{' '}
+          <strong className="text-ink">{all.length} bukti</strong> di misi lain — kosongkan
+          saringannya bila ingin ikut membantu.
+        </p>
+      </div>
     )
   }
 
   return (
     <div className="space-y-6">
+      {filterBar}
+
       <Pagination
         page={pagination.page}
         perPage={pagination.perPage}

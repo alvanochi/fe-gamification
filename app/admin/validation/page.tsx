@@ -7,7 +7,7 @@ export default function AdminValidationPage() {
   return (
     <AdminPageShell
       title="Validasi Submission"
-      description="Setujui atau tolak bukti misi yang dikirim peserta. Halaman ini otomatis diperbarui tiap 5 detik."
+      description="Setujui atau tolak bukti misi yang dikirim peserta. Pilih misi yang menjadi tanggung jawabmu agar antreannya tidak bercampur dengan panitia lain. Halaman ini otomatis diperbarui tiap 5 detik."
       width="lg"
     >
       <ValidationQueue />

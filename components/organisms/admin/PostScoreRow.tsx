@@ -14,6 +14,24 @@ import { formatTime } from '@/utils/format/formatDate'
 const jam = (iso: string) => formatTime(iso)
 
 /**
+ * Sudah berapa lama kelompok ini di pos, dibanding jatahnya.
+ *
+ * Dihitung di sini, bukan dengan hitung mundur berdetak: layar petugas sudah
+ * menyegarkan dirinya sendiri, dan yang dibutuhkannya bukan angka yang
+ * bergerak melainkan penanda "yang ini sudah lewat waktunya". Kelompok yang
+ * sudah check-out dibekukan pada lama menginapnya, bukan terus bertambah.
+ */
+const lamaDiPos = (row: PostQueueRow, durationMinutes: number | null) => {
+  if (!durationMinutes) return null
+
+  const mulai = new Date(row.checkedInAt).getTime()
+  const akhir = row.checkedOutAt ? new Date(row.checkedOutAt).getTime() : Date.now()
+  const menit = Math.floor((akhir - mulai) / 60_000)
+
+  return { menit, lewat: menit > durationMinutes, jatah: durationMinutes }
+}
+
+/**
  * Satu kelompok di pos, beserta form penilaiannya.
  *
  * Formnya menyesuaikan cara penilaian misi: hitungan hasil, waktu tempuh, atau
@@ -38,6 +56,7 @@ export default function PostScoreRow({
 
   const apiError = submitResult.error as AppError | null
   const scored = row.resultStatus !== null
+  const durasi = lamaDiPos(row, mission.durationMinutes)
 
   const ready =
     (mission.scoringMode !== 'PER_UNIT' || units !== '') &&
@@ -73,6 +92,17 @@ export default function PostScoreRow({
             {row.checkedOutAt ? ` · pergi ${jam(row.checkedOutAt)}` : ''}
           </p>
         </div>
+
+        {durasi && (
+          <span
+            className={`shrink-0 rounded-full border-brut-sm px-3 py-1 font-mono text-[10px] font-bold uppercase ${
+              durasi.lewat ? 'bg-danger text-white' : 'bg-paper text-ink/60'
+            }`}
+            title={`Jatah ${durasi.jatah} menit sejak check-in`}
+          >
+            {durasi.lewat ? `lewat ${durasi.menit - durasi.jatah} mnt` : `${durasi.menit}/${durasi.jatah} mnt`}
+          </span>
+        )}
 
         {scored ? (
           <span className="shrink-0 rounded-full bg-success/15 px-3 py-1 font-mono text-[10px] uppercase text-success">

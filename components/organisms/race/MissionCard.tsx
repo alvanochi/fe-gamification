@@ -6,6 +6,7 @@ import Input from '@/components/elements/Input'
 import ErrorMessage from '@/components/elements/ErrorMessage'
 import EvidencePicker from '@/components/fragments/EvidencePicker'
 import MissionPostQr from '@/components/organisms/race/MissionPostQr'
+import PostDurationCountdown from '@/components/organisms/race/PostDurationCountdown'
 import SponsorLogo from '@/components/fragments/SponsorLogo'
 import { useSubmitMissionWithEvidenceMutation } from '@/hooks/use-submissions'
 import { useSponsorsQuery } from '@/hooks/use-sponsors'
@@ -313,9 +314,21 @@ export default function MissionCard({
                 QR ini, bukan oleh peserta sendiri. QR-nya memuat pos ini —
                 jadi tidak ada lagi kemungkinan tercatat di meja yang keliru. */}
             {checkIn && !checkIn.checkedOutAt && (
-              <p className="rounded-md border-brut !border-warning bg-warning/15 px-4 py-3 text-sm font-bold text-warning">
-                ▶ Misi ini sedang dimainkan — kelompokmu tercatat berada di pos ini.
-              </p>
+              <>
+                <p className="rounded-md border-brut !border-warning bg-warning/15 px-4 py-3 text-sm font-bold text-warning">
+                  ▶ Misi ini sedang dimainkan — kelompokmu tercatat berada di pos ini.
+                </p>
+
+                {/* Jatah waktu hanya berarti selama kelompok masih di pos:
+                    setelah check-out, angka yang terus berjalan hanya
+                    membingungkan. */}
+                {mission.durationMinutes && (
+                  <PostDurationCountdown
+                    checkedInAt={checkIn.checkedInAt}
+                    durationMinutes={mission.durationMinutes}
+                  />
+                )}
+              </>
             )}
 
             <MissionPostQr missionId={mission.id} checkIn={checkIn} />

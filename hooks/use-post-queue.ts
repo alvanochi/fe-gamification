@@ -30,6 +30,8 @@ export interface PostQueue {
     pointPerUnit: number | null
     maxUnits: number | null
     timeTargetSeconds: number | null
+    /** Jatah waktu pengerjaan di pos, dihitung sejak check-in. */
+    durationMinutes: number | null
   }
   active: PostQueueRow[]
   departed: PostQueueRow[]
