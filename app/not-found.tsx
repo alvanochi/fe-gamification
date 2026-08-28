@@ -10,7 +10,7 @@ export default function NotFound() {
         </p>
         <h1 className="mt-2 font-display text-7xl text-ink">404</h1>
         <p className="mt-3 max-w-xs text-ink/70">
-          Rute ini tidak ada di peta Millionaire Race. Ayo balik ke checkpoint utama.
+          Rute ini tidak ada di peta MMBC Race. Ayo balik ke checkpoint utama.
         </p>
       </div>
       <Link href="/">

@@ -48,7 +48,7 @@ function QrExchange() {
 
   return (
     <RaceShell
-      eyebrow="Millionaire Race"
+      eyebrow="MMBC Race"
       title={error ? 'QR TIDAK DIKENALI' : 'MEMBUKA AKUNMU'}
       subtitle={error ? undefined : 'Sebentar, kami sedang memasukkanmu ke akun.'}
     >

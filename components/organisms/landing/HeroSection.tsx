@@ -68,7 +68,7 @@ export default function HeroSection() {
           </h1>
 
           <p className="mt-6 max-w-lg text-base text-ink/70 md:text-lg">
-            Millionaire Race adalah balapan tantangan nyata antar tim —
+            MMBC Race adalah balapan tantangan nyata antar tim —
             selesaikan misi, dukung UMKM lokal, dan rebut posisi puncak leaderboard.
           </p>
 

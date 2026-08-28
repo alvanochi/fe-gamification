@@ -17,9 +17,9 @@ const archivoBlack = Archivo_Black({
 })
 
 export const metadata: Metadata = {
-  title: 'Millionaire Race — Yogyakarta',
+  title: 'MMBC Race — Yogyakarta',
   description:
-    'Platform gamifikasi Millionaire Race: kejar misi, jelajahi Yogyakarta bareng timmu, dan naik ke puncak leaderboard.',
+    'Platform gamifikasi MMBC Race: kejar misi, jelajahi Yogyakarta bareng timmu, dan naik ke puncak leaderboard.',
 }
 
 export default function RootLayout({

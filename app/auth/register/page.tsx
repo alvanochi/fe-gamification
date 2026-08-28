@@ -4,7 +4,7 @@ import AuthCard from '@/components/fragments/AuthCard'
 import RegisterForm from '@/components/organisms/RegisterForm'
 
 export const metadata: Metadata = {
-  title: 'Daftar — Millionaire Race',
+  title: 'Daftar — MMBC Race',
 }
 
 export default function RegisterPage() {
@@ -12,7 +12,7 @@ export default function RegisterPage() {
     <AuthCard
       eyebrow="Boarding Pass · Pendaftaran"
       title="DAFTAR SEKARANG"
-      subtitle="Isi data diri & akun media sosial UMKM-mu untuk ikut Millionaire Race."
+      subtitle="Isi data diri & akun media sosial UMKM-mu untuk ikut MMBC Race."
       footer={
         <>
           Sudah punya akun?{' '}

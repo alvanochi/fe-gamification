@@ -60,7 +60,7 @@ export default function StickyNav() {
           }}
           className="font-display text-lg text-ink whitespace-nowrap"
         >
-          MILLIONAIRE&nbsp;RACE
+          MMBC&nbsp;RACE
         </a>
 
         <ul className="hidden md:flex items-center gap-6 font-bold text-sm uppercase tracking-wide text-ink/80">

@@ -25,7 +25,7 @@ function Card({ card }: { card: PrintableCard }) {
 
   return (
     <div className="flex break-inside-avoid flex-col items-center rounded-md border-brut bg-paper px-3 py-4 text-center">
-      <p className="font-mono text-[9px] uppercase tracking-widest text-ink/45">Millionaire Race</p>
+      <p className="font-mono text-[9px] uppercase tracking-widest text-ink/45">MMBC Race</p>
       <canvas ref={canvasRef} className="mt-2" />
       <p className="mt-2 w-full truncate text-sm font-bold text-ink">{card.fullname}</p>
       {card.businessName && (

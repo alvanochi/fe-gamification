@@ -67,9 +67,9 @@ export default function FooterCtaSection() {
             bawah garis finish hanya menggandakan hal yang sama. */}
 
         <div className="mt-10 flex flex-col items-center gap-2 text-center text-sm text-ink/60">
-          <p className="font-display text-base text-ink">MILLIONAIRE RACE</p>
+          <p className="font-display text-base text-ink">MMBC Race</p>
           <p>Platform gamifikasi promosi wisata &amp; akselerasi UMKM Yogyakarta.</p>
-          <p>#MillionaireRace</p>
+          <p>#MMBCRace</p>
         </div>
       </div>
     </footer>

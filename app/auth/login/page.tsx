@@ -3,7 +3,7 @@ import AuthCard from '@/components/fragments/AuthCard'
 import NameLoginForm from '@/components/organisms/NameLoginForm'
 
 export const metadata: Metadata = {
-  title: 'Masuk Admin — Millionaire Race',
+  title: 'Masuk Admin — MMBC Race',
 }
 
 /**
