@@ -7,6 +7,7 @@ import Label from '@/components/elements/Label'
 import Select from '@/components/elements/Select'
 import ErrorMessage from '@/components/elements/ErrorMessage'
 import { useMissionsQuery } from '@/hooks/use-missions'
+import type { Mission } from '@/types/mission'
 import { useProfileQuery } from '@/hooks/use-profile'
 import { usePostScanMutation, type PostScanResult } from '@/hooks/use-post-scan'
 import { usePostQueueQuery } from '@/hooks/use-post-queue'
@@ -47,6 +48,43 @@ const waktu = () => formatTime(new Date().toISOString())
  * Petugas memilih posnya sekali di awal sesi, lalu tinggal mengarahkan kamera
  * sepanjang acara.
  */
+/**
+ * Pos yang dijaga seorang petugas, dari dua sumber yang saling menambal.
+ *
+ * Daftar misi memberi keterangan terlengkap (nama lokasi), tetapi belum tentu
+ * sudah termuat; profil selalu ikut dalam permintaan yang sama dengan yang
+ * memutuskan halaman ini boleh dibuka. Yang mana pun lebih dulu sampai, posnya
+ * tetap muncul — jadi begitu Super Admin menugaskan, layar ini langsung bisa
+ * dipakai tanpa menunggu apa pun yang lain.
+ */
+const assignedPosts = (
+  profile: { id?: string; assignedMissionIds?: string[]; assignedMissionTitles?: string[] } | undefined,
+  posts: Mission[],
+) => {
+  const found = new Map<string, { id: string; title: string; locationName: string | null }>()
+
+  for (const mission of posts) {
+    if (mission.guardUserId && mission.guardUserId === profile?.id) {
+      found.set(mission.id, {
+        id: mission.id,
+        title: mission.title,
+        locationName: mission.locationName,
+      })
+    }
+  }
+
+  ;(profile?.assignedMissionIds ?? []).forEach((id, index) => {
+    if (found.has(id)) return
+    found.set(id, {
+      id,
+      title: profile?.assignedMissionTitles?.[index] ?? 'Pos',
+      locationName: posts.find(p => p.id === id)?.locationName ?? null,
+    })
+  })
+
+  return [...found.values()]
+}
+
 export default function PostGuardScanner() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -77,14 +115,21 @@ export default function PostGuardScanner() {
   const posts = (missions ?? []).filter(m => m.requiresCheckIn)
 
   /**
-   * Penjaga pos tidak memilih dari seluruh daftar pos — hanya dari pos yang
-   * ditugaskan kepadanya. Satu petugas bisa memegang beberapa pos sekaligus
-   * (di lembar panitia ditulis dengan me-merge sel PETUGAS ke beberapa baris),
-   * jadi pilihannya tetap ada, hanya saja dipersempit ke posnya sendiri.
+   * Pos yang dijaga, diambil langsung dari profil.
+   *
+   * Sebelumnya daftar ini adalah irisan dua kueri: penugasan dari profil,
+   * disaring lagi terhadap daftar misi. Artinya penugasan yang sudah benar
+   * tetap tampil kosong setiap kali daftar misi belum termuat atau gagal
+   * diambil — petugas melihat "belum ditugaskan" padahal sudah. Profil sendiri
+   * sudah membawa id sekaligus judul posnya, jadi tidak ada yang perlu
+   * dicocokkan: begitu Super Admin menugaskan, layar ini langsung bisa dipakai.
+   *
+   * Nama lokasi tetap dicari di daftar misi, tetapi hanya sebagai pemanis —
+   * ketiadaannya tidak menghilangkan posnya dari daftar.
    */
   const isPostGuard = profile?.role === 'POST_GUARD'
-  const myPostIds = profile?.assignedMissionIds ?? []
-  const myPosts = isPostGuard ? posts.filter(p => myPostIds.includes(p.id)) : posts
+
+  const myPosts = isPostGuard ? assignedPosts(profile, posts) : posts
 
   // Petugas dengan satu pos tidak perlu memilih apa pun; yang memegang beberapa
   // pos memilih sendiri mana yang sedang dijaganya.

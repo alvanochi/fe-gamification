@@ -50,6 +50,8 @@ export interface Mission {
   pointMin: number | null
   pointMax: number | null
   requiresCheckIn: boolean
+  /** Panitia yang menjaga pos ini. Satu penjaga boleh memegang banyak pos. */
+  guardUserId: string | null
   /** Misi yel-yel — satu-satunya yang ikut muncul di rangkaian checkpoint. */
   isYelYel: boolean
   equipment: string | null
