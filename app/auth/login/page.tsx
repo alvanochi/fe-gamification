@@ -3,7 +3,7 @@ import AuthCard from '@/components/fragments/AuthCard'
 import NameLoginForm from '@/components/organisms/NameLoginForm'
 
 export const metadata: Metadata = {
-  title: 'Masuk Admin — MMBC Race',
+  title: 'Masuk Panitia — MMBC Race',
 }
 
 /**
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 export default function LoginPage() {
   return (
     <AuthCard
-      title="MASUK ADMIN"
+      title="MASUK PANITIA"
       subtitle="Cari namamu, lalu masukkan nomor telepon yang terdaftar sebagai panitia."
     >
       <NameLoginForm scope="PANITIA" emptyLabel="nama Anda" />
