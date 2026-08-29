@@ -74,6 +74,39 @@ export const useSubmissionHistoryQuery = (enabled = true) =>
     refetchInterval: 30_000,
   })
 
+/**
+ * Meninjau ulang keputusan yang sudah dibuat.
+ *
+ * Terpisah dari useValidateSubmissionMutation: yang itu jalur normal dan hanya
+ * boleh sekali, ini jalur koreksi yang menerima keadaan apa pun sebagai titik
+ * awal. Server yang menjaga poin lama dicabut dan poin baru dipasang dalam
+ * satu transaksi.
+ */
+export const useReviewSubmissionMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      submissionId,
+      ...payload
+    }: {
+      submissionId: string
+      status: 'APPROVED' | 'REJECTED'
+      awardedPoint?: number
+      rejectReason?: string
+    }) => submissionService.review(submissionId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['submission-history'] })
+      queryClient.invalidateQueries({ queryKey: ['pending-submissions'] })
+      queryClient.invalidateQueries({ queryKey: ['pending-counts'] })
+      queryClient.invalidateQueries({ queryKey: ['monitoring'] })
+      queryClient.invalidateQueries({ queryKey: ['monitoring-group'] })
+      queryClient.invalidateQueries({ queryKey: ['leaderboard'] })
+      queryClient.invalidateQueries({ queryKey: ['final-scores'] })
+    },
+  })
+}
+
 export const useValidateSubmissionMutation = () => {
   const queryClient = useQueryClient()
 

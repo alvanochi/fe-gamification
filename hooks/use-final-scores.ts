@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { http } from '@/libs/api'
 import { endpoints } from '@/libs/endpoint'
 import { IApiEnvelope } from '@/types/auth'
@@ -13,6 +13,8 @@ export const PLATFORM_LABEL: Record<SocialPlatform, string> = {
 }
 
 export interface FinalScoreMember {
+  /** Sasaran penyimpanan di layar input manual. */
+  userId: string
   fullname: string
   /** Username per platform; string kosong berarti akunnya tidak didaftarkan. */
   accounts: Record<SocialPlatform, string>
@@ -64,3 +66,32 @@ export const useFinalScoresQuery = () =>
     // membebani basis data menjelang pengumuman.
     refetchInterval: 30_000,
   })
+
+export interface ManualScorePayload {
+  groupId: string
+  /** Dikosongkan berarti nett kelompok ini tidak diubah. */
+  nett?: number
+  members: Array<{ userId: string } & Record<SocialPlatform, number>>
+}
+
+/**
+ * Menyimpan angka media sosial yang diketik panitia sendiri.
+ *
+ * Menulis ke kolom yang sama dengan jalur /api/external — tidak ada tempat
+ * penyimpanan kedua, karena dua tempat untuk satu angka hanya melahirkan
+ * pertanyaan mana yang benar.
+ */
+export const useSaveManualScoresMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (payload: ManualScorePayload) =>
+      http.put<IApiEnvelope<{ groupId: string }>, ManualScorePayload>(
+        endpoints.admin.finalScoresManual,
+        payload,
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['final-scores'] })
+    },
+  })
+}

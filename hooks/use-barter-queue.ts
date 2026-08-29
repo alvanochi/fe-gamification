@@ -40,6 +40,10 @@ export const useValidateBarterStepMutation = () => {
       qc.invalidateQueries({ queryKey: ['barter-queue'] })
       qc.invalidateQueries({ queryKey: ['leaderboard'] })
       qc.invalidateQueries({ queryKey: ['pending-counts'] })
+      // Audit validasi ikut memperlihatkan rantai barter, jadi ia harus
+      // menyusul berubah begitu satu rantai ditutup dari sana.
+      qc.invalidateQueries({ queryKey: ['submission-history'] })
+      qc.invalidateQueries({ queryKey: ['final-scores'] })
     },
   })
 }

@@ -48,6 +48,17 @@ export const submissionService = {
     return http.get<IApiEnvelope<PendingSubmission[]>>(endpoints.submissions.pending)
   },
 
+  /** Meninjau ulang keputusan yang sudah dibuat — status sekaligus nilainya. */
+  review(
+    submissionId: string,
+    payload: { status: 'APPROVED' | 'REJECTED'; awardedPoint?: number; rejectReason?: string },
+  ) {
+    return http.put<IApiEnvelope<{ submissionId: string }>, typeof payload>(
+      endpoints.admin.submissionReview(submissionId),
+      payload,
+    )
+  },
+
   /** Seluruh kiriman beserta keputusannya, plus ringkasan rantai barter. */
   history() {
     return http.get<IApiEnvelope<SubmissionHistory>>(endpoints.submissions.history)

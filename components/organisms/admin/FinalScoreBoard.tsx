@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import Button from '@/components/elements/Button'
 import ErrorMessage from '@/components/elements/ErrorMessage'
@@ -282,6 +283,13 @@ export default function FinalScoreBoard() {
           <Button size="sm" variant="secondary" loading={isDownloading} onClick={unduh}>
             Unduh Nilai Akhir
           </Button>
+
+          {/* Jalur cadangan bila pihak pemantau tidak mengirim lewat API. */}
+          <Link href="/admin/final-score/input">
+            <Button size="sm" variant="ghost">
+              Input Manual
+            </Button>
+          </Link>
           <span className="text-xs text-ink/50">
             Berisi rincian tiap suku perhitungan, postingan per peserta per platform, dan cara
             menghitungnya.
