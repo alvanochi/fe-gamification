@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
 import NoGroupStep from '@/components/organisms/race/NoGroupStep'
@@ -11,6 +11,7 @@ import NameGroupStep from '@/components/organisms/race/NameGroupStep'
 import YelYelStep from '@/components/organisms/race/YelYelStep'
 import GroupSuccessScreen from '@/components/organisms/race/GroupSuccessScreen'
 import LogoutButton from '@/components/fragments/LogoutButton'
+import SocialProfileButton from '@/components/fragments/SocialProfileButton'
 import AnnouncementPopup from '@/components/fragments/AnnouncementPopup'
 import AppToast from '@/components/fragments/AppToast'
 import { useRealtime } from '@/hooks/use-realtime'
@@ -19,6 +20,11 @@ import { useGroupQuery } from '@/hooks/use-group'
 
 export default function RacePage() {
   const router = useRouter()
+
+  // Checkpoint 0 dibuka ulang dari tombol melayang, bukan lewat alamat
+  // tersendiri: peserta harus kembali persis ke tempatnya semula setelah
+  // selesai, dan halaman terpisah akan kehilangan tempat itu.
+  const [isEditingSocial, setIsEditingSocial] = useState(false)
   const profileQuery = useProfileQuery()
   const profile = profileQuery.data
   const groupId = profile?.groupId ?? null
@@ -58,6 +64,14 @@ export default function RacePage() {
           sebagai kabar, bukan sebagai angka yang bergeser diam-diam. */}
       <AppToast />
       <LogoutButton floating />
+
+      {/* Muncul setelah Checkpoint 0 terlewati, dan tidak muncul di dalam
+          Checkpoint 0 itu sendiri — di sana tombolnya tidak menuju ke mana
+          pun. Panitia tidak melihatnya: mereka mengubah akun peserta dari
+          panel, bukan dari layar ini. */}
+      {profile?.role === 'PARTICIPANT' && profile.socialProfileAt && !isEditingSocial && (
+        <SocialProfileButton onClick={() => setIsEditingSocial(true)} />
+      )}
     </>
   )
 
@@ -79,6 +93,18 @@ export default function RacePage() {
       <>
         {chrome}
         <SocialProfileStep profile={profile} />
+      </>
+    )
+  }
+
+  // Kunjungan ulang. Menutupi checkpoint mana pun yang sedang terbuka, lalu
+  // mengembalikannya utuh begitu selesai — termasuk bila peserta memilih
+  // melewatinya lagi.
+  if (isEditingSocial) {
+    return (
+      <>
+        {chrome}
+        <SocialProfileStep profile={profile} onDone={() => setIsEditingSocial(false)} />
       </>
     )
   }

@@ -58,6 +58,22 @@ export const useQuizReviewQuery = (submissionId: string, enabled = true) => {
   })
 }
 
+/**
+ * Riwayat lengkap layar validasi.
+ *
+ * Terpisah dari antrean karena umurnya berbeda: antrean disegarkan tiap 5
+ * detik karena panitia menunggu kiriman baru, sedangkan riwayat hanya perlu
+ * ikut berubah setelah ada keputusan. Menyatukannya berarti menarik seluruh
+ * kiriman acara ini setiap lima detik untuk empat layar sekaligus.
+ */
+export const useSubmissionHistoryQuery = (enabled = true) =>
+  useQuery({
+    queryKey: ['submission-history'],
+    queryFn: async () => (await submissionService.history()).data,
+    enabled,
+    refetchInterval: 30_000,
+  })
+
 export const useValidateSubmissionMutation = () => {
   const queryClient = useQueryClient()
 
@@ -67,6 +83,8 @@ export const useValidateSubmissionMutation = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pending-submissions'] })
       queryClient.invalidateQueries({ queryKey: ['pending-counts'] })
+      // Keputusan barusan harus langsung terlihat di daftar riwayat.
+      queryClient.invalidateQueries({ queryKey: ['submission-history'] })
     },
   })
 }

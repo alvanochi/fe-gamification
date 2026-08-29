@@ -80,6 +80,7 @@ export const endpoints = {
   submissions: {
     myGroup: '/submissions/my-group',
     pending: '/submissions/pending',
+    history: '/submissions/history',
     pendingCount: '/submissions/pending/count',
     submit: '/submissions',
     validate: (submissionId: string) => `/submissions/${submissionId}/validate`,

@@ -9,6 +9,7 @@ import ConfirmModal from '@/components/fragments/ConfirmModal'
 import Pagination from '@/components/fragments/Pagination'
 import QuizReviewPanel from '@/components/organisms/admin/QuizReviewPanel'
 import ValidationFilterBar from '@/components/organisms/admin/ValidationFilterBar'
+import ValidationHistory from '@/components/organisms/admin/ValidationHistory'
 import {
   usePendingSubmissionsQuery,
   useQuizReviewQuery,
@@ -424,6 +425,7 @@ export default function ValidationQueue() {
         <p className="rounded-md border-brut bg-paper-raised p-6 text-center text-sm text-ink/60">
           Tidak ada submission yang menunggu validasi saat ini.
         </p>
+        <ValidationHistory missionIds={mine} />
       </div>
     )
   }
@@ -440,6 +442,7 @@ export default function ValidationQueue() {
           <strong className="text-ink">{all.length} bukti</strong> di misi lain — kosongkan
           saringannya bila ingin ikut membantu.
         </p>
+        <ValidationHistory missionIds={mine} />
       </div>
     )
   }
@@ -476,6 +479,8 @@ export default function ValidationQueue() {
           </ul>
         </section>
       ))}
+
+      <ValidationHistory missionIds={mine} />
     </div>
   )
 }

@@ -9,6 +9,7 @@ import {
   SOCIAL_PLATFORMS,
   useFinalScoresQuery,
   type FinalScoreGroup,
+  type FinalScoreMember,
 } from '@/hooks/use-final-scores'
 import { formatTime } from '@/utils/format/formatDate'
 import { downloadSheet } from '@/utils/download-sheet'
@@ -45,6 +46,25 @@ function Suku({
       {hint && <p className="mt-0.5 text-[11px] leading-tight text-ink/50">{hint}</p>}
     </div>
   )
+}
+
+/**
+ * Membaca satu anggota dengan aman.
+ *
+ * Layar ini dibuka tepat saat pengumuman juara, dan versi backend yang
+ * melayaninya belum tentu sudah ikut diperbarui — server lama masih mengirim
+ * `instagramUsername` tunggal, bukan `accounts` per platform. Mengakses
+ * `accounts.INSTAGRAM` pada bentuk lama membuat seluruh halaman mati, bukan
+ * sekadar satu baris yang kosong. Bentuk apa pun yang datang diratakan di
+ * sini supaya yang gagal hanya keterangan kecilnya.
+ */
+const readMember = (member: FinalScoreMember) => {
+  const legacy = (member as unknown as { instagramUsername?: string }).instagramUsername
+
+  return {
+    accounts: member.accounts ?? { INSTAGRAM: legacy ?? '', TIKTOK: '', YOUTUBE: '' },
+    postCounts: member.postCounts ?? { INSTAGRAM: member.postCount ?? 0, TIKTOK: 0, YOUTUBE: 0 },
+  }
 }
 
 function GroupRow({ group, missionWeight }: { group: FinalScoreGroup; missionWeight: number }) {
@@ -132,7 +152,10 @@ function GroupRow({ group, missionWeight }: { group: FinalScoreGroup; missionWei
                 Postingan per anggota
               </p>
               <ul className="mt-2 divide-y divide-ink/10 rounded-md border-brut bg-paper">
-                {group.members.map(member => (
+                {group.members.map(member => {
+                  const { accounts, postCounts } = readMember(member)
+
+                  return (
                   <li
                     key={member.fullname}
                     className="flex flex-wrap items-center gap-3 px-4 py-2.5"
@@ -147,13 +170,13 @@ function GroupRow({ group, missionWeight }: { group: FinalScoreGroup; missionWei
                           ditampilkan sama sekali, bukan ditulis "0 postingan"
                           yang terbaca seolah akunnya ada tapi menganggur. */}
                       <span className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 font-mono text-[10px] text-ink/45">
-                        {SOCIAL_PLATFORMS.filter(p => member.accounts[p]).map(p => (
+                        {SOCIAL_PLATFORMS.filter(p => accounts[p]).map(p => (
                           <span key={p}>
-                            {PLATFORM_LABEL[p]} @{member.accounts[p]} ·{' '}
-                            <strong className="text-ink/70">{member.postCounts[p]}</strong>
+                            {PLATFORM_LABEL[p]} @{accounts[p]} ·{' '}
+                            <strong className="text-ink/70">{postCounts[p]}</strong>
                           </span>
                         ))}
-                        {!SOCIAL_PLATFORMS.some(p => member.accounts[p]) && (
+                        {!SOCIAL_PLATFORMS.some(p => accounts[p]) && (
                           // Melewati Checkpoint 0: postingannya tidak akan
                           // pernah bisa dicocokkan pihak eksternal.
                           <span className="text-warning">tanpa akun media sosial</span>
@@ -162,15 +185,16 @@ function GroupRow({ group, missionWeight }: { group: FinalScoreGroup; missionWei
                     </span>
                     <span
                       className={`shrink-0 rounded-full border-brut-sm px-3 py-1 font-mono text-[10px] font-bold ${
-                        SOCIAL_PLATFORMS.some(p => member.accounts[p])
+                        SOCIAL_PLATFORMS.some(p => accounts[p])
                           ? 'bg-paper-raised text-ink/70'
                           : 'bg-warning/20 text-warning'
                       }`}
                     >
-                      {member.postCount} postingan
+                      {member.postCount ?? 0} postingan
                     </span>
                   </li>
-                ))}
+                  )
+                })}
               </ul>
             </>
           )}

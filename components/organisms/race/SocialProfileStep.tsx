@@ -49,7 +49,21 @@ const joinAccounts = (values: string[]) =>
  * Boleh dilewati — tetapi konsekuensinya dinyatakan terlebih dahulu, bukan
  * ditemukan sendiri belakangan ketika poinnya tidak muncul.
  */
-export default function SocialProfileStep({ profile }: { profile: Profile }) {
+/**
+ * `onDone` diberikan saat langkah ini dibuka ulang dari tombol melayang di
+ * layar perlombaan, bukan sebagai gerbang di awal. Bedanya penting: sebagai
+ * gerbang, menyimpan berarti maju ke checkpoint berikutnya; sebagai kunjungan
+ * ulang, menyimpan berarti kembali ke tempat peserta tadi berada. Tanpa jalan
+ * kembali, peserta yang cuma ingin membetulkan satu nama akun akan terdampar
+ * di layar ini.
+ */
+export default function SocialProfileStep({
+  profile,
+  onDone,
+}: {
+  profile: Profile
+  onDone?: () => void
+}) {
   const { mutate: save, isPending, error } = useSaveSocialProfileMutation()
   const apiError = error as AppError | null
 
@@ -79,12 +93,15 @@ export default function SocialProfileStep({ profile }: { profile: Profile }) {
   )
 
   const submit = () =>
-    save({
-      businessName: businessName.trim(),
-      instagramAccount: joinAccounts(accounts.instagramAccount),
-      tiktokAccount: joinAccounts(accounts.tiktokAccount),
-      youtubeAccount: joinAccounts(accounts.youtubeAccount),
-    })
+    save(
+      {
+        businessName: businessName.trim(),
+        instagramAccount: joinAccounts(accounts.instagramAccount),
+        tiktokAccount: joinAccounts(accounts.tiktokAccount),
+        youtubeAccount: joinAccounts(accounts.youtubeAccount),
+      },
+      { onSuccess: () => onDone?.() },
+    )
 
   return (
     <RaceShell
@@ -93,6 +110,18 @@ export default function SocialProfileStep({ profile }: { profile: Profile }) {
       subtitle="Sebagian misi dinilai dari unggahan di akunmu sendiri. Isi sekali di sini, dan panitia bisa menemukannya saat menilai."
     >
       <div className="space-y-5">
+        {/* Jalan keluar untuk kunjungan ulang. Sebagai gerbang di awal
+            tombol ini tidak ada — di sana memang belum ada tempat untuk
+            kembali. */}
+        {onDone && (
+          <button
+            type="button"
+            onClick={onDone}
+            className="font-mono text-xs uppercase tracking-widest text-secondary"
+          >
+            ← Kembali ke perlombaan
+          </button>
+        )}
         {/* Peringatan akun terkunci ditaruh di kepala, bukan di kaki: akun
             privat adalah penyebab paling sering nilai media sosial hangus, dan
             peserta perlu tahu itu sebelum mengetik nama akunnya. */}
@@ -205,7 +234,17 @@ export default function SocialProfileStep({ profile }: { profile: Profile }) {
         confirmVariant="danger"
         cancelLabel="Isi Dulu"
         loading={isPending && isSkipping}
-        onConfirm={() => save({ skipped: true }, { onSettled: () => setIsSkipping(false) })}
+        onConfirm={() =>
+          save(
+            { skipped: true },
+            {
+              onSettled: () => setIsSkipping(false),
+              // Melewati dari kunjungan ulang mengembalikan peserta ke tempat
+              // ia tadi berada, bukan menahannya di layar ini.
+              onSuccess: () => onDone?.(),
+            },
+          )
+        }
         onCancel={() => setIsSkipping(false)}
       />
     </RaceShell>

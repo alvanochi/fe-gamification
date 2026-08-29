@@ -228,6 +228,36 @@ export interface PendingSubmission {
   submittedByName: string
 }
 
+/** Kiriman yang sudah diputuskan panitia — antrean ditambah jejak keputusannya. */
+export interface ValidatedSubmission extends PendingSubmission {
+  awardedPoint: number | null
+  rejectReason: string | null
+  validatedAt: string | null
+  validatedByName: string | null
+}
+
+/**
+ * Rantai Bigger Better.
+ *
+ * Barter tidak meninggalkan submission sama sekali, jadi ia tidak akan pernah
+ * muncul di daftar kiriman. Diringkas tersendiri supaya kelompok yang rantainya
+ * masih berjalan tidak terlihat seolah belum mengerjakan apa pun.
+ */
+export interface BarterChainSummary {
+  assignmentId: string
+  groupName: string
+  missionTitle: string
+  status: 'TODO' | 'DOING' | 'REVIEW' | 'ACCEPTED' | 'REJECTED'
+  approvedSteps: number
+  pendingSteps: number
+  earnedPoint: number
+}
+
+export interface SubmissionHistory {
+  submissions: ValidatedSubmission[]
+  barterChains: BarterChainSummary[]
+}
+
 /** Satu jawaban kuis beserta soal & kuncinya, untuk layar validasi. */
 export interface QuizReviewAnswer {
   questionId: string

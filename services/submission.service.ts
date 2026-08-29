@@ -4,6 +4,7 @@ import { IApiEnvelope } from '@/types/auth'
 import {
   PendingSubmission,
   QuizReview,
+  SubmissionHistory,
   Submission,
   SubmitMissionPayload,
   ValidateSubmissionPayload,
@@ -45,6 +46,11 @@ export const submissionService = {
 
   pending() {
     return http.get<IApiEnvelope<PendingSubmission[]>>(endpoints.submissions.pending)
+  },
+
+  /** Seluruh kiriman beserta keputusannya, plus ringkasan rantai barter. */
+  history() {
+    return http.get<IApiEnvelope<SubmissionHistory>>(endpoints.submissions.history)
   },
 
   /** Hanya angkanya — dibaca lencana navigasi di setiap halaman panel. */
