@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query'
 import { http } from '@/libs/api'
 import { endpoints } from '@/libs/endpoint'
 import { IApiEnvelope } from '@/types/auth'
@@ -107,6 +107,31 @@ export const useMissionMonitoringQuery = (page = 1, perPage = DEFAULT_PER_PAGE) 
         >(endpoints.admin.monitoringMissions, { params: { page, perPage } })
       ).data,
     refetchInterval: 10_000,
+  })
+}
+
+/**
+ * Membetulkan nilai kiriman yang sudah disetujui.
+ *
+ * Nilainya tersimpan di dua tempat — angka yang tampil dan angka yang
+ * dijumlahkan klasemen — dan server yang menjaga keduanya tetap sepakat.
+ * Setelah berhasil, detail kelompok dan klasemen ditarik ulang supaya
+ * angkanya tidak tertinggal di layar yang sedang dibuka panitia lain.
+ */
+export const useUpdateSubmissionScoreMutation = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ submissionId, awardedPoint }: { submissionId: string; awardedPoint: number }) =>
+      http.put<IApiEnvelope<{ submissionId: string; awardedPoint: number }>, { awardedPoint: number }>(
+        endpoints.admin.submissionScore(submissionId),
+        { awardedPoint },
+      ),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['monitoring-group'] })
+      queryClient.invalidateQueries({ queryKey: ['monitoring'] })
+      queryClient.invalidateQueries({ queryKey: ['leaderboard'] })
+    },
   })
 }
 

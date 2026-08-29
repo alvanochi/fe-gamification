@@ -3,9 +3,18 @@
 import { useState } from 'react'
 import Button from '@/components/elements/Button'
 import Input from '@/components/elements/Input'
+import ErrorMessage from '@/components/elements/ErrorMessage'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
 import Pagination from '@/components/fragments/Pagination'
-import { useGroupDetailQuery, useMonitoringQuery, type GroupProgress } from '@/hooks/use-monitoring'
+import {
+  useGroupDetailQuery,
+  useMonitoringQuery,
+  useUpdateSubmissionScoreMutation,
+  type ActivityRow,
+  type GroupProgress,
+} from '@/hooks/use-monitoring'
+import { useProfileQuery } from '@/hooks/use-profile'
+import { AppError } from '@/libs/api'
 import { useDebounce } from '@/hooks/use-debounce'
 import { DEFAULT_PER_PAGE } from '@/hooks/use-pagination'
 import { formatTime as waktu } from '@/utils/format/formatDate'
@@ -20,6 +29,12 @@ const tahap = (g: GroupProgress) => {
 
 function GroupDetail({ group, onClose }: { group: GroupProgress; onClose: () => void }) {
   const { data, isLoading } = useGroupDetailQuery(group.id)
+  const { data: profile } = useProfileQuery()
+
+  // Mengubah nilai yang sudah disetujui menggeser peringkat setelah faktanya,
+  // jadi pintunya hanya dibuka untuk Super Admin. Server memeriksanya lagi —
+  // menyembunyikan tombol saja bukan penjagaan.
+  const canEditScore = profile?.role === 'SUPER_ADMIN'
 
   return (
     <div className="rounded-lg border-brut-lg bg-paper-raised p-6 shadow-brutal-lg">
@@ -99,38 +114,7 @@ function GroupDetail({ group, onClose }: { group: GroupProgress; onClose: () => 
             {data?.activity.length ? (
               <ul className="mt-2 space-y-2">
                 {data.activity.map(a => (
-                  <li key={a.id} className="rounded-md border-brut-sm bg-paper px-3 py-2 text-sm">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="font-bold text-ink">{a.missionTitle}</span>
-                      <span
-                        className={`font-mono text-[10px] uppercase ${
-                          a.status === 'APPROVED'
-                            ? 'text-success'
-                            : a.status === 'REJECTED'
-                              ? 'text-danger'
-                              : 'text-warning'
-                        }`}
-                      >
-                        {a.status === 'APPROVED'
-                          ? // Submission yang divalidasi sebelum kolom nilai ada tidak
-                            // menyimpan angkanya — tampilkan tanpa poin, bukan "0 poin"
-                            // yang keliru menyiratkan tidak dapat nilai.
-                            a.awardedPoint != null
-                            ? `disetujui · ${a.awardedPoint} poin`
-                            : 'disetujui'
-                          : a.status === 'REJECTED'
-                            ? 'ditolak'
-                            : 'menunggu'}
-                      </span>
-                    </div>
-                    <p className="mt-0.5 text-xs text-ink/55">
-                      dikirim {a.submittedByName} pukul {waktu(a.createdAt)}
-                      {a.validatedByName ? ` · diperiksa ${a.validatedByName}` : ''}
-                    </p>
-                    {a.rejectReason && (
-                      <p className="mt-1 text-xs font-bold text-danger">Alasan: {a.rejectReason}</p>
-                    )}
-                  </li>
+                  <ActivityCard key={a.id} activity={a} canEditScore={canEditScore} />
                 ))}
               </ul>
             ) : (
@@ -140,6 +124,107 @@ function GroupDetail({ group, onClose }: { group: GroupProgress; onClose: () => 
         </div>
       )}
     </div>
+  )
+}
+
+/**
+ * Satu baris riwayat misi, dengan nilainya bisa dibetulkan di tempat.
+ *
+ * Salah ketik saat validasi — "3080" alih-alih "308" — sebelumnya hanya bisa
+ * dibetulkan lewat UPDATE langsung ke basis data, dan itu berbahaya bukan
+ * karena perintahnya melainkan karena nilainya tersimpan di dua tempat:
+ * angka yang tampil dan angka yang dijumlahkan klasemen. Server yang menjaga
+ * keduanya tetap sepakat; layar ini hanya menyediakan pintunya.
+ *
+ * Hanya Super Admin yang melihat tombolnya. Mengubah nilai yang sudah
+ * disetujui menggeser peringkat setelah faktanya, jadi bukan sesuatu yang
+ * pantas berada satu ketukan dari jangkauan setiap panitia.
+ */
+function ActivityCard({ activity, canEditScore }: { activity: ActivityRow; canEditScore: boolean }) {
+  const [draft, setDraft] = useState<string | null>(null)
+  const { mutate: updateScore, isPending, error } = useUpdateSubmissionScoreMutation()
+  const apiError = error as AppError | null
+
+  const parsed = Number(draft)
+  const valid = draft !== null && draft.trim() !== '' && Number.isInteger(parsed) && parsed >= 0
+
+  return (
+    <li className="rounded-md border-brut-sm bg-paper px-3 py-2 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="font-bold text-ink">{activity.missionTitle}</span>
+        <span
+          className={`font-mono text-[10px] uppercase ${
+            activity.status === 'APPROVED'
+              ? 'text-success'
+              : activity.status === 'REJECTED'
+                ? 'text-danger'
+                : 'text-warning'
+          }`}
+        >
+          {activity.status === 'APPROVED'
+            ? // Submission yang divalidasi sebelum kolom nilai ada tidak
+              // menyimpan angkanya — tampilkan tanpa poin, bukan "0 poin"
+              // yang keliru menyiratkan tidak dapat nilai.
+              activity.awardedPoint != null
+              ? `disetujui · ${activity.awardedPoint} poin`
+              : 'disetujui'
+            : activity.status === 'REJECTED'
+              ? 'ditolak'
+              : 'menunggu'}
+        </span>
+      </div>
+
+      <p className="mt-0.5 text-xs text-ink/55">
+        dikirim {activity.submittedByName} pukul {waktu(activity.createdAt)}
+        {activity.validatedByName ? ` · diperiksa ${activity.validatedByName}` : ''}
+      </p>
+
+      {activity.rejectReason && (
+        <p className="mt-1 text-xs font-bold text-danger">Alasan: {activity.rejectReason}</p>
+      )}
+
+      {/* Hanya kiriman yang sudah disetujui punya nilai untuk dibetulkan.
+          Yang menunggu cukup divalidasi seperti biasa. */}
+      {canEditScore && activity.status === 'APPROVED' && (
+        draft === null ? (
+          <button
+            type="button"
+            onClick={() => setDraft(String(activity.awardedPoint ?? 0))}
+            className="mt-2 font-mono text-[10px] uppercase tracking-widest text-secondary"
+          >
+            Betulkan nilai
+          </button>
+        ) : (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Input
+              className="w-28"
+              type="number"
+              min={0}
+              value={draft}
+              onChange={e => setDraft(e.target.value)}
+              error={!valid}
+            />
+            <Button
+              size="sm"
+              loading={isPending}
+              disabled={!valid}
+              onClick={() =>
+                updateScore(
+                  { submissionId: activity.id, awardedPoint: parsed },
+                  { onSuccess: () => setDraft(null) },
+                )
+              }
+            >
+              Simpan
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setDraft(null)}>
+              Batal
+            </Button>
+            <ErrorMessage message={apiError?.message} />
+          </div>
+        )
+      )}
+    </li>
   )
 }
 

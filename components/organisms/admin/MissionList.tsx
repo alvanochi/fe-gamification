@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useMemo, useState } from 'react'
 import Button from '@/components/elements/Button'
 import Input from '@/components/elements/Input'
@@ -148,8 +149,16 @@ function MissionRow({
               Kelola Pertanyaan
             </Button>
           )}
+          {/* Menyunting seluruh isinya, bukan poinnya saja. Ubah Poin di
+              tempat tetap ada di sebelahnya karena itu yang paling sering
+              dipakai di tengah acara — satu ketukan, tanpa pindah halaman. */}
+          <Link href={`/admin/missions/${mission.id}/edit`} className="flex-1">
+            <Button variant="secondary" size="sm" className="w-full">
+              Sunting
+            </Button>
+          </Link>
           <Button
-            variant="secondary"
+            variant="ghost"
             size="sm"
             className="flex-1"
             onClick={() => setPointDraft(String(mission.pointWeight))}

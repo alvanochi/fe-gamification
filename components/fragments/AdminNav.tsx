@@ -38,6 +38,9 @@ const LINKS: Array<{
   // Master akun & kelompok memegang identitas seluruh peserta, jadi ia
   // sepenuhnya milik Super Admin — termasuk membacanya.
   { href: '/admin/accounts', label: 'Akun & Kelompok', roles: SUPER },
+  // Jalur pemulihan: mengirim bukti atas nama peserta yang kehilangan
+  // kesempatannya karena sesuatu di luar kendali mereka.
+  { href: '/admin/submissions/new', label: 'Kirim Bukti', roles: SUPER },
   { href: '/leaderboard', label: 'Klasemen', roles: [...PANITIA, 'POST_GUARD'] },
 ]
 
