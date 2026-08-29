@@ -306,6 +306,46 @@ function BarterRow({ chain }: { chain: BarterChainSummary }) {
   )
 }
 
+/**
+ * Daftar rantai barter, dipenggal halaman.
+ *
+ * Jumlahnya sebanyak kelompok yang mengikuti barter — belasan sampai puluhan —
+ * dan menampilkan seluruhnya sekaligus membuat panel audit ini panjangnya
+ * berlipat tanpa ada yang membacanya sampai bawah.
+ */
+function BarterList({ chains }: { chains: BarterChainSummary[] }) {
+  const pagination = usePagination(chains)
+
+  if (chains.length === 0) {
+    return (
+      <p className="mt-2 rounded-md border-brut bg-paper p-6 text-center text-sm text-ink/60">
+        Semua rantai barter sudah diakhiri.
+      </p>
+    )
+  }
+
+  return (
+    <>
+      <div className="mt-2">
+        <Pagination
+          page={pagination.page}
+          perPage={pagination.perPage}
+          total={pagination.total}
+          totalPages={pagination.totalPages}
+          onPageChange={pagination.setPage}
+          onPerPageChange={pagination.setPerPage}
+        />
+      </div>
+
+      <ul className="mt-2 space-y-2">
+        {pagination.pageItems.map(c => (
+          <BarterRow key={c.assignmentId} chain={c} />
+        ))}
+      </ul>
+    </>
+  )
+}
+
 export default function ValidationHistory({ missionIds }: { missionIds: string[] }) {
   const { data, isLoading, error } = useSubmissionHistoryQuery()
 
@@ -334,6 +374,11 @@ export default function ValidationHistory({ missionIds }: { missionIds: string[]
 
   const pagination = usePagination(filtered)
 
+  // Rantai barter punya paginasinya sendiri: jumlahnya sebanyak kelompok
+  // (belasan sampai puluhan) dan tidak ada hubungannya dengan saringan
+  // kiriman di atas — barter tidak meninggalkan kiriman sama sekali.
+  const [barterScope, setBarterScope] = useState<'BELUM' | 'SEMUA'>('BELUM')
+
   // Hitungan dihitung atas cakupan sebelum saringan status, supaya angkanya
   // berarti "sebanyak ini yang akan kamu lihat kalau menekannya".
   const countOf = (value: StatusFilter) =>
@@ -354,6 +399,7 @@ export default function ValidationHistory({ missionIds }: { missionIds: string[]
   }
 
   const berjalan = data.barterChains.filter(c => c.status !== 'ACCEPTED' && c.status !== 'REJECTED')
+  const barterVisible = barterScope === 'BELUM' ? berjalan : data.barterChains
 
   return (
     <div className="space-y-5 rounded-lg border-brut bg-paper-raised p-5 shadow-brutal-sm">
@@ -470,15 +516,32 @@ export default function ValidationHistory({ missionIds }: { missionIds: string[]
             <p className="mt-2 rounded-md border-brut-sm !border-warning bg-warning/10 px-4 py-2.5 text-xs font-bold text-warning">
               {berjalan.length} rantai sudah diterima pertukarannya tetapi belum diakhiri. Poin tiap
               pertukaran memang sudah masuk — yang belum ada bukan nilainya, melainkan status
-              selesainya.
+              selesainya. Tekan <strong>Akhiri Rantai</strong> pada masing-masing untuk menutupnya.
             </p>
           )}
 
-          <ul className="mt-2 space-y-2">
-            {data.barterChains.map(c => (
-              <BarterRow key={c.assignmentId} chain={c} />
+          <div className="mt-2 flex flex-wrap gap-2">
+            {(
+              [
+                ['BELUM', `Belum diakhiri (${berjalan.length})`],
+                ['SEMUA', `Semua (${data.barterChains.length})`],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={barterScope === value}
+                onClick={() => setBarterScope(value)}
+                className={`rounded-md border-brut-sm px-3 py-2 font-mono text-[11px] font-bold uppercase tracking-wide brutal-press-sm ${
+                  barterScope === value ? 'bg-ink text-paper' : 'bg-paper text-ink/70'
+                }`}
+              >
+                {label}
+              </button>
             ))}
-          </ul>
+          </div>
+
+          <BarterList chains={barterVisible} />
         </section>
       )}
     </div>
