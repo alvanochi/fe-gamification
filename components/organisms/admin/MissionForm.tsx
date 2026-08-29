@@ -35,15 +35,37 @@ import {
   scoringModeOptions,
   proofTypeOptions,
 } from '@/schema/mission.schema'
-import { useCreateMissionMutation } from '@/hooks/use-missions'
+import { useCreateMissionMutation, useUpdateMissionMutation } from '@/hooks/use-missions'
 import { useSponsorsQuery } from '@/hooks/use-sponsors'
 import { AppError } from '@/libs/api'
 import { Mission } from '@/types/mission'
 import { MISSION_TYPE_LABEL } from '@/utils/mission/type-meta'
 
-export default function MissionForm({ existingMissions }: { existingMissions: Mission[] }) {
+/**
+ * Form misi — dipakai untuk membuat maupun menyunting.
+ *
+ * Satu form untuk keduanya, bukan dua yang mirip: setiap aturan validasi di
+ * sini (rentang butuh poin min & maks, misi lokasi butuh koordinat, petunjuk
+ * butuh isi) berlaku sama saat menyunting. Menyalinnya ke form kedua berarti
+ * menyalin pula setiap perbaikan yang menyusul, dan satu-satunya yang
+ * ketinggalan akan menjadi misi yang tersimpan dalam keadaan mustahil.
+ *
+ * `mission` yang terisi menjadikannya mode sunting: nilainya menjadi isian
+ * awal, dan simpanannya memanggil PUT alih-alih POST.
+ */
+export default function MissionForm({
+  existingMissions,
+  mission,
+}: {
+  existingMissions: Mission[]
+  mission?: Mission
+}) {
   const router = useRouter()
-  const { mutate: createMission, isPending, error, reset } = useCreateMissionMutation()
+  const isEditing = !!mission
+  const createMutation = useCreateMissionMutation()
+  const updateMutation = useUpdateMissionMutation()
+  const { mutate: createMission, reset } = createMutation
+  const { isPending, error } = isEditing ? updateMutation : createMutation
   const { data: sponsors } = useSponsorsQuery()
 
   // Soal kuis disusun di form yang sama. Misi kuis tanpa soal tidak bisa
@@ -61,18 +83,55 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
     formState: { errors },
   } = useForm<CreateMissionFormInput, unknown, CreateMissionFormValues>({
     resolver: zodResolver(createMissionSchema),
-    defaultValues: {
-      isMandatory: false,
-      pointWeight: 0,
-      participantCount: 1,
-      category: 'MANDIRI',
-      clueType: 'NONE',
-      clueImages: [],
-      proofType: 'FOTO',
-      requiresCheckIn: false,
-      isYelYel: false,
-      scoringMode: 'FLAT',
-    },
+    // Nilai awal disusun sekali saat form dipasang. Angka yang null di basis
+    // data menjadi string kosong, bukan 0 — "belum diisi" dan "nol" adalah dua
+    // hal berbeda di hampir semua kolom di sini.
+    defaultValues: mission
+      ? {
+          title: mission.title,
+          description: mission.description,
+          type: mission.type,
+          isMandatory: mission.isMandatory,
+          pointWeight: mission.pointWeight,
+          participantCount: mission.participantCount,
+          // <input type="datetime-local"> menolak akhiran Z beserta detiknya.
+          openAt: mission.openAt ? mission.openAt.slice(0, 16) : '',
+          prerequisiteId: mission.prerequisiteId ?? '',
+          sponsorId: mission.sponsorId ?? '',
+          geoLat: mission.geoLat ?? '',
+          geoLng: mission.geoLng ?? '',
+          geoRadius: mission.geoRadius ?? undefined,
+          category: mission.category,
+          clueType: mission.clueType,
+          clue: mission.clue ?? '',
+          clueImages: mission.clueImages ?? [],
+          locationName: mission.locationName ?? '',
+          sessionStart: mission.sessionStart ?? '',
+          sessionEnd: mission.sessionEnd ?? '',
+          durationMinutes: mission.durationMinutes ?? '',
+          proofType: mission.proofType,
+          pointMin: mission.pointMin ?? '',
+          pointMax: mission.pointMax ?? '',
+          requiresCheckIn: mission.requiresCheckIn,
+          isYelYel: mission.isYelYel,
+          equipment: mission.equipment ?? '',
+          scoringMode: mission.scoringMode,
+          pointPerUnit: mission.pointPerUnit ?? '',
+          maxUnits: mission.maxUnits ?? '',
+          timeTargetSeconds: mission.timeTargetSeconds ?? '',
+        }
+      : {
+          isMandatory: false,
+          pointWeight: 0,
+          participantCount: 1,
+          category: 'MANDIRI',
+          clueType: 'NONE',
+          clueImages: [],
+          proofType: 'FOTO',
+          requiresCheckIn: false,
+          isYelYel: false,
+          scoringMode: 'FLAT',
+        },
   })
 
   const type = watch('type')
@@ -86,20 +145,42 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
   const apiError = error as AppError | null
 
   const isQuiz = type === 'KUIS'
-  const quizReady = !isQuiz || questionsValid(questions)
+  // Saat menyunting, soal kuis diurus layarnya sendiri — jadi tidak ada yang
+  // perlu dilengkapi di sini sebelum tombol simpan terbuka.
+  const quizReady = isEditing || !isQuiz || questionsValid(questions)
 
   const onSubmit = (values: CreateMissionFormValues) => {
+    const payload = {
+      ...values,
+      openAt: values.openAt ? new Date(values.openAt).toISOString() : undefined,
+      sponsorId: values.sponsorId || undefined,
+      prerequisiteId: values.prerequisiteId || undefined,
+    }
+
+    if (isEditing) {
+      /*
+       * Soal kuis sengaja tidak ikut terkirim saat menyunting.
+       *
+       * Menyertakan daftar kosong akan menghapus seluruh soal yang sudah
+       * disusun — dan bersamanya jawaban peserta yang menggantung padanya.
+       * Soal disunting di layarnya sendiri lewat tombol Kelola Pertanyaan.
+       */
+      updateMutation.mutate(
+        { missionId: mission.id, ...payload },
+        {
+          onSuccess: () => {
+            setCreatedTitle(values.title)
+          },
+        },
+      )
+      return
+    }
+
     reset()
     createMission(
       {
-        ...values,
+        ...payload,
         questions: isQuiz ? toQuestionPayload(questions) : undefined,
-        openAt: values.openAt ? new Date(values.openAt).toISOString() : undefined,
-        // Select yang tidak dipilih mengirim string kosong. sponsorId punya
-        // foreign key ke sponsors, jadi '' akan ditolak database — kirim
-        // undefined supaya kolomnya benar-benar dibiarkan kosong.
-        sponsorId: values.sponsorId || undefined,
-        prerequisiteId: values.prerequisiteId || undefined,
       },
       {
         onSuccess: () => {
@@ -145,7 +226,9 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
       onSubmit={handleSubmit(onSubmit)}
       className="space-y-5 rounded-lg border-brut-lg bg-paper-raised p-6 shadow-brutal-lg sm:p-8"
     >
-      <h3 className="font-display text-2xl text-ink">Buat Misi Baru</h3>
+      <h3 className="font-display text-2xl text-ink">
+        {isEditing ? 'Sunting Misi' : 'Buat Misi Baru'}
+      </h3>
 
       {apiError?.message && (
         <div className="rounded-md border-brut !border-danger bg-paper p-4 text-sm font-bold text-danger">
@@ -485,12 +568,23 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
             </p>
           </div>
 
-          <QuestionsBuilder questions={questions} onChange={setQuestions} />
+          {/* Saat menyunting, soalnya tidak ikut ditampilkan di sini.
+              Mengirim daftar kosong akan menghapus seluruh soal yang sudah
+              disusun berikut jawaban peserta yang menggantung padanya —
+              risiko yang tidak sepadan hanya demi menyatukan dua layar. */}
+          {isEditing ? (
+            <p className="rounded-md border-brut-sm bg-paper-raised px-3 py-2 text-xs text-ink/60">
+              Soal kuis disunting lewat tombol <strong>Kelola Pertanyaan</strong> di daftar misi.
+              Menyimpan dari sini tidak mengubah soal yang sudah ada.
+            </p>
+          ) : (
+            <QuestionsBuilder questions={questions} onChange={setQuestions} />
+          )}
         </div>
       )}
 
       <Button type="submit" size="lg" className="w-full" loading={isPending} disabled={!quizReady}>
-        Simpan Misi
+        {isEditing ? 'Simpan Perubahan' : 'Simpan Misi'}
       </Button>
       {!quizReady && (
         <p className="text-xs font-bold text-danger">
@@ -503,19 +597,26 @@ export default function MissionForm({ existingMissions }: { existingMissions: Mi
           begitu panitia menekan tombol simpan di kakinya. */}
       <ConfirmModal
         open={!!createdTitle}
-        title="Misi berhasil dibuat 🎉"
+        title={isEditing ? 'Perubahan tersimpan ✓' : 'Misi berhasil dibuat 🎉'}
         description={
-          <>
+          isEditing ? (
             <p>
-              <strong>{createdTitle}</strong> sudah masuk daftar misi.
+              <strong>{createdTitle}</strong> sudah diperbarui. Peserta melihat versi barunya
+              begitu daftar misinya disegarkan.
             </p>
-            <p className="mt-2">
-              Buat misi berikutnya sekarang, atau lihat hasilnya di daftar misi.
-            </p>
-          </>
+          ) : (
+            <>
+              <p>
+                <strong>{createdTitle}</strong> sudah masuk daftar misi.
+              </p>
+              <p className="mt-2">
+                Buat misi berikutnya sekarang, atau lihat hasilnya di daftar misi.
+              </p>
+            </>
+          )
         }
         confirmLabel="Lihat Daftar Misi"
-        cancelLabel="Buat Misi Lagi"
+        cancelLabel={isEditing ? 'Lanjut Menyunting' : 'Buat Misi Lagi'}
         onConfirm={() => {
           setCreatedTitle(null)
           router.push('/admin/missions')
