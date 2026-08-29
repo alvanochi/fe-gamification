@@ -33,6 +33,7 @@ export const endpoints = {
     monitoringGroup: (groupId: string) => `/admin/monitoring/${groupId}`,
     accounts: '/admin/accounts',
     finalScores: '/admin/final-scores',
+    sheetFinalScores: '/admin/sheets/final-scores',
     submissions: '/admin/submissions',
     submissionScore: (submissionId: string) => `/admin/submissions/${submissionId}/score`,
     accountRole: (userId: string) => `/admin/accounts/${userId}/role`,

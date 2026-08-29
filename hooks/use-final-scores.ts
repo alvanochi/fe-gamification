@@ -3,9 +3,21 @@ import { http } from '@/libs/api'
 import { endpoints } from '@/libs/endpoint'
 import { IApiEnvelope } from '@/types/auth'
 
+export const SOCIAL_PLATFORMS = ['INSTAGRAM', 'TIKTOK', 'YOUTUBE'] as const
+export type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number]
+
+export const PLATFORM_LABEL: Record<SocialPlatform, string> = {
+  INSTAGRAM: 'Instagram',
+  TIKTOK: 'TikTok',
+  YOUTUBE: 'YouTube',
+}
+
 export interface FinalScoreMember {
   fullname: string
-  instagramUsername: string
+  /** Username per platform; string kosong berarti akunnya tidak didaftarkan. */
+  accounts: Record<SocialPlatform, string>
+  postCounts: Record<SocialPlatform, number>
+  /** Jumlah ketiganya. */
   postCount: number
 }
 

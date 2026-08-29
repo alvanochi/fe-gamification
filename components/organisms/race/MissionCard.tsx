@@ -153,7 +153,17 @@ export default function MissionCard({
   assignment?: Assignment | null
 }) {
   const latest = getLatestSubmissionForMission(submissions, mission.id)
-  const canSubmit = !latest || latest.status === 'REJECTED'
+
+  /*
+   * Misi kumpulan selalu terbuka.
+   *
+   * "Cari sepuluh orang bernama Agus" ditemukan satu per satu sepanjang hari,
+   * jadi kiriman yang sudah disetujui tidak menutup misinya — justru menjadi
+   * tanda bahwa temuan berikutnya boleh menyusul. Rekap di bawah yang memberi
+   * tahu berapa yang sudah bernilai, supaya peserta tidak menebak-nebak
+   * apakah kirimannya tadi terhitung.
+   */
+  const canSubmit = mission.allowMultipleSubmissions || !latest || latest.status === 'REJECTED'
 
   const [isOpen, setIsOpen] = useState(false)
   const [evidenceFiles, setEvidenceFiles] = useState<File[]>([])
@@ -161,6 +171,12 @@ export default function MissionCard({
   const geolocation = useGeolocation()
 
   const { data: sponsors } = useSponsorsQuery()
+
+  // Terbaru di atas. Hanya dipakai misi kumpulan; misi biasa cukup melihat
+  // kiriman terakhirnya lewat StatusBanner.
+  const missionSubmissions = submissions
+    .filter(s => s.missionId === mission.id)
+    .sort((a, b) => Number(new Date(b.createdAt)) - Number(new Date(a.createdAt)))
   const sponsor = mission.sponsorId ? sponsors?.find(s => s.id === mission.sponsorId) : undefined
 
   const { mutate: submitMission, isPending, error } = useSubmitMissionWithEvidenceMutation()
@@ -342,6 +358,50 @@ export default function MissionCard({
               rejectReason={latest.rejectReason}
               awardedPoint={latest.awardedPoint}
             />
+          </div>
+        )}
+
+        {/* Misi kumpulan: rekap seluruh kiriman, bukan hanya yang terakhir.
+            Tanpa ini peserta hanya melihat keadaan kiriman terbaru dan tidak
+            punya cara tahu berapa temuannya yang sudah bernilai. */}
+        {mission.allowMultipleSubmissions && (
+          <div className="mt-4 rounded-md border-brut bg-paper px-4 py-3">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-ink/45">
+              Kiriman kelompokmu di misi ini
+            </p>
+            <p className="mt-1 text-sm font-bold text-ink">
+              {mission.approvedCount} disetujui
+              {mission.earnedPoint > 0 && ` · ${mission.earnedPoint} poin sudah masuk`}
+            </p>
+
+            {missionSubmissions.length > 0 && (
+              <ul className="mt-2 space-y-1">
+                {missionSubmissions.map((s, index) => (
+                  <li key={s.id} className="flex items-center justify-between gap-2 text-xs">
+                    <span className="text-ink/55">Kiriman {missionSubmissions.length - index}</span>
+                    <span
+                      className={`font-mono uppercase ${
+                        s.status === 'APPROVED'
+                          ? 'text-success'
+                          : s.status === 'REJECTED'
+                            ? 'text-danger'
+                            : 'text-warning'
+                      }`}
+                    >
+                      {s.status === 'APPROVED'
+                        ? `disetujui${s.awardedPoint != null ? ` · ${s.awardedPoint} poin` : ''}`
+                        : s.status === 'REJECTED'
+                          ? 'ditolak'
+                          : 'menunggu validasi'}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <p className="mt-2 text-xs text-ink/50">
+              Temuan berikutnya boleh langsung dikirim — tidak perlu menunggu yang ini divalidasi.
+            </p>
           </div>
         )}
 

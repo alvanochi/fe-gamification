@@ -113,6 +113,7 @@ export default function MissionForm({
           pointMin: mission.pointMin ?? '',
           pointMax: mission.pointMax ?? '',
           requiresCheckIn: mission.requiresCheckIn,
+          allowMultipleSubmissions: mission.allowMultipleSubmissions,
           isYelYel: mission.isYelYel,
           equipment: mission.equipment ?? '',
           scoringMode: mission.scoringMode,
@@ -129,6 +130,7 @@ export default function MissionForm({
           clueImages: [],
           proofType: 'FOTO',
           requiresCheckIn: false,
+          allowMultipleSubmissions: false,
           isYelYel: false,
           scoringMode: 'FLAT',
         },
@@ -211,6 +213,7 @@ export default function MissionForm({
             pointMin: '',
             pointMax: '',
             requiresCheckIn: false,
+            allowMultipleSubmissions: false,
             scoringMode: 'FLAT',
             pointPerUnit: '',
             maxUnits: '',
@@ -519,6 +522,20 @@ export default function MissionForm({
         <p className="text-xs text-ink/55">
           Kedatangan dan kepergian di pos ini dicatat petugas lewat pemindaian QR peserta, bukan
           oleh peserta sendiri.
+        </p>
+
+        <label className="flex items-center gap-2 text-sm font-bold text-ink">
+          <input
+            type="checkbox"
+            className="h-4 w-4 border-brut-sm"
+            {...register('allowMultipleSubmissions')}
+          />
+          Boleh dikirim berkali-kali
+        </label>
+        <p className="text-xs text-ink/55">
+          Untuk misi kumpulan seperti &quot;cari sepuluh orang bernama Agus&quot;: temuannya
+          dikirim satu per satu sepanjang hari. Tiap kiriman divalidasi dan bernilai sendiri, dan
+          misinya tidak pernah ditandai selesai selama acara berjalan.
         </p>
 
         <label className="flex items-center gap-2 text-sm font-bold text-ink">

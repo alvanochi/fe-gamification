@@ -1,9 +1,18 @@
 'use client'
 
 import { useState } from 'react'
+import Button from '@/components/elements/Button'
+import ErrorMessage from '@/components/elements/ErrorMessage'
 import CardSkeleton from '@/components/skeleton/CardSkeleton'
-import { useFinalScoresQuery, type FinalScoreGroup } from '@/hooks/use-final-scores'
+import {
+  PLATFORM_LABEL,
+  SOCIAL_PLATFORMS,
+  useFinalScoresQuery,
+  type FinalScoreGroup,
+} from '@/hooks/use-final-scores'
 import { formatTime } from '@/utils/format/formatDate'
+import { downloadSheet } from '@/utils/download-sheet'
+import { endpoints } from '@/libs/endpoint'
 
 /** Angka nilai selalu dua desimal; pembobotan 70% jarang menghasilkan bulat. */
 const nilai = (value: number) =>
@@ -132,15 +141,30 @@ function GroupRow({ group, missionWeight }: { group: FinalScoreGroup; missionWei
                       <span className="block truncate text-sm font-bold text-ink">
                         {member.fullname}
                       </span>
-                      <span className="block truncate font-mono text-[11px] text-ink/45">
-                        {/* Username kosong berarti peserta melewati Checkpoint 0;
-                            postingannya tidak akan pernah bisa dicocokkan. */}
-                        {member.instagramUsername ? `@${member.instagramUsername}` : 'tanpa akun Instagram'}
+
+                      {/* Rinci per platform. Peserta boleh mendaftarkan satu,
+                          dua, atau ketiganya — yang tidak didaftarkan tidak
+                          ditampilkan sama sekali, bukan ditulis "0 postingan"
+                          yang terbaca seolah akunnya ada tapi menganggur. */}
+                      <span className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 font-mono text-[10px] text-ink/45">
+                        {SOCIAL_PLATFORMS.filter(p => member.accounts[p]).map(p => (
+                          <span key={p}>
+                            {PLATFORM_LABEL[p]} @{member.accounts[p]} ·{' '}
+                            <strong className="text-ink/70">{member.postCounts[p]}</strong>
+                          </span>
+                        ))}
+                        {!SOCIAL_PLATFORMS.some(p => member.accounts[p]) && (
+                          // Melewati Checkpoint 0: postingannya tidak akan
+                          // pernah bisa dicocokkan pihak eksternal.
+                          <span className="text-warning">tanpa akun media sosial</span>
+                        )}
                       </span>
                     </span>
                     <span
                       className={`shrink-0 rounded-full border-brut-sm px-3 py-1 font-mono text-[10px] font-bold ${
-                        member.instagramUsername ? 'bg-paper-raised text-ink/70' : 'bg-warning/20 text-warning'
+                        SOCIAL_PLATFORMS.some(p => member.accounts[p])
+                          ? 'bg-paper-raised text-ink/70'
+                          : 'bg-warning/20 text-warning'
                       }`}
                     >
                       {member.postCount} postingan
@@ -167,6 +191,20 @@ function GroupRow({ group, missionWeight }: { group: FinalScoreGroup; missionWei
  */
 export default function FinalScoreBoard() {
   const { data, isLoading, error } = useFinalScoresQuery()
+  const [isDownloading, setIsDownloading] = useState(false)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
+
+  const unduh = async () => {
+    setDownloadError(null)
+    setIsDownloading(true)
+    try {
+      await downloadSheet(endpoints.admin.sheetFinalScores, 'nilai-akhir.xlsx')
+    } catch (e) {
+      setDownloadError((e as Error).message)
+    } finally {
+      setIsDownloading(false)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -215,6 +253,18 @@ export default function FinalScoreBoard() {
             bisa berubah setelah kirimannya masuk.
           </p>
         )}
+
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <Button size="sm" variant="secondary" loading={isDownloading} onClick={unduh}>
+            Unduh Nilai Akhir
+          </Button>
+          <span className="text-xs text-ink/50">
+            Berisi rincian tiap suku perhitungan, postingan per peserta per platform, dan cara
+            menghitungnya.
+          </span>
+        </div>
+
+        <ErrorMessage message={downloadError ?? undefined} className="mt-2" />
       </section>
 
       <ul className="space-y-3">

@@ -50,6 +50,8 @@ export interface Mission {
   pointMin: number | null
   pointMax: number | null
   requiresCheckIn: boolean
+  /** Misi kumpulan: boleh dikirim berkali-kali, tiap kiriman dinilai sendiri. */
+  allowMultipleSubmissions: boolean
   /** Panitia yang menjaga pos ini. Satu penjaga boleh memegang banyak pos. */
   guardUserId: string | null
   /** Misi yel-yel — satu-satunya yang ikut muncul di rangkaian checkpoint. */
@@ -76,6 +78,10 @@ export interface BoardMission extends Mission {
   minutesToSessionEnd: number | null
   /** Rantai barter yang sudah diakhiri panitia. */
   barterClosed: boolean
+
+  // Rekap kiriman kelompok untuk misi ini — berarti bagi misi berulang.
+  approvedCount: number
+  earnedPoint: number
 }
 
 /** Papan misi peserta: sudah dicari, disaring, diurutkan, dan dipenggal server. */
@@ -299,6 +305,7 @@ export interface CreateMissionPayload {
   clueType: ClueType
   clue?: string
   clueImages?: string[]
+  allowMultipleSubmissions?: boolean
   locationName?: string
   sessionStart?: string
   sessionEnd?: string

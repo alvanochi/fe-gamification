@@ -5,27 +5,9 @@ import Button from '@/components/elements/Button'
 import ErrorMessage from '@/components/elements/ErrorMessage'
 import { useSheetImportMutation, type SheetImportResult, type SheetKind } from '@/hooks/use-sheets'
 import { AppError } from '@/libs/api'
+import { downloadSheet } from '@/utils/download-sheet'
 
 /** Unduhan menembak API langsung, membawa token supaya lolos penjaga rute. */
-const downloadSheet = async (path: string, filename: string) => {
-  const base = process.env.NEXT_PUBLIC_API_URL || '/api'
-  const token = localStorage.getItem('accessToken')
-
-  const headers: Record<string, string> = { 'ngrok-skip-browser-warning': 'true' }
-  if (token) headers.Authorization = `Bearer ${token}`
-
-  const res = await fetch(`${base}${path}`, { headers })
-  if (!res.ok) throw new Error('Gagal mengunduh berkas')
-
-  const blob = await res.blob()
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  link.click()
-  URL.revokeObjectURL(url)
-}
-
 interface SheetExchangePanelProps {
   kind: SheetKind
   title: string
