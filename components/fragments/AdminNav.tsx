@@ -44,7 +44,10 @@ const LINKS: Array<{
   // Jalur pemulihan: mengirim bukti atas nama peserta yang kehilangan
   // kesempatannya karena sesuatu di luar kendali mereka.
   { href: '/admin/submissions/new', label: 'Kirim Bukti', roles: SUPER },
-  { href: '/leaderboard', label: 'Klasemen', roles: [...PANITIA, 'POST_GUARD'] },
+  // Klasemen disembunyikan bersama halamannya — papan skor sedang tidak
+  // dipamerkan. Tautannya pun sudah lama menunjuk /leaderboard yang tidak ada
+  // lagi sejak halamannya pindah, jadi menekannya hanya berujung 404.
+  // { href: '/klasemen-admin', label: 'Klasemen', roles: [...PANITIA, 'POST_GUARD'] },
 ]
 
 export default function AdminNav() {

@@ -39,11 +39,13 @@ export default function GroupSuccessScreen({ group, myId }: { group: Group; myId
           Lihat Misi Saya
         </Button>
       </Link>
-      <Link href="/leaderboard">
+      {/* Klasemen disembunyikan bersama halamannya. Tautan ini pun sudah
+          menunjuk alamat yang tidak ada lagi sejak halamannya pindah. */}
+      {/* <Link href="/klasemen-admin">
         <Button size="lg" variant="secondary" className="mt-3 w-full">
           Lihat Klasemen
         </Button>
-      </Link>
+      </Link> */}
 
       {/* QR pos kini dirender QrPosPanel di seluruh checkpoint,
           jadi tidak perlu digandakan di sini. */}
