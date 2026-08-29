@@ -38,6 +38,9 @@ const LINKS: Array<{
   // Master akun & kelompok memegang identitas seluruh peserta, jadi ia
   // sepenuhnya milik Super Admin — termasuk membacanya.
   { href: '/admin/accounts', label: 'Akun & Kelompok', roles: SUPER },
+  // Nilai akhir menggabungkan poin sistem dengan data media sosial dari pihak
+  // luar; seluruh panitia boleh membacanya, tidak ada yang bisa diubah dari sana.
+  { href: '/admin/final-score', label: 'Nilai Akhir', roles: PANITIA },
   { href: '/leaderboard', label: 'Klasemen', roles: [...PANITIA, 'POST_GUARD'] },
 ]
 

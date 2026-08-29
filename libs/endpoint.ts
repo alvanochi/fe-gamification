@@ -32,6 +32,7 @@ export const endpoints = {
     validateBarterStep: (stepId: string) => `/admin/barter/steps/${stepId}/validate`,
     monitoringGroup: (groupId: string) => `/admin/monitoring/${groupId}`,
     accounts: '/admin/accounts',
+    finalScores: '/admin/final-scores',
     accountRole: (userId: string) => `/admin/accounts/${userId}/role`,
     accountRoles: '/admin/accounts/roles',
     accountQrTokens: '/admin/accounts/qr-tokens',
