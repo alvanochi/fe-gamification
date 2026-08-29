@@ -31,9 +31,8 @@ export default function LeaderboardTable({
         return (
           <li
             key={row.id}
-            className={`flex items-center justify-between gap-4 py-3 ${
-              isMe ? 'rounded-md bg-primary/10 px-3' : ''
-            }`}
+            className={`flex items-center justify-between gap-4 py-3 ${isMe ? 'rounded-md bg-primary/10 px-3' : ''
+              }`}
           >
             <div className="flex min-w-0 items-center gap-4">
               <span className="w-8 shrink-0 font-display text-lg text-primary">{index + 1}</span>
@@ -44,7 +43,7 @@ export default function LeaderboardTable({
               </span>
             </div>
             <span className="shrink-0 font-display text-lg text-primary">
-              {row.score.toLocaleString('id-ID')}
+              {/* {row.score.toLocaleString('id-ID')} */}
             </span>
           </li>
         )
